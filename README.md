@@ -4,7 +4,7 @@ SE项目后端仓库
 
 ### 项目结构
 
-<img src="/Users/yuerfei/Documents/SWJTU/Year3/SoftwareProject/repo/backend/img/repo_tree.png" alt="项目结构" style="zoom:50%; float:left" />
+<img src="./img/repo_tree.png" alt="项目结构" style="zoom:50%; float:left" />
 
 #### 1. cmd
 
@@ -81,4 +81,4 @@ dao == data access object，这一层封装了对数据库的操作，在我们�
 
 ### 各层之间交互关系如图
 
-<img src="/Users/yuerfei/Documents/SWJTU/Year3/SoftwareProject/repo/backend/img/layer.jpg" alt="layer" style="zoom:30%; float:left" />
+<img src="./img/layer.jpg" alt="layer" style="zoom:30%; float:left" />
