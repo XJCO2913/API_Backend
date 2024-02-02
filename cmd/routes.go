@@ -11,7 +11,9 @@ func NewRouter() *gin.Engine {
 	userController := user.NewUserController()
 
 	api := r.Group("/api")
-	api.POST("/user", userController.CreateUser)
+	{
+		api.POST("/user", userController.CreateUser)
+	}
 
 	return r
 }
