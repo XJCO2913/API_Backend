@@ -11,6 +11,8 @@ func init() {
 
 	localConfig.SetConfigName("config")
 	localConfig.AddConfigPath("$workdirectory/config/")
+	localConfig.AddConfigPath("../../config/")
+	localConfig.AddConfigPath("./config")
 
 	if err := localConfig.ReadInConfig(); err != nil {
 		if _, ok := err.(viper.ConfigFileNotFoundError); ok {
