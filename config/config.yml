@@ -1,0 +1,7 @@
+database:
+  mysql:
+    host: "43.136.232.116"
+    port: "3307"
+    user: "xiaofei"
+    password: "2021110003"
+    databaseName: "API_XJCO2913_TEST"
