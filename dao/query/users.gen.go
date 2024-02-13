@@ -27,10 +27,16 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 
 	tableName := _user.userDo.TableName()
 	_user.ALL = field.NewAsterisk(tableName)
-	_user.ID = field.NewInt32(tableName, "ID")
-	_user.Name = field.NewString(tableName, "name")
-	_user.CreatedAt = field.NewTime(tableName, "created_at")
-	_user.UpdatedAt = field.NewTime(tableName, "updated_at")
+	_user.ID = field.NewInt32(tableName, "id")
+	_user.UserID = field.NewString(tableName, "userId")
+	_user.AvatarURL = field.NewString(tableName, "avatarUrl")
+	_user.MembershipTime = field.NewInt64(tableName, "membershipTime")
+	_user.Sexual = field.NewInt32(tableName, "sexual")
+	_user.Region = field.NewString(tableName, "region")
+	_user.Tags = field.NewString(tableName, "tags")
+	_user.Birthday = field.NewTime(tableName, "birthday")
+	_user.CreatedAt = field.NewTime(tableName, "createdAt")
+	_user.UpdatedAt = field.NewTime(tableName, "updatedAt")
 
 	_user.fillFieldMap()
 
@@ -40,11 +46,17 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 type user struct {
 	userDo userDo
 
-	ALL       field.Asterisk
-	ID        field.Int32
-	Name      field.String
-	CreatedAt field.Time
-	UpdatedAt field.Time
+	ALL            field.Asterisk
+	ID             field.Int32
+	UserID         field.String
+	AvatarURL      field.String
+	MembershipTime field.Int64 // membership expired time, a unix timestamp
+	Sexual         field.Int32 // 0 is male, 1 is female
+	Region         field.String
+	Tags           field.String // Multiple tags are separated using '|'
+	Birthday       field.Time
+	CreatedAt      field.Time
+	UpdatedAt      field.Time
 
 	fieldMap map[string]field.Expr
 }
@@ -61,10 +73,16 @@ func (u user) As(alias string) *user {
 
 func (u *user) updateTableName(table string) *user {
 	u.ALL = field.NewAsterisk(table)
-	u.ID = field.NewInt32(table, "ID")
-	u.Name = field.NewString(table, "name")
-	u.CreatedAt = field.NewTime(table, "created_at")
-	u.UpdatedAt = field.NewTime(table, "updated_at")
+	u.ID = field.NewInt32(table, "id")
+	u.UserID = field.NewString(table, "userId")
+	u.AvatarURL = field.NewString(table, "avatarUrl")
+	u.MembershipTime = field.NewInt64(table, "membershipTime")
+	u.Sexual = field.NewInt32(table, "sexual")
+	u.Region = field.NewString(table, "region")
+	u.Tags = field.NewString(table, "tags")
+	u.Birthday = field.NewTime(table, "birthday")
+	u.CreatedAt = field.NewTime(table, "createdAt")
+	u.UpdatedAt = field.NewTime(table, "updatedAt")
 
 	u.fillFieldMap()
 
@@ -89,11 +107,17 @@ func (u *user) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (u *user) fillFieldMap() {
-	u.fieldMap = make(map[string]field.Expr, 4)
-	u.fieldMap["ID"] = u.ID
-	u.fieldMap["name"] = u.Name
-	u.fieldMap["created_at"] = u.CreatedAt
-	u.fieldMap["updated_at"] = u.UpdatedAt
+	u.fieldMap = make(map[string]field.Expr, 10)
+	u.fieldMap["id"] = u.ID
+	u.fieldMap["userId"] = u.UserID
+	u.fieldMap["avatarUrl"] = u.AvatarURL
+	u.fieldMap["membershipTime"] = u.MembershipTime
+	u.fieldMap["sexual"] = u.Sexual
+	u.fieldMap["region"] = u.Region
+	u.fieldMap["tags"] = u.Tags
+	u.fieldMap["birthday"] = u.Birthday
+	u.fieldMap["createdAt"] = u.CreatedAt
+	u.fieldMap["updatedAt"] = u.UpdatedAt
 }
 
 func (u user) clone(db *gorm.DB) user {
