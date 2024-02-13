@@ -6,6 +6,7 @@ require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/spf13/viper v1.18.2
 	go.uber.org/zap v1.26.0
+	golang.org/x/crypto v0.18.0
 	gorm.io/driver/mysql v1.5.2
 	gorm.io/gen v0.3.25
 	gorm.io/gorm v1.25.6
@@ -47,7 +48,6 @@ require (
 	github.com/ugorji/go/codec v1.2.12 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.7.0 // indirect
-	golang.org/x/crypto v0.18.0 // indirect
 	golang.org/x/exp v0.0.0-20230905200255-921286631fa9 // indirect
 	golang.org/x/mod v0.14.0 // indirect
 	golang.org/x/net v0.20.0 // indirect
