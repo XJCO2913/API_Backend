@@ -2,6 +2,10 @@ package util
 
 import "reflect"
 
+import (
+    "golang.org/x/crypto/bcrypt"
+)
+
 func IsEmpty(value interface{}) bool {
     if value == nil {
         return true
@@ -24,4 +28,17 @@ func IsEmpty(value interface{}) bool {
     }
 
     return false
+}
+
+func EncryptPassword(password string) (string, error) {
+    hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
+    if err != nil {
+        return "", err
+    }
+    return string(hash), nil
+}
+
+func VerifyPassword(hash string, password string) bool {
+    err := bcrypt.CompareHashAndPassword([]byte(hash), []byte(password))
+    return err == nil
 }
