@@ -31,12 +31,14 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 	_user.UserID = field.NewString(tableName, "userId")
 	_user.AvatarURL = field.NewString(tableName, "avatarUrl")
 	_user.MembershipTime = field.NewInt64(tableName, "membershipTime")
-	_user.Sexual = field.NewInt32(tableName, "sexual")
+	_user.Gender = field.NewInt32(tableName, "gender")
 	_user.Region = field.NewString(tableName, "region")
 	_user.Tags = field.NewString(tableName, "tags")
 	_user.Birthday = field.NewTime(tableName, "birthday")
 	_user.CreatedAt = field.NewTime(tableName, "createdAt")
 	_user.UpdatedAt = field.NewTime(tableName, "updatedAt")
+	_user.Username = field.NewString(tableName, "username")
+	_user.Password = field.NewString(tableName, "password")
 
 	_user.fillFieldMap()
 
@@ -51,12 +53,14 @@ type user struct {
 	UserID         field.String
 	AvatarURL      field.String
 	MembershipTime field.Int64 // membership expired time, a unix timestamp
-	Sexual         field.Int32 // 0 is male, 1 is female
+	Gender         field.Int32 // 0 is male, 1 is female
 	Region         field.String
 	Tags           field.String // Multiple tags are separated using '|'
 	Birthday       field.Time
 	CreatedAt      field.Time
 	UpdatedAt      field.Time
+	Username       field.String
+	Password       field.String
 
 	fieldMap map[string]field.Expr
 }
@@ -77,12 +81,14 @@ func (u *user) updateTableName(table string) *user {
 	u.UserID = field.NewString(table, "userId")
 	u.AvatarURL = field.NewString(table, "avatarUrl")
 	u.MembershipTime = field.NewInt64(table, "membershipTime")
-	u.Sexual = field.NewInt32(table, "sexual")
+	u.Gender = field.NewInt32(table, "gender")
 	u.Region = field.NewString(table, "region")
 	u.Tags = field.NewString(table, "tags")
 	u.Birthday = field.NewTime(table, "birthday")
 	u.CreatedAt = field.NewTime(table, "createdAt")
 	u.UpdatedAt = field.NewTime(table, "updatedAt")
+	u.Username = field.NewString(table, "username")
+	u.Password = field.NewString(table, "password")
 
 	u.fillFieldMap()
 
@@ -107,17 +113,19 @@ func (u *user) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (u *user) fillFieldMap() {
-	u.fieldMap = make(map[string]field.Expr, 10)
+	u.fieldMap = make(map[string]field.Expr, 12)
 	u.fieldMap["id"] = u.ID
 	u.fieldMap["userId"] = u.UserID
 	u.fieldMap["avatarUrl"] = u.AvatarURL
 	u.fieldMap["membershipTime"] = u.MembershipTime
-	u.fieldMap["sexual"] = u.Sexual
+	u.fieldMap["gender"] = u.Gender
 	u.fieldMap["region"] = u.Region
 	u.fieldMap["tags"] = u.Tags
 	u.fieldMap["birthday"] = u.Birthday
 	u.fieldMap["createdAt"] = u.CreatedAt
 	u.fieldMap["updatedAt"] = u.UpdatedAt
+	u.fieldMap["username"] = u.Username
+	u.fieldMap["password"] = u.Password
 }
 
 func (u user) clone(db *gorm.DB) user {

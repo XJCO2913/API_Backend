@@ -12,7 +12,7 @@ var (
 
 func init() {
 	var err error
-	dsn := "xiaofei:2021110003@tcp(127.0.0.1:3306)/API_XJCO2913?parseTime=true"
+	dsn := "xiaofei:2021110003@tcp(43.136.232.116:3307)/API_XJCO2913_TEST?parseTime=true"
 	DB, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	if err != nil {
 		panic(err)
