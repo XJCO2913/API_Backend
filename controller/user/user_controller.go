@@ -92,9 +92,9 @@ func (u *UserController) Login(c *gin.Context) {
 				"avatarUrl":      "",
 				"isOrganiser":    0,
 				"membershipTime": time.Now().Unix(),
-				"gender":   out.Gender,
-                "birthday": out.Birthday,
-                "region":   out.Region,
+				"gender":   	  out.Gender,
+                "birthday": 	  out.Birthday,
+                "region":   	  out.Region,
             },
         },
     })
