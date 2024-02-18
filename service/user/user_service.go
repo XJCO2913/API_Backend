@@ -135,11 +135,21 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
         return nil, errors.New("internal error")
     }
 
+	var gender int32
+	if user.Gender != nil {
+		gender = *user.Gender
+	}
+
+	var birthdayStr string
+	if user.Birthday != nil {
+		birthdayStr = user.Birthday.Format("2006-01-02")
+	}
+
     return &sdto.AuthenticateOutput{
         UserID:   user.UserID,
 		Token:    tokenStr,
-        Gender:   *user.Gender,
-        Birthday: user.Birthday.Format("2006-01-02"),
+        Gender:   gender,
+        Birthday: birthdayStr,
         Region:   user.Region,
     }, nil
 }
