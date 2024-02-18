@@ -43,10 +43,13 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	newUserID := uuid.String()
 
 	// parse birthday
-	birthday, err := time.Parse("2006-01-02", in.Birthday)
-	if err != nil {
-		zlog.Error("Error while parse birthday " + in.Birthday)
-		return nil, err
+	var birthday time.Time
+	if !util.IsEmpty(in.Birthday) {
+		birthday, err = time.Parse("2006-01-02", in.Birthday)
+		if err != nil {
+			zlog.Error("Error while parse birthday " + in.Birthday)
+			return nil, err
+		}
 	}
 
 	// encrypt password
