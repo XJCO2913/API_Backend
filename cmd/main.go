@@ -1,11 +1,18 @@
 package main
 
-import "api.backend.xjco2913/util/zlog"
+import (
+	"fmt"
+
+	"api.backend.xjco2913/util/config"
+	"api.backend.xjco2913/util/zlog"
+)
 
 func main() {
 	r := NewRouter()
 
-	zlog.Info("Starting listening at :8080...")
+	port := config.Get("server.port")
+
+	zlog.Info(fmt.Sprintf("Starting listening at :%v...", port))
 	
-	r.Run(":8080")
+	r.Run(fmt.Sprintf(":%v", port))
 }
