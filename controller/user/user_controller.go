@@ -88,7 +88,7 @@ func (u *UserController) Login(c *gin.Context) {
             "token": out.Token,
             "userInfo": gin.H{
                 "userId":         out.UserID,
-                "username":       out.Username,
+                "username":       req.Username,
 				"avatarUrl":      "",
 				"isOrganiser":    0,
 				"membershipTime": time.Now().Unix(),

@@ -94,7 +94,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 
 	return &sdto.CreateUserOutput{
 		UserID: newUserID,
-		Token:  tokenStr, // jwt token not implement yet
+		Token:  tokenStr,
 	}, nil
 }
 
@@ -116,12 +116,30 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
         return nil, errors.New("invalid password")
     }
 
+	// sign token
+	claims := jwt.MapClaims{
+        "userID":  user.UserID,
+        "isAdmin": false,
+        "exp":     time.Now().Add(24 * time.Hour).Unix(),
+    }
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	secret := config.Get("jwt.secret")
+	if util.IsEmpty(secret) {
+        zlog.Error("jwt.secret is empty in config")
+        return nil, errors.New("internal error")
+    }
+	tokenStr, err := token.SignedString([]byte(secret))
+    if err != nil {
+        zlog.Error("Error while signing jwt: " + err.Error())
+        return nil, errors.New("internal error")
+    }
+
     return &sdto.AuthenticateOutput{
         UserID:   user.UserID,
-        Username: user.Username,
+		Token:    tokenStr,
         Gender:   *user.Gender,
         Birthday: user.Birthday.Format("2006-01-02"),
         Region:   user.Region,
-        Token:    "", // Token generation logic to be implemented
     }, nil
 }
