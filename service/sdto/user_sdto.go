@@ -19,6 +19,10 @@ type AuthenticateInput struct {
 }
 
 type AuthenticateOutput struct {
-    UserID string
-    Token  string
+    UserID   string
+    Username string
+    Gender   int32
+    Birthday string
+    Region   string
+    Token    string
 }

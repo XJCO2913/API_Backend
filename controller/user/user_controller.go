@@ -59,7 +59,6 @@ func (u *UserController) SignUp(c *gin.Context) {
 	})
 }
 
-// Login handles user login requests.
 func (u *UserController) Login(c *gin.Context) {
     var req dto.UserLoginReq
     if err := c.ShouldBindJSON(&req); err != nil {
@@ -70,14 +69,11 @@ func (u *UserController) Login(c *gin.Context) {
         return
     }
 
-    // Call the service layer to authenticate the user.
     out, err := user.Service().Authenticate(c.Request.Context(), &sdto.AuthenticateInput{
         Username: req.Username,
         Password: req.Password,
     })
     if err != nil {
-        // You might want to handle different kinds of errors differently
-        // e.g., distinguish between "user not found" and "incorrect password"
         c.JSON(401, dto.CommonRes{
             StatusCode: -1,
             StatusMsg:  err.Error(),
@@ -85,7 +81,6 @@ func (u *UserController) Login(c *gin.Context) {
         return
     }
 
-    // Respond with a token and user info if the authentication is successful.
     c.JSON(200, dto.CommonRes{
         StatusCode: 0,
         StatusMsg:  "Login successfully",
@@ -93,7 +88,13 @@ func (u *UserController) Login(c *gin.Context) {
             "token": out.Token,
             "userInfo": gin.H{
                 "userId":         out.UserID,
-                "username":       req.Username,
+                "username":       out.Username,
+				"avatarUrl":      "",
+				"isOrganiser":    0,
+				"membershipTime": time.Now().Unix(),
+				"gender":   out.Gender,
+                "birthday": out.Birthday,
+                "region":   out.Region,
             },
         },
     })

@@ -117,7 +117,11 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
     }
 
     return &sdto.AuthenticateOutput{
-        UserID: user.UserID,
-        Token:  "", // jwt token not implement yet
+        UserID:   user.UserID,
+        Username: user.Username,
+        Gender:   *user.Gender,
+        Birthday: user.Birthday.Format("2006-01-02"),
+        Region:   user.Region,
+        Token:    "", // Token generation logic to be implemented
     }, nil
 }
