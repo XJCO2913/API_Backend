@@ -5,3 +5,6 @@ database:
     user: "xiaofei"
     password: "2021110003"
     databaseName: "API_XJCO2913_TEST"
+
+jwt:
+  secret: "Xbtxed0prpo7pxE42e"

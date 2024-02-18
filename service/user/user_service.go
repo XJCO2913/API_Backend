@@ -9,9 +9,12 @@ import (
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/util"
+	"api.backend.xjco2913/util/config"
 	"api.backend.xjco2913/util/zlog"
+	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type UserService struct{}
@@ -27,11 +30,10 @@ func Service() *UserService {
 func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sdto.CreateUserOutput, error) {
 	// check if user already exist or not
 	user, err := dao.FindUserByUsername(ctx, in.Username)
-	if err != nil || user != nil {
+	if err != gorm.ErrRecordNotFound || user != nil {
 		return nil, errors.New("user already exist")
 	}
 
-	
 	// generate uuid for userID
 	uuid, err := uuid.NewUUID()
 	if err != nil {
@@ -71,8 +73,27 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 		return nil, err
 	}
 
+	// sign token
+	claims := jwt.MapClaims{
+		"userID":  newUserID,
+		"isAdmin": false,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+	}
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+
+	secret := config.Get("jwt.secret")
+	if util.IsEmpty(secret) {
+		zlog.Error("jwt.secret is empty in config")
+		return nil, errors.New("internal error")
+	}
+	tokenStr, err := token.SignedString([]byte(secret))
+	if err != nil {
+		zlog.Error("error while sign jwt: " + err.Error())
+		return nil, errors.New("internal error")
+	}
+
 	return &sdto.CreateUserOutput{
 		UserID: newUserID,
-		Token:  "", // jwt token not implement yet
+		Token:  tokenStr, // jwt token not implement yet
 	}, nil
 }
