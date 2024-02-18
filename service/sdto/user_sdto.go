@@ -12,3 +12,13 @@ type CreateUserOutput struct {
 	UserID string
 	Token  string
 }
+
+type AuthenticateInput struct {
+    Username string
+    Password string
+}
+
+type AuthenticateOutput struct {
+    UserID string
+    Token  string
+}

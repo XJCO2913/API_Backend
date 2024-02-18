@@ -15,6 +15,6 @@ type UserSignUpReq struct {
 }
 
 type UserLoginReq struct {
-	Useename string
-	Password string
+	Username string `binding:"required"`
+	Password string `binding:"required"`
 }

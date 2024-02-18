@@ -13,7 +13,7 @@ func NewRouter() *gin.Engine {
 	api := r.Group("/api")
 	{
 		api.POST("/user/register", userController.SignUp)
-		api.POST("/user/login")
+		api.POST("/user/login", userController.Login)
 	}
 
 	return r

@@ -30,7 +30,6 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	if err != nil || user != nil {
 		return nil, errors.New("user already exist")
 	}
-
 	
 	// generate uuid for userID
 	uuid, err := uuid.NewUUID()
@@ -75,4 +74,28 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 		UserID: newUserID,
 		Token:  "", // jwt token not implement yet
 	}, nil
+}
+
+func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInput) (*sdto.AuthenticateOutput, error) {
+    user, err := dao.FindUserByUsername(ctx, in.Username)
+    if err != nil {
+        zlog.Error("Error while finding user by username", zap.String("username", in.Username), zap.Error(err))
+		return nil, errors.New("an error occurred while processing your request")
+    }
+
+	// Find the user
+    if user == nil {
+        return nil, errors.New("user not found")
+    }
+
+	// Verify the password
+    if !util.VerifyPassword(user.Password, in.Password) {
+		zlog.Info("Invalid login attempt", zap.String("username", in.Username))
+        return nil, errors.New("invalid password")
+    }
+
+    return &sdto.AuthenticateOutput{
+        UserID: user.UserID,
+        Token:  "", // jwt token not implement yet
+    }, nil
 }
