@@ -3,7 +3,7 @@ package user
 import (
 	"time"
 
-	"api.backend.xjco2913/controller/user/dto"
+	"api.backend.xjco2913/controller/dto"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/user"
 	"github.com/gin-gonic/gin"
