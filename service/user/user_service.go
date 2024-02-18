@@ -99,15 +99,15 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 }
 
 func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInput) (*sdto.AuthenticateOutput, error) {
+	// check whether the user exist or not
     user, err := dao.FindUserByUsername(ctx, in.Username)
     if err != nil {
-        zlog.Error("Error while finding user by username", zap.String("username", in.Username), zap.Error(err))
-		return nil, errors.New("an error occurred while processing your request")
-    }
-
-	// Find the user
-    if user == nil {
-        return nil, errors.New("user not found")
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, errors.New("user not found")
+        } else {
+            zlog.Error("Error while finding user by username", zap.String("username", in.Username), zap.Error(err))
+            return nil, errors.New("an error occurred while processing your request")
+        }
     }
 
 	// Verify the password
