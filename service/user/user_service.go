@@ -105,40 +105,40 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 
 func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInput) (*sdto.AuthenticateOutput, error) {
 	// check whether the user exist or not
-    user, err := dao.FindUserByUsername(ctx, in.Username)
-    if err != nil {
-        if errors.Is(err, gorm.ErrRecordNotFound) {
-            return nil, errors.New("user not found")
-        } else {
-            zlog.Error("Error while finding user by username", zap.String("username", in.Username), zap.Error(err))
-            return nil, errors.New("an error occurred while processing your request")
-        }
-    }
+	user, err := dao.FindUserByUsername(ctx, in.Username)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		} else {
+			zlog.Error("Error while finding user by username", zap.String("username", in.Username), zap.Error(err))
+			return nil, errors.New("an error occurred while processing your request")
+		}
+	}
 
 	// Verify the password
-    if !util.VerifyPassword(user.Password, in.Password) {
+	if !util.VerifyPassword(user.Password, in.Password) {
 		zlog.Info("Invalid login attempt", zap.String("username", in.Username))
-        return nil, errors.New("invalid password")
-    }
+		return nil, errors.New("invalid password")
+	}
 
 	// sign token
 	claims := jwt.MapClaims{
-        "userID":  user.UserID,
-        "isAdmin": false,
-        "exp":     time.Now().Add(24 * time.Hour).Unix(),
-    }
+		"userID":  user.UserID,
+		"isAdmin": false,
+		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
 	secret := config.Get("jwt.secret")
 	if util.IsEmpty(secret) {
-        zlog.Error("jwt.secret is empty in config")
-        return nil, errors.New("internal error")
-    }
+		zlog.Error("jwt.secret is empty in config")
+		return nil, errors.New("internal error")
+	}
 	tokenStr, err := token.SignedString([]byte(secret))
-    if err != nil {
-        zlog.Error("Error while signing jwt: " + err.Error())
-        return nil, errors.New("internal error")
-    }
+	if err != nil {
+		zlog.Error("Error while signing jwt: " + err.Error())
+		return nil, errors.New("internal error")
+	}
 
 	var gender int32
 	if user.Gender != nil {
@@ -150,11 +150,11 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		birthdayStr = user.Birthday.Format("2006-01-02")
 	}
 
-    return &sdto.AuthenticateOutput{
-        UserID:   user.UserID,
+	return &sdto.AuthenticateOutput{
+		UserID:   user.UserID,
 		Token:    tokenStr,
-        Gender:   gender,
-        Birthday: birthdayStr,
-        Region:   user.Region,
-    }, nil
+		Gender:   gender,
+		Birthday: birthdayStr,
+		Region:   user.Region,
+	}, nil
 }
