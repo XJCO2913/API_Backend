@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"api.backend.xjco2913/controller/dto"
 	"api.backend.xjco2913/util"
@@ -53,13 +54,7 @@ func VerifyToken() gin.HandlerFunc {
 			return []byte(jwtSecret), nil
 		})
 		if err != nil || !token.Valid {
-			if errors.Is(err, jwt.ErrTokenExpired) {
-				ctx.AbortWithStatusJSON(http.StatusUnauthorized, dto.CommonRes{
-					StatusCode: -1,
-					StatusMsg:  "Token expired",
-				})
-				return
-			} else if errors.Is(err, jwt.ErrSignatureInvalid) {
+			if errors.Is(err, jwt.ErrSignatureInvalid) {
 				ctx.AbortWithStatusJSON(http.StatusUnauthorized, dto.CommonRes{
 					StatusCode: -1,
 					StatusMsg:  "Invalid token signature",
@@ -74,7 +69,7 @@ func VerifyToken() gin.HandlerFunc {
 			return
 		}
 
-		// if token is valid, set userId into context
+		// if token is valid, check expried
 		claims, ok := token.Claims.(jwt.MapClaims)
 		if !ok {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, dto.CommonRes{
@@ -84,6 +79,17 @@ func VerifyToken() gin.HandlerFunc {
 			return
 		}
 
+		exp := claims["exp"].(float64)
+		expTime := time.Unix(int64(exp), 0)
+		if time.Now().After(expTime) {
+			ctx.AbortWithStatusJSON(http.StatusUnauthorized, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  "Token expired",
+			})
+			return
+		}
+
+		// set userId into context
 		userID := claims["userID"]
 		isAdmin := claims["isAdmin"]
 		ctx.Set("userID", userID)
