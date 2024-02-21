@@ -1,7 +1,7 @@
 package zlog
 
 import (
-	"os"
+	//"os"
 	"path"
 	"runtime"
 
@@ -20,17 +20,12 @@ func init() {
 
 	encoder := zapcore.NewJSONEncoder(encoderConfig)
 
-	file, _ := os.OpenFile("../../log/backend.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	fileWriterSyncer := zapcore.AddSync(file)
-
-	errFile, _ := os.OpenFile("../../log/error.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	errFileWriterSyncer := zapcore.AddSync(errFile)
+	redisLogger := &RedisWriter{}
 
 	// print into both stdout and log file
 	core := zapcore.NewTee(
-		zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), zapcore.DebugLevel),
-		zapcore.NewCore(encoder, fileWriterSyncer, zapcore.DebugLevel),
-		zapcore.NewCore(encoder, errFileWriterSyncer, zapcore.ErrorLevel),
+		//zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), zapcore.DebugLevel),
+		zapcore.NewCore(encoder, zapcore.AddSync(redisLogger), zapcore.DebugLevel),
 	)
 
 	localLogger = zap.New(core)
