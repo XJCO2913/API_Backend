@@ -6,7 +6,9 @@ import (
 	"strconv"
 
 	"api.backend.xjco2913/util/config"
+	"api.backend.xjco2913/util/zlog"
 	"github.com/go-redis/redis/v8"
+	"go.uber.org/zap"
 )
 
 var (
@@ -40,6 +42,9 @@ func init() {
 	if _, err := rdb.Ping(ctx).Result(); err != nil {
 		panic("unable to connect to Redis: " + err.Error())
 	}
+
+	// Log Redis connection success
+	zlog.Info("Redis initialized successfully", zap.String("address", addr))
 }
 
 // RDB returns a singleton of the Redis client
