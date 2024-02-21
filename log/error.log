@@ -1,1 +1,0 @@
-{"level":"error","ts":"2024-02-08T15:48:45.706+0800","msg":"error msg","error":true,"func":"zlog_test.TestLogger","file":"/Users/yuerfei/Documents/SWJTU/Year3/SoftwareProject/repo/api.backend.xjco2913/util/zlog/zlog_test.go","line":13}
