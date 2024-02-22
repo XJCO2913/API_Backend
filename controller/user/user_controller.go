@@ -74,11 +74,27 @@ func (u *UserController) Login(c *gin.Context) {
         Password: req.Password,
     })
     if err != nil {
-        c.JSON(401, dto.CommonRes{
-            StatusCode: -1,
-            StatusMsg:  err.Error(),
-        })
-        return
+		// Check whether the password is entered incorrectly or is disabled
+        if authErr, ok := err.(*sdto.AuthError); ok {
+			data := gin.H{
+				"remaining_attempts": authErr.RemainingAttempts,
+			}
+			if !authErr.LockExpires.IsZero() {
+				// Contains LockExpires if not zero
+				data["lock_expires"] = authErr.LockExpires.Unix()
+			}
+			c.JSON(401, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  authErr.Msg,
+				Data:       data,
+			})
+		} else {
+            c.JSON(401, dto.CommonRes{
+                StatusCode: -1,
+                StatusMsg:  err.Error(),
+            })
+        }
+		return
     }
 
     c.JSON(200, dto.CommonRes{
