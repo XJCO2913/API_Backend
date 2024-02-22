@@ -13,6 +13,7 @@ func main() {
 	port := config.Get("server.port")
 
 	zlog.Info(fmt.Sprintf("Starting listening at :%v...", port))
+	zlog.Error("this is a error")
 	
 	r.Run(fmt.Sprintf(":%v", port))
 }
