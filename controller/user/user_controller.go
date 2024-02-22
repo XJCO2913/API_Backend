@@ -80,7 +80,6 @@ func (u *UserController) Login(c *gin.Context) {
 				"remaining_attempts": authErr.RemainingAttempts,
 			}
 			if !authErr.LockExpires.IsZero() {
-				// Contains LockExpires if not zero
 				data["lock_expires"] = authErr.LockExpires.Unix()
 			}
 			c.JSON(401, dto.CommonRes{
