@@ -1,6 +1,7 @@
 package zlog
 
 import (
+	"io"
 	"os"
 	"path"
 	"runtime"
@@ -10,7 +11,9 @@ import (
 )
 
 var (
-	localLogger *zap.Logger
+	localLogger  *zap.Logger
+	localCore    zapcore.Core    // default core
+	localEncoder zapcore.Encoder // default encoder
 )
 
 func init() {
@@ -18,22 +21,34 @@ func init() {
 	encoderConfig := zap.NewProductionEncoderConfig()
 	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
 
-	encoder := zapcore.NewJSONEncoder(encoderConfig)
-
-	file, _ := os.OpenFile("../../log/backend.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	fileWriterSyncer := zapcore.AddSync(file)
-
-	errFile, _ := os.OpenFile("../../log/error.log", os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0644)
-	errFileWriterSyncer := zapcore.AddSync(errFile)
+	localEncoder = zapcore.NewJSONEncoder(encoderConfig)
 
 	// print into both stdout and log file
-	core := zapcore.NewTee(
-		zapcore.NewCore(encoder, zapcore.AddSync(os.Stdout), zapcore.DebugLevel),
-		zapcore.NewCore(encoder, fileWriterSyncer, zapcore.DebugLevel),
-		zapcore.NewCore(encoder, errFileWriterSyncer, zapcore.ErrorLevel),
+	localCore = zapcore.NewTee(
+		zapcore.NewCore(localEncoder, zapcore.AddSync(os.Stdout), zapcore.DebugLevel),
+		// zapcore.NewCore(encoder, zapcore.AddSync(redisLogger), zapcore.DebugLevel),
 	)
 
-	localLogger = zap.New(core)
+	localLogger = zap.New(localCore)
+}
+
+// Injection a new writer into zap logger
+func WithNewWriter(w io.Writer, isError bool) {
+	if isError {
+		localCore = zapcore.NewTee(
+			localCore,
+			zapcore.NewCore(localEncoder, zapcore.AddSync(w), zapcore.ErrorLevel),
+		)
+	} else {
+		localCore = zapcore.NewTee(
+			localCore,
+			zapcore.NewCore(localEncoder, zapcore.AddSync(w), zapcore.DebugLevel),
+		)
+	}
+
+	localLogger = localLogger.WithOptions(zap.WrapCore(func(c zapcore.Core) zapcore.Core {
+		return localCore
+	}))
 }
 
 func Info(msg string, fields ...zap.Field) {
