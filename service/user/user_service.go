@@ -131,13 +131,23 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	if err == nil {
 		lockedUntil, err := time.Parse(time.RFC3339, lockedUntilStr)
 		if err == nil && time.Now().Before(lockedUntil) {
-			// User is locked
-			return nil, fmt.Errorf("account is locked until %v", lockedUntil)
+			// User is locked, return remaining attempts as 0 and lock expiration
+			return nil, &sdto.AuthError{
+				Msg:               fmt.Sprintf("account is locked until %v", lockedUntil),
+				RemainingAttempts: 0,
+				LockExpires:       lockedUntil,
+			}
 		}
 	}
 
-	// Verify the password
-	if !util.VerifyPassword(user.Password, in.Password) {
+	// Password verification logic starts here
+	if util.VerifyPassword(user.Password, in.Password) {
+		// Password correct, reset attempts and unlock
+		redis.RDB().Del(ctx, attemptKey)
+		redis.RDB().Del(ctx, lockKey)
+		// Continue with the login process...
+	} else {
+		// Password is incorrect. Increment login attempt and check for lock condition.
 		attempts, err := redis.RDB().Incr(ctx, attemptKey).Result()
 		if err != nil {
 			zlog.Error("Error incrementing login attempts", zap.Error(err))
@@ -146,27 +156,26 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		redis.RDB().Expire(ctx, attemptKey, lockDuration)
 
 		if attempts >= maxLoginAttempts {
-			// Lock account
+			// Account should be locked, set the lock expiration
 			lockExpiration := time.Now().Add(lockDuration)
-			redis.RDB().Set(ctx, lockKey, lockExpiration.Unix(), lockDuration)
-			zlog.Warn("Account locked due to too many failed login attempts", zap.String("username", in.Username), zap.Int64("lockExpiration", lockExpiration.Unix()))
+			redis.RDB().Set(ctx, lockKey, lockExpiration.Format(time.RFC3339), lockDuration)
+			
+			// Return the account lock error with remaining attempts as 0 and lock expiration
+			zlog.Warn("Account locked due to too many failed login attempts", zap.String("username", in.Username))
 			return nil, &sdto.AuthError{
-                Msg:               fmt.Sprintf("account is locked until %v", lockExpiration.Unix()),
+				Msg:               fmt.Sprintf("account is locked until %v", lockExpiration),
 				RemainingAttempts: 0,
-                LockExpires:       lockExpiration,
-            }
-		}
-
-		zlog.Info("Invalid login attempt", zap.String("username", in.Username), zap.Int64("remainingAttempts", maxLoginAttempts - attempts))
-		return nil, &sdto.AuthError{
-			Msg:               fmt.Sprintf("invalid password, %d attempts remaining", maxLoginAttempts - attempts),
-			RemainingAttempts: maxLoginAttempts - attempts,
+				LockExpires:       lockExpiration,
+			}
+		} else {
+			// Return the error with remaining attempts and without lock expiration
+			zlog.Info("Invalid login attempt", zap.String("username", in.Username))
+			return nil, &sdto.AuthError{
+				Msg:               fmt.Sprintf("invalid password, %d attempts remaining", maxLoginAttempts-attempts),
+				RemainingAttempts: maxLoginAttempts - attempts,
+			}
 		}
 	}
-
-	// Password correct, reset attempts and unlock
-	redis.RDB().Del(ctx, attemptKey)
-	redis.RDB().Del(ctx, lockKey)
 
 	// Sign token
 	claims := jwt.MapClaims{
