@@ -111,6 +111,18 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 }
 
 func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInput) (*sdto.AuthenticateOutput, error) {
+	// Check whether the user exist or not
+	user, err := dao.FindUserByUsername(ctx, in.Username)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errors.New("user not found")
+		} else {
+			zlog.Error("Error while finding user by username", zap.String("username", in.Username), zap.Error(err))
+			return nil, errors.New("an error occurred while processing your request")
+		}
+	}
+
+	// Keys for tracking login attempts and locks
 	attemptKey := fmt.Sprintf("WrongPwd:%s", in.Username)
 	lockKey := fmt.Sprintf("lock:%s", in.Username)
 
@@ -121,17 +133,6 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		if err == nil && time.Now().Before(lockedUntil) {
 			// User is locked
 			return nil, fmt.Errorf("account is locked until %v", lockedUntil)
-		}
-	}
-
-	// Check whether the user exist or not
-	user, err := dao.FindUserByUsername(ctx, in.Username)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("user not found")
-		} else {
-			zlog.Error("Error while finding user by username", zap.String("username", in.Username), zap.Error(err))
-			return nil, errors.New("an error occurred while processing your request")
 		}
 	}
 
