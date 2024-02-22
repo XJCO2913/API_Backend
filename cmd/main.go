@@ -15,6 +15,7 @@ var (
 func main() {
 	r := NewRouter()
 
+	port = "80"
 	if env, ok := os.LookupEnv("DEPLOY_ENV"); ok {
 		if env == "test" {
 			port = config.Get("server.test.port")
@@ -24,7 +25,6 @@ func main() {
 	}
 
 	zlog.Info(fmt.Sprintf("Starting listening at :%v...", port))
-	zlog.Error("this is a error")
 	
 	r.Run(fmt.Sprintf(":%v", port))
 }
