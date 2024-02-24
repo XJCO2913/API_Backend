@@ -10,6 +10,7 @@ import (
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/dao/redis"
 	"api.backend.xjco2913/service/sdto"
+	"api.backend.xjco2913/service/sdto/errorx"
 	"api.backend.xjco2913/util"
 	"api.backend.xjco2913/util/config"
 	"api.backend.xjco2913/util/zlog"
@@ -110,15 +111,19 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	}, nil
 }
 
-func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInput) (*sdto.AuthenticateOutput, error) {
+func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInput) (*sdto.AuthenticateOutput, *errorx.ServiceErr) {
 	// Check whether the user exist or not
 	user, err := dao.FindUserByUsername(ctx, in.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errors.New("user not found")
+			return nil, errorx.NewServicerErr(
+				errorx.ErrExternal,
+				"user not found",
+				nil,
+			)
 		} else {
 			zlog.Error("Error while finding user by username", zap.String("username", in.Username), zap.Error(err))
-			return nil, errors.New("an error occurred while processing your request")
+			return nil, errorx.NewInternalErr()
 		}
 	}
 
@@ -132,11 +137,14 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		lockedUntil, err := time.Parse(time.RFC3339, lockedUntilStr)
 		if err == nil && time.Now().Before(lockedUntil) {
 			// User is locked
-			return nil, &sdto.AuthError{
-				Msg:               fmt.Sprintf("account is locked until %v", lockedUntil),
-				RemainingAttempts: 0,
-				LockExpires:       lockedUntil,
-			}
+			return nil, errorx.NewServicerErr(
+				errorx.ErrExternal,
+				fmt.Sprintf("account is locked until %v", lockedUntil),
+				map[string]any{
+					"remaining_attempts": 0,
+					"lock_expires":       lockedUntil,
+				},
+			)
 		}
 	}
 
@@ -149,28 +157,43 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		attempts, err := redis.RDB().Incr(ctx, attemptKey).Result()
 		if err != nil {
 			zlog.Error("Error incrementing login attempts", zap.Error(err))
-			return nil, errors.New("an error occurred while processing your request")
+			return nil, errorx.NewInternalErr()
 		}
 		redis.RDB().Expire(ctx, attemptKey, lockDuration)
 
 		if attempts >= maxLoginAttempts {
 			// Account should be locked, set the lock expiration
 			lockExpiration := time.Now().Add(lockDuration)
-			redis.RDB().Set(ctx, lockKey, lockExpiration.Format(time.RFC3339), lockDuration)
-			
-			zlog.Warn("Account locked due to too many failed login attempts", zap.String("username", in.Username))
-			return nil, &sdto.AuthError{
-				Msg:               fmt.Sprintf("account is locked until %v", lockExpiration),
-				RemainingAttempts: 0,
-				LockExpires:       lockExpiration,
+			err := redis.RDB().Set(ctx, lockKey, lockExpiration.Format(time.RFC3339), lockDuration).Err()
+			if err != nil {
+				zlog.Error("Error while set lock key", zap.Error(err))
+				return nil, errorx.NewInternalErr()
 			}
+
+			zlog.Warn("Account locked due to too many failed login attempts", zap.String("username", in.Username))
+			// return nil, &sdto.AuthError{
+			// 	Msg:               fmt.Sprintf("account is locked until %v", lockExpiration),
+			// 	RemainingAttempts: 0,
+			// 	LockExpires:       lockExpiration,
+			// }
+			return nil, errorx.NewServicerErr(
+				errorx.ErrExternal,
+				fmt.Sprintf("account is locked until %v", lockExpiration),
+				map[string]any{
+					"remaining_attempts": 0,
+					"lock_expires":       lockExpiration,
+				},
+			)
 		} else {
 			// Return remaining attempts without lock expiration
 			zlog.Info("Invalid login attempt", zap.String("username", in.Username))
-			return nil, &sdto.AuthError{
-				Msg:               fmt.Sprintf("invalid password, %d attempts remaining", maxLoginAttempts-attempts),
-				RemainingAttempts: maxLoginAttempts - attempts,
-			}
+			return nil, errorx.NewServicerErr(
+				errorx.ErrExternal,
+				fmt.Sprintf("invalid password, %d attempts remaining", maxLoginAttempts-attempts),
+				map[string]any{
+					"remaining_attempts": maxLoginAttempts - attempts,
+				},
+			)
 		}
 	}
 
@@ -186,13 +209,13 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 
 	if util.IsEmpty(secret) {
 		zlog.Error("jwt.secret is empty in config")
-		return nil, errors.New("internal error")
+		return nil, errorx.NewInternalErr()
 	}
 
 	tokenStr, err := token.SignedString([]byte(secret))
 	if err != nil {
 		zlog.Error("Error while signing jwt: " + err.Error())
-		return nil, errors.New("internal error")
+		return nil, errorx.NewInternalErr()
 	}
 
 	var gender int32
