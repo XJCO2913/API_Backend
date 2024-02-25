@@ -14,6 +14,10 @@ type ServiceErr struct {
 
 // Wrap a service layer error
 func NewServicerErr(code int, msg string, data map[string]any) *ServiceErr {
+	if data == nil {
+		data = make(map[string]any)
+	}
+
 	return &ServiceErr{
 		errCode: code,
 		errMsg:  msg,
