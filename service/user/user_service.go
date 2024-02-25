@@ -35,18 +35,22 @@ func Service() *UserService {
 	return &userService
 }
 
-func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sdto.CreateUserOutput, error) {
+func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sdto.CreateUserOutput, *errorx.ServiceErr) {
 	// check if user already exist or not
 	user, err := dao.FindUserByUsername(ctx, in.Username)
 	if err != gorm.ErrRecordNotFound || user != nil {
-		return nil, errors.New("user already exist")
+		return nil, errorx.NewServicerErr(
+			errorx.ErrExternal,
+			"user already exist",
+			nil,
+		)
 	}
 
 	// generate uuid for userID
 	uuid, err := uuid.NewUUID()
 	if err != nil {
 		zlog.Error("Error while generate uuid: " + err.Error())
-		return nil, err
+		return nil, errorx.NewInternalErr()
 	}
 	newUserID := uuid.String()
 
@@ -56,7 +60,11 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 		birthday, err := time.Parse("2006-01-02", in.Birthday)
 		if err != nil {
 			zlog.Error("Error while parse birthday " + in.Birthday)
-			return nil, err
+			return nil, errorx.NewServicerErr(
+				errorx.ErrExternal,
+				"invalid birthday",
+				nil,
+			)
 		}
 
 		birthdayEntity = &birthday
@@ -66,7 +74,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	hashPwd, err := util.EncryptPassword(in.Password)
 	if err != nil {
 		zlog.Error("Error while encrypt password " + in.Password)
-		return nil, err
+		return nil, errorx.NewInternalErr()
 	}
 
 	// DB logic
@@ -83,7 +91,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	})
 	if err != nil {
 		zlog.Error("Error while create new user: "+err.Error(), zap.String("username", in.Username))
-		return nil, err
+		return nil, errorx.NewInternalErr()
 	}
 
 	// sign token
@@ -97,12 +105,12 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	secret := config.Get("jwt.secret")
 	if util.IsEmpty(secret) {
 		zlog.Error("jwt.secret is empty in config")
-		return nil, errors.New("internal error")
+		return nil, errorx.NewInternalErr()
 	}
 	tokenStr, err := token.SignedString([]byte(secret))
 	if err != nil {
 		zlog.Error("error while sign jwt: " + err.Error())
-		return nil, errors.New("internal error")
+		return nil, errorx.NewInternalErr()
 	}
 
 	return &sdto.CreateUserOutput{
