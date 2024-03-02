@@ -35,3 +35,11 @@ services:
     command: redis-server --requirepass 2021110003
     volumes:
       - ./config/redis.conf:/usr/local/etc/redis/redis.conf
+
+  nginx:
+    image: nginx:latest
+    ports:
+      - "80:80"
+    volumes:
+      - /home/lighthouse/xjco2913/config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /home/lighthouse/xjco2913/log:/var/log/nginx:rw
