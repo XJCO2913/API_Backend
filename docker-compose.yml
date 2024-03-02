@@ -6,7 +6,7 @@ services:
       context: /home/lighthouse/API_Backend
       dockerfile: Dockerfile
     ports:
-      - 8099:80
+      - 8080:80
     depends_on:
       mysql:
         condition: service_healthy
