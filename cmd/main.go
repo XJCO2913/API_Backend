@@ -26,5 +26,5 @@ func main() {
 
 	zlog.Info(fmt.Sprintf("Starting listening at :%v...", port))
 	
-	r.Run(fmt.Sprintf("localhost:%v", port))
+	r.Run(fmt.Sprintf(":%v", port))
 }
