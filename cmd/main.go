@@ -15,7 +15,7 @@ var (
 func main() {
 	r := NewRouter()
 
-	port = "80"
+	port = "8080"
 	if env, ok := os.LookupEnv("DEPLOY_ENV"); ok {
 		if env == "test" {
 			port = config.Get("server.test.port")
