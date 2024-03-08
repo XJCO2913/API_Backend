@@ -31,6 +31,9 @@ func NewRouter() *gin.Engine {
 				"isAdmin": isAdmin,
 			})
 		})
+		api.GET("/hello", func(c *gin.Context) {
+			c.String(200, "hello")
+		})
 	}
 
 	return r
