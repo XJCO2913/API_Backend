@@ -3,13 +3,32 @@ version: '3'
 services:
   backend1:
     build:
-      context: /home/lighthouse/API_Backend
+      context: https://github.com/XJCO2913/API_Backend.git#main
       dockerfile: Dockerfile
     ports:
-      - 8080:80
+      - 8080:8080
     depends_on:
       mysql:
         condition: service_healthy
+
+  backend_test1:
+    build:
+      context: https://github.com/XJCO2913/API_Backend.git#develop
+      dockerfile: Dockerfile
+    ports:
+      - 8099:8080
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  user_frontend:
+    build:
+      context: /home/lighthouse/Web_Frontend
+      dockerfile: Dockerfile
+    ports:
+      - 5173:80
+    volumes:
+      - /home/lighthouse/Web_Frontend/nginx.conf:/etc/nginx/conf.d/default.conf
 
   mysql:
     image: 'mysql:latest'
