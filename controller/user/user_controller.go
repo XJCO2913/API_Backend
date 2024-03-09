@@ -81,7 +81,11 @@ func (u *UserController) Login(c *gin.Context) {
 			data["lock_expires"] = t.Unix()
 		}
 
-		c.JSON(err.Code(), data)
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg: err.Error(),
+			Data: data,
+		})
 		return
 	}
 
