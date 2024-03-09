@@ -2,7 +2,6 @@ package dao
 
 import (
 	"context"
-
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/dao/query"
 )
@@ -25,4 +24,13 @@ func FindUserByUsername(ctx context.Context, username string) (*model.User, erro
 	}
 
 	return user, nil
+}
+
+func GetAllUsers(ctx context.Context) ([]*model.User, error) {
+    var users []*model.User
+    err := DB.WithContext(ctx).Model(&model.User{}).Find(&users).Error
+    if err != nil {
+        return nil, err
+    }
+    return users, nil
 }

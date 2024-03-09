@@ -179,11 +179,6 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 			}
 
 			zlog.Warn("Account locked due to too many failed login attempts", zap.String("username", in.Username))
-			// return nil, &sdto.AuthError{
-			// 	Msg:               fmt.Sprintf("account is locked until %v", lockExpiration),
-			// 	RemainingAttempts: 0,
-			// 	LockExpires:       lockExpiration,
-			// }
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
 				fmt.Sprintf("account is locked until %v", lockExpiration),
@@ -243,4 +238,34 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		Birthday: birthdayStr,
 		Region:   user.Region,
 	}, nil
+}
+
+func (s *UserService) GetAllUsers(ctx context.Context) ([]*sdto.UserDetail, error) {
+    users, err := dao.GetAllUsers(ctx)
+    if err != nil {
+        return nil, err
+    }
+
+    userDtos := make([]*sdto.UserDetail, len(users))
+    for i, user := range users {
+        var gender int32
+        if user.Gender != nil {
+            gender = *user.Gender
+        }
+
+		var birthday string
+        if user.Birthday != nil {
+            birthday = user.Birthday.Format("2006-01-02")
+        }
+
+        userDtos[i] = &sdto.UserDetail{
+            UserID:   user.UserID,
+            Username: user.Username,
+            Gender:   gender,
+            Birthday: birthday,
+            Region:   user.Region,
+        }
+    }
+
+    return userDtos, nil
 }
