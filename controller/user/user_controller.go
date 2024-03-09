@@ -2,7 +2,6 @@ package user
 
 import (
 	"time"
-	"net/http"
 
 	"api.backend.xjco2913/controller/dto"
 	"api.backend.xjco2913/service/sdto"
@@ -112,7 +111,7 @@ func (u *UserController) Login(c *gin.Context) {
 func (u *UserController) GetAllUsers(ctx *gin.Context) {
     users, serviceErr := user.Service().GetAllUsers(ctx.Request.Context())
     if serviceErr != nil {
-        ctx.JSON(http.StatusInternalServerError, dto.CommonRes{
+        ctx.JSON(500, dto.CommonRes{
             StatusCode: -1,
             StatusMsg:  serviceErr.Error(),
         })
@@ -124,13 +123,16 @@ func (u *UserController) GetAllUsers(ctx *gin.Context) {
         userInfos[i] = gin.H{
             "userId":         user.UserID,
             "username":       user.Username,
-            "gender":         user.Gender,
+			"avatarUrl":      "",
+			"isOrganiser":    0,
+			"membershipTime": time.Now().Unix(),
+			"gender":         user.Gender,
             "birthday":       user.Birthday,
             "region":         user.Region,
         }
     }
 
-    ctx.JSON(http.StatusOK, dto.CommonRes{
+    ctx.JSON(200, dto.CommonRes{
         StatusCode: 0,
         StatusMsg:  "Get users successfully",
         Data:       userInfos,
