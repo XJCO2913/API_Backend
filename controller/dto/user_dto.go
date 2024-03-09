@@ -9,7 +9,7 @@ type CommonRes struct {
 type UserSignUpReq struct {
 	Username string `binding:"required"`
 	Password string `binding:"required"`
-	Gender   int32
+	Gender   int32 `binding:"required"`
 	Birthday string
 	Region   string `binding:"required"`
 }

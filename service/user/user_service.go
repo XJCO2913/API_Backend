@@ -82,7 +82,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 		UserID:         newUserID,
 		AvatarURL:      nil, // avatar not implement yet
 		MembershipTime: time.Now().Unix(),
-		Gender:         &in.Gender,
+		Gender:         in.Gender,
 		Region:         in.Region,
 		Tags:           nil,
 		Birthday:       birthdayEntity,
@@ -226,11 +226,6 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		return nil, errorx.NewInternalErr()
 	}
 
-	var gender int32
-	if user.Gender != nil {
-		gender = *user.Gender
-	}
-
 	var birthdayStr string
 	if user.Birthday != nil {
 		birthdayStr = user.Birthday.Format("2006-01-02")
@@ -239,7 +234,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	return &sdto.AuthenticateOutput{
 		UserID:   user.UserID,
 		Token:    tokenStr,
-		Gender:   gender,
+		Gender:   user.Gender,
 		Birthday: birthdayStr,
 		Region:   user.Region,
 	}, nil
