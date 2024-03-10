@@ -25,10 +25,19 @@ func (u *UserController) SignUp(c *gin.Context) {
 		return
 	}
 
+	// check the gender, gender must be 0, 1, 2
+	if *req.Gender < 0 || *req.Gender > 2 {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg: "wrong params: gender field must be 0 or 1 or 2",
+		})
+		return
+	}
+
 	out, err := user.Service().Create(c.Request.Context(), &sdto.CreateUserInput{
 		Username: req.Username,
 		Password: req.Password,
-		Gender:   req.Gender,
+		Gender:   *req.Gender,
 		Region:   req.Region,
 		Birthday: req.Birthday,
 	})
