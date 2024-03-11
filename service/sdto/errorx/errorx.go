@@ -28,7 +28,7 @@ func NewServicerErr(code int, msg string, data map[string]any) *ServiceErr {
 func NewInternalErr() *ServiceErr {
 	return &ServiceErr{
 		errCode: ErrInternal,
-		errMsg: "Internal server error",
+		errMsg:  "Internal server error",
 		errData: make(map[string]any),
 	}
 }

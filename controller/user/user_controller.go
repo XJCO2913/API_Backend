@@ -127,11 +127,11 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 		return
 	}
 
-	users, serviceErr := user.Service().GetAll(ctx.Request.Context())
-	if serviceErr != nil {
-		ctx.JSON(500, dto.CommonRes{
+	users, err := user.Service().GetAll(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(err.Code(), dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  serviceErr.Error(),
+			StatusMsg:  err.Error(),
 		})
 		return
 	}
