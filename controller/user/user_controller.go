@@ -29,7 +29,7 @@ func (u *UserController) SignUp(c *gin.Context) {
 	if *req.Gender < 0 || *req.Gender > 2 {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg: "wrong params: gender field must be 0 or 1 or 2",
+			StatusMsg:  "wrong params: gender field must be 0 or 1 or 2",
 		})
 		return
 	}
@@ -92,8 +92,8 @@ func (u *UserController) Login(c *gin.Context) {
 
 		c.JSON(err.Code(), dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg: err.Error(),
-			Data: data,
+			StatusMsg:  err.Error(),
+			Data:       data,
 		})
 		return
 	}
@@ -118,32 +118,32 @@ func (u *UserController) Login(c *gin.Context) {
 }
 
 func (u *UserController) GetAll(ctx *gin.Context) {
-    users, serviceErr := user.Service().GetAll(ctx.Request.Context())
-    if serviceErr != nil {
-        ctx.JSON(500, dto.CommonRes{
-            StatusCode: -1,
-            StatusMsg:  serviceErr.Error(),
-        })
-        return
-    }
+	users, serviceErr := user.Service().GetAll(ctx.Request.Context())
+	if serviceErr != nil {
+		ctx.JSON(500, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
 
-    userInfos := make([]gin.H, len(users))
-    for i, user := range users {
-        userInfos[i] = gin.H{
-            "userId":         user.UserID,
-            "username":       user.Username,
+	userInfos := make([]gin.H, len(users))
+	for i, user := range users {
+		userInfos[i] = gin.H{
+			"userId":         user.UserID,
+			"username":       user.Username,
 			"avatarUrl":      "",
 			"isOrganiser":    0,
-			"membershipTime": time.Now().Unix(),
 			"gender":         user.Gender,
-            "birthday":       user.Birthday,
-            "region":         user.Region,
-        }
-    }
+			"birthday":       user.Birthday,
+			"region":         user.Region,
+			"membershipTime": user.MembershipTime,
+		}
+	}
 
-    ctx.JSON(200, dto.CommonRes{
-        StatusCode: 0,
-        StatusMsg:  "Get users successfully",
-        Data:       userInfos,
-    })
+	ctx.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get users successfully",
+		Data:       userInfos,
+	})
 }

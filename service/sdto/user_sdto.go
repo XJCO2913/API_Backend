@@ -27,9 +27,10 @@ type AuthenticateOutput struct {
 }
 
 type GetAllOutput struct {
-    UserID   string `json:"userId"`
-    Username string `json:"username"`
-    Gender   int32  `json:"gender"`
-    Birthday string `json:"birthday"`
-    Region   string `json:"region"`
+    UserID        string `json:"userId"`
+    Username      string `json:"username"`
+    Gender        int32  `json:"gender"`
+    Birthday      string `json:"birthday"`
+    Region        string `json:"region"`
+    MembershipTime int64 `json:"membershipTime"`
 }
