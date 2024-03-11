@@ -118,6 +118,15 @@ func (u *UserController) Login(c *gin.Context) {
 }
 
 func (u *UserController) GetAll(ctx *gin.Context) {
+	isAdmin, exists := ctx.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		ctx.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource.",
+		})
+		return
+	}
+
 	users, serviceErr := user.Service().GetAll(ctx.Request.Context())
 	if serviceErr != nil {
 		ctx.JSON(500, dto.CommonRes{
