@@ -238,6 +238,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx.ServiceErr) {
 	users, err := dao.GetAllUsers(ctx)
 	if err != nil {
+		zlog.Error("Failed to retrieve all users", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
