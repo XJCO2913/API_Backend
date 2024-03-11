@@ -26,7 +26,7 @@ type AuthenticateOutput struct {
     Region   string
 }
 
-type UserDetail struct {
+type GetAllOutput struct {
     UserID   string `json:"userId"`
     Username string `json:"username"`
     Gender   int32  `json:"gender"`

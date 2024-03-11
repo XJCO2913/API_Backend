@@ -235,20 +235,20 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	}, nil
 }
 
-func (s *UserService) GetAll(ctx context.Context) ([]*sdto.UserDetail, error) {
+func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, error) {
     users, err := dao.GetAllUsers(ctx)
     if err != nil {
         return nil, err
     }
 
-    userDtos := make([]*sdto.UserDetail, len(users))
+    userDtos := make([]*sdto.GetAllOutput, len(users))
     for i, user := range users {
 		var birthday string
         if user.Birthday != nil {
             birthday = user.Birthday.Format("2006-01-02")
         }
 
-        userDtos[i] = &sdto.UserDetail{
+        userDtos[i] = &sdto.GetAllOutput{
             UserID:   user.UserID,
             Username: user.Username,
             Gender:   user.Gender,
