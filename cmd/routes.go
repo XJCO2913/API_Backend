@@ -22,7 +22,7 @@ func NewRouter() *gin.Engine {
 
 		api.POST("/user/register", userController.SignUp)
 		api.POST("/user/login", userController.Login)
-		api.GET("/users", userController.GetAllUsers)
+		api.GET("/users", userController.GetAll)
 		api.GET("/test", func(c *gin.Context) {
 			userID := c.GetString("userID")
 			isAdmin := c.GetBool("isAdmin")

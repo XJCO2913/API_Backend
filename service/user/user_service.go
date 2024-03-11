@@ -235,7 +235,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	}, nil
 }
 
-func (s *UserService) GetAllUsers(ctx context.Context) ([]*sdto.UserDetail, error) {
+func (s *UserService) GetAll(ctx context.Context) ([]*sdto.UserDetail, error) {
     users, err := dao.GetAllUsers(ctx)
     if err != nil {
         return nil, err

@@ -117,8 +117,8 @@ func (u *UserController) Login(c *gin.Context) {
 	})
 }
 
-func (u *UserController) GetAllUsers(ctx *gin.Context) {
-    users, serviceErr := user.Service().GetAllUsers(ctx.Request.Context())
+func (u *UserController) GetAll(ctx *gin.Context) {
+    users, serviceErr := user.Service().GetAll(ctx.Request.Context())
     if serviceErr != nil {
         ctx.JSON(500, dto.CommonRes{
             StatusCode: -1,
