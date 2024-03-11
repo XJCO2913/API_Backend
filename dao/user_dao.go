@@ -17,7 +17,7 @@ func CreateNewUser(ctx context.Context, newUser *model.User) error {
 
 func FindUserByUsername(ctx context.Context, username string) (*model.User, error) {
 	u := query.Use(DB).User
-
+	
 	user, err := u.WithContext(ctx).Where(u.Username.Eq(username)).First()
 	if err != nil {
 		return nil, err
@@ -27,10 +27,12 @@ func FindUserByUsername(ctx context.Context, username string) (*model.User, erro
 }
 
 func GetAllUsers(ctx context.Context) ([]*model.User, error) {
-    var users []*model.User
-    err := DB.WithContext(ctx).Model(&model.User{}).Find(&users).Error
+    u := query.Use(DB).User
+
+    users, err := u.WithContext(ctx).Find()
     if err != nil {
         return nil, err
     }
+
     return users, nil
 }

@@ -243,11 +243,6 @@ func (s *UserService) GetAllUsers(ctx context.Context) ([]*sdto.UserDetail, erro
 
     userDtos := make([]*sdto.UserDetail, len(users))
     for i, user := range users {
-        var gender int32
-        if user.Gender != nil {
-            gender = *user.Gender
-        }
-
 		var birthday string
         if user.Birthday != nil {
             birthday = user.Birthday.Format("2006-01-02")
@@ -256,7 +251,7 @@ func (s *UserService) GetAllUsers(ctx context.Context) ([]*sdto.UserDetail, erro
         userDtos[i] = &sdto.UserDetail{
             UserID:   user.UserID,
             Username: user.Username,
-            Gender:   gender,
+            Gender:   user.Gender,
             Birthday: birthday,
             Region:   user.Region,
         }
