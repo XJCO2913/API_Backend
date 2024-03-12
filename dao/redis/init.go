@@ -11,6 +11,10 @@ import (
 	"go.uber.org/zap"
 )
 
+const (
+	KEY_NOT_FOUND = redis.Nil
+)
+
 var (
 	rdb  *redis.Client
 )
