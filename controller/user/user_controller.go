@@ -158,14 +158,14 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 }
 
 func (u *UserController) GetByID(c *gin.Context) {
-	requestedUserID := c.Param("userID")
+	userID := c.Query("userID")
 
 	currentUserID, _ := c.Get("userID")
 	isAdmin, _ := c.Get("isAdmin")
 
 	// Check if the current user is an administrator,
 	// otherwise check if the requested userID is the same as the current userID.
-	if !isAdmin.(bool) && requestedUserID != currentUserID.(string) {
+	if !isAdmin.(bool) && userID != currentUserID.(string) {
 		c.JSON(403, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Forbidden: You do not have permission to access this resource.",
@@ -173,7 +173,7 @@ func (u *UserController) GetByID(c *gin.Context) {
 		return
 	}
 
-	userDetail, serviceErr := user.Service().GetByID(c.Request.Context(), requestedUserID)
+	userDetail, serviceErr := user.Service().GetByID(c.Request.Context(), userID)
 	if serviceErr != nil {
 		c.JSON(serviceErr.Code(), dto.CommonRes{
 			StatusCode: -1,
