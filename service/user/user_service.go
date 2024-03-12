@@ -238,7 +238,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		}
 
 		// store the token into cache
-		err = redis.RDB().Set(ctx, cacheTokenKey, tokenStr, 5 * time.Minute).Err()
+		err = redis.RDB().Set(ctx, cacheTokenKey, tokenStr, 24 * time.Hour).Err()
 		if err != nil {
 			zlog.Error("fail to store token into cache", zap.Error(err))
 			return nil, errorx.NewInternalErr()
