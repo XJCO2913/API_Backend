@@ -200,25 +200,49 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		}
 	}
 
-	// Sign token
-	claims := jwt.MapClaims{
-		"userID":  user.UserID,
-		"isAdmin": false,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
-	}
-
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret := config.Get("jwt.secret")
-
-	if util.IsEmpty(secret) {
-		zlog.Error("jwt.secret is empty in config")
+	// first try to get jwt cache from redis
+	// key format => jwt:username
+	cacheTokenKey := fmt.Sprintf("jwt:%v", in.Username)
+	cachedToken, err := redis.RDB().Get(ctx, cacheTokenKey).Result()
+	if err != nil && err != redis.KEY_NOT_FOUND {
+		// error occur
+		zlog.Error("fail to get cached token", zap.Error(err), zap.String("cachedTokenKey", cacheTokenKey))
 		return nil, errorx.NewInternalErr()
 	}
 
-	tokenStr, err := token.SignedString([]byte(secret))
-	if err != nil {
-		zlog.Error("Error while signing jwt: " + err.Error())
-		return nil, errorx.NewInternalErr()
+	// if exist cached token, return it immediately
+	var tokenStr string
+	if err != redis.KEY_NOT_FOUND {
+		tokenStr = cachedToken
+	} else {
+		// if not exist cached token, generate a new token
+		// Sign token
+		claims := jwt.MapClaims{
+			"userID":  user.UserID,
+			"isAdmin": false,
+			"exp":     time.Now().Add(24 * time.Hour).Unix(),
+		}
+
+		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+		secret := config.Get("jwt.secret")
+
+		if util.IsEmpty(secret) {
+			zlog.Error("jwt.secret is empty in config")
+			return nil, errorx.NewInternalErr()
+		}
+
+		tokenStr, err = token.SignedString([]byte(secret))
+		if err != nil {
+			zlog.Error("Error while signing jwt: " + err.Error())
+			return nil, errorx.NewInternalErr()
+		}
+
+		// store the token into cache
+		err = redis.RDB().Set(ctx, cacheTokenKey, tokenStr, 24 * time.Hour).Err()
+		if err != nil {
+			zlog.Error("fail to store token into cache", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
 	}
 
 	var birthdayStr string
@@ -263,30 +287,30 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 }
 
 func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByIDOutput, *errorx.ServiceErr) {
-    user, err := dao.GetUserByID(ctx, userID)
-    if err != nil {
-        if errors.Is(err, gorm.ErrRecordNotFound) {
-            zlog.Warn("User not found", zap.String("userID", userID))
-            return nil, errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
-        } else {
-            zlog.Error("Failed to retrieve user by ID", zap.String("userID", userID), zap.Error(err))
-            return nil, errorx.NewInternalErr()
-        }
-    }
+	user, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return nil, errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Failed to retrieve user by ID", zap.String("userID", userID), zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+	}
 
-    var birthday string
-    if user.Birthday != nil {
-        birthday = user.Birthday.Format("2006-01-02")
-    }
+	var birthday string
+	if user.Birthday != nil {
+		birthday = user.Birthday.Format("2006-01-02")
+	}
 
-    userDto := &sdto.GetByIDOutput{
-        UserID:         user.UserID,
-        Username:       user.Username,
-        Gender:         user.Gender,
-        Birthday:       birthday,
-        Region:         user.Region,
-        MembershipTime: user.MembershipTime,
-    }
+	userDto := &sdto.GetByIDOutput{
+		UserID:         user.UserID,
+		Username:       user.Username,
+		Gender:         user.Gender,
+		Birthday:       birthday,
+		Region:         user.Region,
+		MembershipTime: user.MembershipTime,
+	}
 
-    return userDto, nil
+	return userDto, nil
 }
