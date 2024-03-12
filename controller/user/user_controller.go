@@ -156,3 +156,22 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 		Data:       userInfos,
 	})
 }
+
+func (u *UserController) GetByID(c *gin.Context) {
+	userID := c.Param("userID")
+
+	userDetail, serviceErr := user.Service().GetByID(c.Request.Context(), userID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get user successfully",
+		Data:       userDetail,
+	})
+}
