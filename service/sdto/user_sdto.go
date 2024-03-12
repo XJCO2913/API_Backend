@@ -14,23 +14,32 @@ type CreateUserOutput struct {
 }
 
 type AuthenticateInput struct {
-    Username string
-    Password string
+	Username string
+	Password string
 }
 
 type AuthenticateOutput struct {
-    UserID   string
+	UserID   string
 	Token    string
-    Gender   int32
-    Birthday string
-    Region   string
+	Gender   int32
+	Birthday string
+	Region   string
 }
 
 type GetAllOutput struct {
-    UserID        string `json:"userId"`
-    Username      string `json:"username"`
-    Gender        int32  `json:"gender"`
-    Birthday      string `json:"birthday"`
-    Region        string `json:"region"`
-    MembershipTime int64 `json:"membershipTime"`
+	UserID         string `json:"userId"`
+	Username       string `json:"username"`
+	Gender         int32  `json:"gender"`
+	Birthday       string `json:"birthday"`
+	Region         string `json:"region"`
+	MembershipTime int64  `json:"membershipTime"`
+}
+
+type GetByIDOutput struct {
+	UserID         string `json:"userId"`
+	Username       string `json:"username"`
+	Gender         int32  `json:"gender"`
+	Birthday       string `json:"birthday"`
+	Region         string `json:"region"`
+	MembershipTime int64  `json:"membershipTime"`
 }

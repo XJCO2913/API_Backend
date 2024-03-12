@@ -261,3 +261,32 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 
 	return userDtos, nil
 }
+
+func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByIDOutput, *errorx.ServiceErr) {
+    user, err := dao.GetUserByID(ctx, userID)
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            zlog.Warn("User not found", zap.String("userID", userID))
+            return nil, errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+        } else {
+            zlog.Error("Failed to retrieve user by ID", zap.String("userID", userID), zap.Error(err))
+            return nil, errorx.NewInternalErr()
+        }
+    }
+
+    var birthday string
+    if user.Birthday != nil {
+        birthday = user.Birthday.Format("2006-01-02")
+    }
+
+    userDto := &sdto.GetByIDOutput{
+        UserID:         user.UserID,
+        Username:       user.Username,
+        Gender:         user.Gender,
+        Birthday:       birthday,
+        Region:         user.Region,
+        MembershipTime: user.MembershipTime,
+    }
+
+    return userDto, nil
+}
