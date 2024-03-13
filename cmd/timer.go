@@ -8,7 +8,7 @@ import (
 )
 
 func FlushLogs(ctx context.Context) {
-	ticker := time.NewTicker(5 * time.Second)
+	ticker := time.NewTicker(10 * time.Minute)
 	for range ticker.C {
 		redis.SyncLogs(ctx, LOG_KEY)
 		redis.SyncLogs(ctx, ERR_LOG_KEY)
