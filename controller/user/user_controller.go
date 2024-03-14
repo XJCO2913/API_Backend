@@ -122,7 +122,7 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 	if !exists || !isAdmin.(bool) {
 		ctx.JSON(403, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "Forbidden: Only admins can access this resource.",
+			StatusMsg:  "Forbidden: Only admins can access this resource",
 		})
 		return
 	}
@@ -168,7 +168,7 @@ func (u *UserController) GetByID(c *gin.Context) {
 	if !isAdmin.(bool) && userID != currentUserID.(string) {
 		c.JSON(403, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "Forbidden: You do not have permission to access this resource.",
+			StatusMsg:  "Forbidden: Only admins can access this resource",
 		})
 		return
 	}
@@ -197,5 +197,32 @@ func (u *UserController) GetByID(c *gin.Context) {
 		StatusCode: 0,
 		StatusMsg:  "Get user successfully",
 		Data:       responseData,
+	})
+}
+
+func (u *UserController) DeleteByID(c *gin.Context) {
+	userID := c.Param("userID")
+
+	isAdmin, exists := c.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
+	serviceErr := user.Service().DeleteByID(c.Request.Context(), userID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "User deleted successfully",
 	})
 }
