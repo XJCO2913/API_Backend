@@ -66,6 +66,7 @@ func NewRouter() *gin.Engine {
 		api.POST("/user/login", userController.Login)
 		api.GET("/users", userController.GetAll)
 		api.GET("/user", userController.GetByID)
+		api.DELETE("/user", userController.DeleteByID)
 		api.GET("/test", func(c *gin.Context) {
 			userID := c.GetString("userID")
 			isAdmin := c.GetBool("isAdmin")

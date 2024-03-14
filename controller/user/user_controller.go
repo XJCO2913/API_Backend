@@ -223,6 +223,6 @@ func (u *UserController) DeleteByID(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg:  "User deleted successfully",
+		StatusMsg:  "Delete user successfully",
 	})
 }
