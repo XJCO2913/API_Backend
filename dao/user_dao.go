@@ -26,3 +26,25 @@ func FindUserByUsername(ctx context.Context, username string) (*model.User, erro
 
 	return user, nil
 }
+
+func GetAllUsers(ctx context.Context) ([]*model.User, error) {
+	u := query.Use(DB).User
+
+	users, err := u.WithContext(ctx).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	return users, nil
+}
+
+func GetUserByID(ctx context.Context, userID string) (*model.User, error) {
+	u := query.Use(DB).User
+
+	user, err := u.WithContext(ctx).Where(u.UserID.Eq(userID)).First()
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}

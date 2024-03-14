@@ -25,10 +25,19 @@ func (u *UserController) SignUp(c *gin.Context) {
 		return
 	}
 
+	// check the gender, gender must be 0, 1, 2
+	if *req.Gender < 0 || *req.Gender > 2 {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "wrong params: gender field must be 0 or 1 or 2",
+		})
+		return
+	}
+
 	out, err := user.Service().Create(c.Request.Context(), &sdto.CreateUserInput{
 		Username: req.Username,
 		Password: req.Password,
-		Gender:   req.Gender,
+		Gender:   *req.Gender,
 		Region:   req.Region,
 		Birthday: req.Birthday,
 	})
@@ -83,8 +92,8 @@ func (u *UserController) Login(c *gin.Context) {
 
 		c.JSON(err.Code(), dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg: err.Error(),
-			Data: data,
+			StatusMsg:  err.Error(),
+			Data:       data,
 		})
 		return
 	}
@@ -105,5 +114,88 @@ func (u *UserController) Login(c *gin.Context) {
 				"region":         out.Region,
 			},
 		},
+	})
+}
+
+func (u *UserController) GetAll(ctx *gin.Context) {
+	isAdmin, exists := ctx.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		ctx.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource.",
+		})
+		return
+	}
+
+	users, err := user.Service().GetAll(ctx.Request.Context())
+	if err != nil {
+		ctx.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
+	userInfos := make([]gin.H, len(users))
+	for i, user := range users {
+		userInfos[i] = gin.H{
+			"userId":         user.UserID,
+			"username":       user.Username,
+			"avatarUrl":      "",
+			"isOrganiser":    0,
+			"gender":         user.Gender,
+			"birthday":       user.Birthday,
+			"region":         user.Region,
+			"membershipTime": user.MembershipTime,
+		}
+	}
+
+	ctx.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get users successfully",
+		Data:       userInfos,
+	})
+}
+
+func (u *UserController) GetByID(c *gin.Context) {
+	userID := c.Query("userID")
+
+	currentUserID, _ := c.Get("userID")
+	isAdmin, _ := c.Get("isAdmin")
+
+	// Check if the current user is an administrator,
+	// otherwise check if the requested userID is the same as the current userID.
+	if !isAdmin.(bool) && userID != currentUserID.(string) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: You do not have permission to access this resource.",
+		})
+		return
+	}
+
+	userDetail, serviceErr := user.Service().GetByID(c.Request.Context(), userID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	responseData := gin.H{
+		"userId":         userDetail.UserID,
+		"username":       userDetail.Username,
+		"avatarUrl":      "",
+		"isOrganiser":    0,
+		"gender":         userDetail.Gender,
+		"birthday":       userDetail.Birthday,
+		"region":         userDetail.Region,
+		"membershipTime": userDetail.MembershipTime,
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get user successfully",
+		Data:       responseData,
 	})
 }

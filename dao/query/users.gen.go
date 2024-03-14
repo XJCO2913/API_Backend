@@ -53,7 +53,7 @@ type user struct {
 	UserID         field.String
 	AvatarURL      field.String
 	MembershipTime field.Int64 // membership expired time, a unix timestamp
-	Gender         field.Int32 // 0 is male, 1 is female
+	Gender         field.Int32 // 0 is male, 1 is female, 2 is prefer-not-to-say
 	Region         field.String
 	Tags           field.String // Multiple tags are separated using '|'
 	Birthday       field.Time

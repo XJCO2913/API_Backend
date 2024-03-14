@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -13,6 +14,8 @@ var (
 )
 
 func main() {
+	ctx := context.Background()
+
 	r := NewRouter()
 
 	port = "8080"
@@ -24,7 +27,9 @@ func main() {
 		}
 	}
 
+	// async flush logs into mysql
+	go FlushLogs(ctx)
+
 	zlog.Info(fmt.Sprintf("Starting listening at :%v...", port))
-	
 	r.Run(fmt.Sprintf(":%v", port))
 }

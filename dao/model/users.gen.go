@@ -16,7 +16,7 @@ type User struct {
 	UserID         string     `gorm:"column:userId;not null" json:"userId"`
 	AvatarURL      *string    `gorm:"column:avatarUrl" json:"avatarUrl"`
 	MembershipTime int64      `gorm:"column:membershipTime;not null;comment:membership expired time, a unix timestamp" json:"membershipTime"` // membership expired time, a unix timestamp
-	Gender         *int32     `gorm:"column:gender;comment:0 is male, 1 is female" json:"gender"`                                             // 0 is male, 1 is female
+	Gender         int32      `gorm:"column:gender;not null;comment:0 is male, 1 is female, 2 is prefer-not-to-say" json:"gender"`            // 0 is male, 1 is female, 2 is prefer-not-to-say
 	Region         string     `gorm:"column:region;not null" json:"region"`
 	Tags           *string    `gorm:"column:tags;comment:Multiple tags are separated using '|'" json:"tags"` // Multiple tags are separated using '|'
 	Birthday       *time.Time `gorm:"column:birthday" json:"birthday"`
