@@ -238,7 +238,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		}
 
 		// store the token into cache
-		err = redis.RDB().Set(ctx, cacheTokenKey, tokenStr, 24 * time.Hour).Err()
+		err = redis.RDB().Set(ctx, cacheTokenKey, tokenStr, 24*time.Hour).Err()
 		if err != nil {
 			zlog.Error("fail to store token into cache", zap.Error(err))
 			return nil, errorx.NewInternalErr()
@@ -313,4 +313,20 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 	}
 
 	return userDto, nil
+}
+
+func (s *UserService) DeleteByID(ctx context.Context, userID string) *errorx.ServiceErr {
+
+	err := dao.DeleteUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Failed to delete user by ID", zap.String("userID", userID), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	return nil
 }
