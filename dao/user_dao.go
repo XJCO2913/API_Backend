@@ -50,9 +50,13 @@ func GetUserByID(ctx context.Context, userID string) (*model.User, error) {
 }
 
 func DeleteUserByID(ctx context.Context, userID string) error {
-	u := query.Use(DB).User
+	_, err := GetUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
 
-	_, err := u.WithContext(ctx).Where(u.UserID.Eq(userID)).Delete()
+	u := query.Use(DB).User
+	_, err = u.WithContext(ctx).Where(u.UserID.Eq(userID)).Delete()
 	if err != nil {
 		return err
 	}

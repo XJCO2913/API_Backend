@@ -201,7 +201,7 @@ func (u *UserController) GetByID(c *gin.Context) {
 }
 
 func (u *UserController) DeleteByID(c *gin.Context) {
-	userID := c.Param("userID")
+	userID := c.Query("userID")
 
 	isAdmin, exists := c.Get("isAdmin")
 	if !exists || !isAdmin.(bool) {
