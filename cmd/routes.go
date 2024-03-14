@@ -17,7 +17,11 @@ func NewRouter() *gin.Engine {
 	userController := user.NewUserController()
 
 	// global middleware
-	r.Use(cors.Default())
+	// cors
+	corsConfig := cors.DefaultConfig()
+	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
+	corsConfig.AllowAllOrigins = true
+	r.Use(cors.New(corsConfig))
 
 	// demo admin login api, only for test
 	r.GET("/api/getAdmin", func(c *gin.Context) {
