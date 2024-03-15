@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"api.backend.xjco2913/dao"
@@ -315,17 +316,25 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 	return userDto, nil
 }
 
-func (s *UserService) DeleteByID(ctx context.Context, userID string) *errorx.ServiceErr {
+func (s *UserService) DeleteByID(ctx context.Context, userIDs string) *errorx.ServiceErr {
+	ids := strings.Split(userIDs, "|")
+	deletedIDs, notFoundIDs, err := dao.DeleteUsersByID(ctx, userIDs)
 
-	err := dao.DeleteUserByID(ctx, userID)
 	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			zlog.Warn("User not found", zap.String("userID", userID))
-			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
-		} else {
-			zlog.Error("Failed to delete user by ID", zap.String("userID", userID), zap.Error(err))
-			return errorx.NewInternalErr()
-		}
+		zlog.Error("Failed to delete users", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	// All specified users were not found
+	if len(notFoundIDs) == len(ids) {
+		zlog.Error("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
+	}
+
+	zlog.Info("Specified users deleted", zap.Strings("deleted_user_ids", deletedIDs))
+	// Part of specified users were not found
+	if len(notFoundIDs) > 0 {
+		zlog.Warn("Some specified users not found", zap.Strings("not_found_ids", notFoundIDs))
 	}
 
 	return nil
