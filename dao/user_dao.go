@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"strings"
 
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/dao/query"
@@ -49,17 +50,30 @@ func GetUserByID(ctx context.Context, userID string) (*model.User, error) {
 	return user, nil
 }
 
-func DeleteUserByID(ctx context.Context, userID string) error {
-	_, err := GetUserByID(ctx, userID)
-	if err != nil {
-		return err
+func DeleteUsersByID(ctx context.Context, userIDs string) ([]string, []string, error) {
+	ids := strings.Split(userIDs, "|")
+	var deletedIDs []string
+	var notFoundIDs []string
+
+	for _, id := range ids {
+		_, err := GetUserByID(ctx, id)
+		if err != nil {
+			notFoundIDs = append(notFoundIDs, id)
+			continue
+		}
+
+		u := query.Use(DB).User
+		result, err := u.WithContext(ctx).Where(u.UserID.Eq(id)).Delete()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if result.RowsAffected > 0 {
+			deletedIDs = append(deletedIDs, id)
+		} else {
+			notFoundIDs = append(notFoundIDs, id)
+		}
 	}
 
-	u := query.Use(DB).User
-	_, err = u.WithContext(ctx).Where(u.UserID.Eq(userID)).Delete()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return deletedIDs, notFoundIDs, nil
 }
