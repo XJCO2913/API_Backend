@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"strconv"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -28,20 +29,12 @@ var (
 		[]string{"method", "URL"},
 	)
 
-	httpRequestsErrors = promauto.NewCounterVec(
-		prometheus.CounterOpts{
-			Name: "http_requests_errors_total",
-			Help: "Total number of requests errors.",
-		},
-		[]string{"method", "URL"}, // 使用路径作为标签
-	)
-
 	httpRequestsSuccess = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: "http_requests_success_total",
 			Help: "Total number of requests errors.",
 		},
-		[]string{"method", "URL"}, // 使用路径作为标签
+		[]string{"method", "URL", "status"}, // 使用路径作为标签
 	)
 )
 
@@ -68,11 +61,6 @@ func PrometheusResErr() gin.HandlerFunc {
 		c.Next()
 
 		statusCode := c.Writer.Status()
-		if statusCode >= 500 {
-			// internal error
-			httpRequestsErrors.WithLabelValues(c.Request.Method, c.FullPath()).Inc()
-		} else {
-			httpRequestsSuccess.WithLabelValues(c.Request.Method, c.FullPath()).Inc()
-		}
+		httpRequestsSuccess.WithLabelValues(c.Request.Method, c.FullPath(), strconv.Itoa(statusCode))
 	}
 }
