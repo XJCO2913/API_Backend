@@ -9,6 +9,7 @@ import (
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func NewRouter() *gin.Engine {
@@ -22,6 +23,11 @@ func NewRouter() *gin.Engine {
 	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
 	corsConfig.AllowAllOrigins = true
 	r.Use(cors.New(corsConfig))
+	// prometheus
+	r.Use(middleware.PrometheusRequests())
+	r.Use(middleware.PrometheusDuration())
+	r.Use(middleware.PrometheusResErr())
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// demo admin login api, only for test
 	r.GET("/api/getAdmin", func(c *gin.Context) {
