@@ -37,12 +37,6 @@ var (
 	)
 )
 
-func init() {
-	prometheus.MustRegister(httpRequestsTotal)
-	prometheus.MustRegister(httpRequestsDuration)
-	prometheus.MustRegister(httpRequestsErrors)
-}
-
 func PrometheusRequests() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		httpRequestsTotal.WithLabelValues(c.Request.Method, c.FullPath()).Inc()
