@@ -35,6 +35,14 @@ var (
 		},
 		[]string{"method", "URL"}, // 使用路径作为标签
 	)
+
+	httpRequestsSuccess = promauto.NewCounterVec(
+		prometheus.CounterOpts{
+			Name: "http_requests_success_total",
+			Help: "Total number of requests errors.",
+		},
+		[]string{"method", "URL"}, // 使用路径作为标签
+	)
 )
 
 func PrometheusRequests() gin.HandlerFunc {
@@ -63,6 +71,8 @@ func PrometheusResErr() gin.HandlerFunc {
 		if statusCode >= 500 {
 			// internal error
 			httpRequestsErrors.WithLabelValues(c.Request.Method, c.FullPath()).Inc()
+		} else {
+			httpRequestsSuccess.WithLabelValues(c.Request.Method, c.FullPath()).Inc()
 		}
 	}
 }
