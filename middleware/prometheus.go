@@ -61,6 +61,6 @@ func PrometheusResErr() gin.HandlerFunc {
 		c.Next()
 
 		statusCode := c.Writer.Status()
-		httpRequestsSuccess.WithLabelValues(c.Request.Method, c.FullPath(), strconv.Itoa(statusCode))
+		httpRequestsSuccess.WithLabelValues(c.Request.Method, c.FullPath(), strconv.Itoa(statusCode)).Inc()
 	}
 }
