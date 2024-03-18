@@ -341,7 +341,7 @@ func (s *UserService) DeleteByID(ctx context.Context, userIDs string) *errorx.Se
 	return nil
 }
 
-func (s *UserService) Ban(ctx context.Context, userID string) *errorx.ServiceErr {
+func (s *UserService) BanByID(ctx context.Context, userID string) *errorx.ServiceErr {
 	_, err := dao.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -369,7 +369,7 @@ func (s *UserService) Ban(ctx context.Context, userID string) *errorx.ServiceErr
 	return nil
 }
 
-func (s *UserService) Unban(ctx context.Context, userID string) *errorx.ServiceErr {
+func (s *UserService) UnbanByID(ctx context.Context, userID string) *errorx.ServiceErr {
 	_, err := dao.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
