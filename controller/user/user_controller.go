@@ -226,3 +226,57 @@ func (u *UserController) DeleteByID(c *gin.Context) {
 		StatusMsg:  "Delete user(s) successfully",
 	})
 }
+
+func (u *UserController) BanByID(c *gin.Context) {
+	userID := c.Query("userID")
+
+	isAdmin, exists := c.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
+	serviceErr := user.Service().BanByID(c.Request.Context(), userID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Ban User successfully",
+	})
+}
+
+func (u *UserController) UnbanByID(c *gin.Context) {
+	userID := c.Query("userID")
+
+	isAdmin, exists := c.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
+	serviceErr := user.Service().UnbanByID(c.Request.Context(), userID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Unban user successfully",
+	})
+}

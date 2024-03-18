@@ -121,7 +121,6 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 }
 
 func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInput) (*sdto.AuthenticateOutput, *errorx.ServiceErr) {
-	// Check whether the user exist or not
 	user, err := dao.FindUserByUsername(ctx, in.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -136,16 +135,20 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		}
 	}
 
-	// Keys for tracking login attempts and locks
+	// Check if the user is banned
+	if u.IsBanned(ctx, user.UserID) {
+		zlog.Warn("Attempted login by banned user", zap.String("userID", user.UserID))
+		return nil, errorx.NewServicerErr(errorx.ErrExternal, "account is banned", nil)
+	}
+
 	attemptKey := fmt.Sprintf("WrongPwd:%s", in.Username)
 	lockKey := fmt.Sprintf("lock:%s", in.Username)
 
-	// Check if it is locked
+	// Check if the user is locked
 	lockedUntilStr, err := redis.RDB().Get(ctx, lockKey).Result()
 	if err == nil {
 		lockedUntil, err := time.Parse(time.RFC3339, lockedUntilStr)
 		if err == nil && time.Now().Before(lockedUntil) {
-			// User is locked
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
 				fmt.Sprintf("account is locked until %v", lockedUntil),
@@ -158,7 +161,6 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	}
 
 	if util.VerifyPassword(user.Password, in.Password) {
-		// Password correct, reset attempts and unlock
 		redis.RDB().Del(ctx, attemptKey)
 		redis.RDB().Del(ctx, lockKey)
 	} else {
@@ -189,7 +191,6 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 				},
 			)
 		} else {
-			// Return remaining attempts without lock expiration
 			zlog.Info("Invalid login attempt", zap.String("username", in.Username))
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
@@ -338,4 +339,68 @@ func (s *UserService) DeleteByID(ctx context.Context, userIDs string) *errorx.Se
 	}
 
 	return nil
+}
+
+func (s *UserService) BanByID(ctx context.Context, userID string) *errorx.ServiceErr {
+	_, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Error checking user existence", zap.String("userID", userID), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	if s.IsBanned(ctx, userID) {
+		zlog.Warn("User already banned", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "User already banned", nil)
+	}
+
+	banKey := fmt.Sprintf("ban:%s", userID)
+	// Disable never expire
+	err = redis.RDB().Set(ctx, banKey, "banned", 0).Err()
+	if err != nil {
+		zlog.Error("Failed to ban user", zap.String("userID", userID), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
+}
+
+func (s *UserService) UnbanByID(ctx context.Context, userID string) *errorx.ServiceErr {
+	_, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Error checking user existence", zap.String("userID", userID), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	if !s.IsBanned(ctx, userID) {
+		zlog.Warn("User not banned", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "User not banned", nil)
+	}
+
+	banKey := fmt.Sprintf("ban:%s", userID)
+	err = redis.RDB().Del(ctx, banKey).Err()
+	if err != nil {
+		zlog.Error("Failed to unban user", zap.String("userID", userID), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
+}
+
+func (s *UserService) IsBanned(ctx context.Context, userID string) bool {
+	banKey := fmt.Sprintf("ban:%s", userID)
+	exists, err := redis.RDB().Exists(ctx, banKey).Result()
+	if err != nil || exists == 0 {
+		return false
+	}
+	return true
 }
