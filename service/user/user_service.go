@@ -341,29 +341,60 @@ func (s *UserService) DeleteByID(ctx context.Context, userIDs string) *errorx.Se
 	return nil
 }
 
-func (s *UserService) BanByID(ctx context.Context, userID string) *errorx.ServiceErr {
-	_, err := dao.GetUserByID(ctx, userID)
-	if err != nil {
-		if errors.Is(err, gorm.ErrRecordNotFound) {
-			zlog.Warn("User not found", zap.String("userID", userID))
-			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
-		} else {
-			zlog.Error("Error checking user existence", zap.String("userID", userID), zap.Error(err))
+func (s *UserService) BanByID(ctx context.Context, userIDs string) *errorx.ServiceErr {
+	ids := strings.Split(userIDs, "|")
+	var bannedIDs []string
+	var notFoundIDs []string
+	var alreadyBannedIDs []string
+
+	for _, id := range ids {
+		_, err := dao.GetUserByID(ctx, id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				notFoundIDs = append(notFoundIDs, id)
+				continue
+			} else {
+				zlog.Error("Error checking user existence", zap.String("userID", id), zap.Error(err))
+				return errorx.NewInternalErr()
+			}
+		}
+
+		if s.IsBanned(ctx, id) {
+			alreadyBannedIDs = append(alreadyBannedIDs, id)
+			continue
+		}
+
+		banKey := fmt.Sprintf("ban:%s", id)
+		// Disable never expire
+		err = redis.RDB().Set(ctx, banKey, "banned", 0).Err()
+		if err != nil {
+			zlog.Error("Failed to ban user", zap.String("userID", id), zap.Error(err))
 			return errorx.NewInternalErr()
 		}
+		bannedIDs = append(bannedIDs, id)
 	}
 
-	if s.IsBanned(ctx, userID) {
-		zlog.Warn("User already banned", zap.String("userID", userID))
-		return errorx.NewServicerErr(errorx.ErrExternal, "User already banned", nil)
+	// All specified users were not found
+	if len(notFoundIDs) == len(ids) {
+		zlog.Error("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
 	}
 
-	banKey := fmt.Sprintf("ban:%s", userID)
-	// Disable never expire
-	err = redis.RDB().Set(ctx, banKey, "banned", 0).Err()
-	if err != nil {
-		zlog.Error("Failed to ban user", zap.String("userID", userID), zap.Error(err))
-		return errorx.NewInternalErr()
+	// All specified users were already banned
+	if len(alreadyBannedIDs) == len(ids) {
+		zlog.Error("All specified users already banned", zap.Strings("already_banned_ids", alreadyBannedIDs))
+		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users already banned", map[string]any{"already_banned_ids": alreadyBannedIDs})
+	}
+
+	zlog.Info("Specified users banned", zap.Strings("banned_user_ids", bannedIDs))
+	// Part of specified users were not found
+	if len(notFoundIDs) > 0 {
+		zlog.Warn("Some specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+	}
+
+	// Part of specified users were already banned
+	if len(alreadyBannedIDs) > 0 {
+		zlog.Warn("Some specified users already banned", zap.Strings("already_banned_ids", alreadyBannedIDs))
 	}
 
 	return nil
