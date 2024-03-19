@@ -6,7 +6,6 @@ import (
 	"api.backend.xjco2913/controller/user"
 	"api.backend.xjco2913/middleware"
 	"api.backend.xjco2913/util/config"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
@@ -18,11 +17,6 @@ func NewRouter() *gin.Engine {
 	userController := user.NewUserController()
 
 	// global middleware
-	// cors
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
-	corsConfig.AllowAllOrigins = true
-	r.Use(cors.New(corsConfig))
 	// prometheus
 	r.Use(middleware.PrometheusRequests())
 	r.Use(middleware.PrometheusDuration())
