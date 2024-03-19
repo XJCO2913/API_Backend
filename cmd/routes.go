@@ -6,9 +6,9 @@ import (
 	"api.backend.xjco2913/controller/user"
 	"api.backend.xjco2913/middleware"
 	"api.backend.xjco2913/util/config"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 func NewRouter() *gin.Engine {
@@ -17,11 +17,11 @@ func NewRouter() *gin.Engine {
 	userController := user.NewUserController()
 
 	// global middleware
-	// cors
-	corsConfig := cors.DefaultConfig()
-	corsConfig.AllowHeaders = []string{"Origin", "Content-Length", "Content-Type", "Authorization"}
-	corsConfig.AllowAllOrigins = true
-	r.Use(cors.New(corsConfig))
+	// prometheus
+	r.Use(middleware.PrometheusRequests())
+	r.Use(middleware.PrometheusDuration())
+	r.Use(middleware.PrometheusResErr())
+	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
 	// demo admin login api, only for test
 	r.GET("/api/getAdmin", func(c *gin.Context) {
@@ -70,6 +70,9 @@ func NewRouter() *gin.Engine {
 		api.POST("/user/login", userController.Login)
 		api.GET("/users", userController.GetAll)
 		api.GET("/user", userController.GetByID)
+		api.DELETE("/user", userController.DeleteByID)
+		api.POST("/user/ban", userController.BanByID)
+		api.POST("/user/unban", userController.UnbanByID)
 		api.GET("/test", func(c *gin.Context) {
 			userID := c.GetString("userID")
 			isAdmin := c.GetBool("isAdmin")

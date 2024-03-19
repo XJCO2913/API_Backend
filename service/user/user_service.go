@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	"api.backend.xjco2913/dao"
@@ -120,7 +121,6 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 }
 
 func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInput) (*sdto.AuthenticateOutput, *errorx.ServiceErr) {
-	// Check whether the user exist or not
 	user, err := dao.FindUserByUsername(ctx, in.Username)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -135,16 +135,20 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		}
 	}
 
-	// Keys for tracking login attempts and locks
+	// Check if the user is banned
+	if u.IsBanned(ctx, user.UserID) {
+		zlog.Warn("Attempted login by banned user", zap.String("userID", user.UserID))
+		return nil, errorx.NewServicerErr(errorx.ErrExternal, "account is banned", nil)
+	}
+
 	attemptKey := fmt.Sprintf("WrongPwd:%s", in.Username)
 	lockKey := fmt.Sprintf("lock:%s", in.Username)
 
-	// Check if it is locked
+	// Check if the user is locked
 	lockedUntilStr, err := redis.RDB().Get(ctx, lockKey).Result()
 	if err == nil {
 		lockedUntil, err := time.Parse(time.RFC3339, lockedUntilStr)
 		if err == nil && time.Now().Before(lockedUntil) {
-			// User is locked
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
 				fmt.Sprintf("account is locked until %v", lockedUntil),
@@ -157,7 +161,6 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	}
 
 	if util.VerifyPassword(user.Password, in.Password) {
-		// Password correct, reset attempts and unlock
 		redis.RDB().Del(ctx, attemptKey)
 		redis.RDB().Del(ctx, lockKey)
 	} else {
@@ -188,7 +191,6 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 				},
 			)
 		} else {
-			// Return remaining attempts without lock expiration
 			zlog.Info("Invalid login attempt", zap.String("username", in.Username))
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
@@ -238,7 +240,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		}
 
 		// store the token into cache
-		err = redis.RDB().Set(ctx, cacheTokenKey, tokenStr, 24 * time.Hour).Err()
+		err = redis.RDB().Set(ctx, cacheTokenKey, tokenStr, 24*time.Hour).Err()
 		if err != nil {
 			zlog.Error("fail to store token into cache", zap.Error(err))
 			return nil, errorx.NewInternalErr()
@@ -313,4 +315,152 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 	}
 
 	return userDto, nil
+}
+
+func (s *UserService) DeleteByID(ctx context.Context, userIDs string) *errorx.ServiceErr {
+	ids := strings.Split(userIDs, "|")
+	deletedIDs, notFoundIDs, err := dao.DeleteUsersByID(ctx, userIDs)
+
+	if err != nil {
+		zlog.Error("Failed to delete users", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	// All specified users were not found
+	if len(notFoundIDs) == len(ids) {
+		zlog.Error("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
+	}
+
+	zlog.Info("Specified users deleted", zap.Strings("deleted_user_ids", deletedIDs))
+	// Part of specified users were not found
+	if len(notFoundIDs) > 0 {
+		zlog.Warn("Some specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+	}
+
+	return nil
+}
+
+func (s *UserService) BanByID(ctx context.Context, userIDs string) *errorx.ServiceErr {
+	ids := strings.Split(userIDs, "|")
+	var bannedIDs []string
+	var notFoundIDs []string
+	var alreadyBannedIDs []string
+
+	for _, id := range ids {
+		_, err := dao.GetUserByID(ctx, id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				notFoundIDs = append(notFoundIDs, id)
+				continue
+			} else {
+				zlog.Error("Failed to retrieve user by ID", zap.String("userID", id), zap.Error(err))
+				return errorx.NewInternalErr()
+			}
+		}
+
+		if s.IsBanned(ctx, id) {
+			alreadyBannedIDs = append(alreadyBannedIDs, id)
+			continue
+		}
+
+		banKey := fmt.Sprintf("ban:%s", id)
+		// Disable never expire
+		err = redis.RDB().Set(ctx, banKey, "banned", 0).Err()
+		if err != nil {
+			zlog.Error("Failed to ban user", zap.String("userID", id), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+		bannedIDs = append(bannedIDs, id)
+	}
+
+	// All specified users were not found
+	if len(notFoundIDs) == len(ids) {
+		zlog.Error("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
+	}
+
+	// All specified users were already banned
+	if len(alreadyBannedIDs) == len(ids) {
+		zlog.Error("All specified users already banned", zap.Strings("already_banned_ids", alreadyBannedIDs))
+		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users already banned", map[string]any{"already_banned_ids": alreadyBannedIDs})
+	}
+
+	zlog.Info("Specified users banned", zap.Strings("banned_user_ids", bannedIDs))
+	// Part of specified users were not found
+	if len(notFoundIDs) > 0 {
+		zlog.Warn("Some specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+	}
+
+	// Part of specified users were already banned
+	if len(alreadyBannedIDs) > 0 {
+		zlog.Warn("Some specified users already banned", zap.Strings("already_banned_ids", alreadyBannedIDs))
+	}
+
+	return nil
+}
+
+func (s *UserService) UnbanByID(ctx context.Context, userIDs string) *errorx.ServiceErr {
+	ids := strings.Split(userIDs, "|")
+	var unbannedIDs []string
+	var notFoundIDs []string
+	var notBannedIDs []string
+
+	for _, id := range ids {
+		_, err := dao.GetUserByID(ctx, id)
+		if err != nil {
+			if errors.Is(err, gorm.ErrRecordNotFound) {
+				notFoundIDs = append(notFoundIDs, id)
+				continue
+			} else {
+				zlog.Error("Failed to retrieve user by ID", zap.String("userID", id), zap.Error(err))
+				return errorx.NewInternalErr()
+			}
+		}
+
+		if !s.IsBanned(ctx, id) {
+			notBannedIDs = append(notBannedIDs, id)
+			continue
+		}
+
+		banKey := fmt.Sprintf("ban:%s", id)
+		err = redis.RDB().Del(ctx, banKey).Err()
+		if err != nil {
+			zlog.Error("Failed to unban user", zap.String("userID", id), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+		unbannedIDs = append(unbannedIDs, id)
+	}
+
+	// All specified users were not found
+	if len(notFoundIDs) == len(ids) {
+		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
+	}
+
+	// All specified users were not banned
+	if len(notBannedIDs) == len(ids) {
+		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users were not banned", map[string]any{"not_banned_ids": notBannedIDs})
+	}
+
+	zlog.Info("Specified users unbanned", zap.Strings("unbanned_user_ids", unbannedIDs))
+	// Part of specified users were not found
+	if len(notFoundIDs) > 0 {
+		zlog.Warn("Some specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+	}
+
+	// Part of specified users were not banned
+	if len(notBannedIDs) > 0 {
+		zlog.Warn("Some specified users were not banned", zap.Strings("not_banned_ids", notBannedIDs))
+	}
+
+	return nil
+}
+
+func (s *UserService) IsBanned(ctx context.Context, userID string) bool {
+	banKey := fmt.Sprintf("ban:%s", userID)
+	exists, err := redis.RDB().Exists(ctx, banKey).Result()
+	if err != nil || exists == 0 {
+		return false
+	}
+	return true
 }
