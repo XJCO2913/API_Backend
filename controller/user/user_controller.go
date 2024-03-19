@@ -250,7 +250,7 @@ func (u *UserController) BanByID(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg:  "Ban User successfully",
+		StatusMsg:  "Ban User(s) successfully",
 	})
 }
 
@@ -277,6 +277,6 @@ func (u *UserController) UnbanByID(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg:  "Unban user successfully",
+		StatusMsg:  "Unban user(s) successfully",
 	})
 }
