@@ -303,3 +303,29 @@ func (u *UserController) IsBanned(c *gin.Context) {
 		},
 	})
 }
+
+func (u *UserController) GetAllStatus(c *gin.Context) {
+	isAdmin, exists := c.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
+	userStatusList, serviceErr := user.Service().GetAllStatus(c.Request.Context())
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get all user statuses successfully",
+		Data:       userStatusList,
+	})
+}
