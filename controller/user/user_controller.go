@@ -299,6 +299,7 @@ func (u *UserController) IsBanned(c *gin.Context) {
 		StatusCode: 0,
 		StatusMsg:  "Check status successfully",
 		Data: gin.H{
+			"userId":   userID,
 			"isBanned": isBanned,
 		},
 	})
