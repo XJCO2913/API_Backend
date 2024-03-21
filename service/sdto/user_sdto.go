@@ -43,3 +43,8 @@ type GetByIDOutput struct {
 	Region         string `json:"region"`
 	MembershipTime int64  `json:"membershipTime"`
 }
+
+type GetAllStatusOutput struct {
+    UserID    string `json:"userId"`
+    IsBanned  bool   `json:"isBanned"`
+}

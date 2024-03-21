@@ -464,3 +464,21 @@ func (s *UserService) IsBanned(ctx context.Context, userID string) bool {
 	}
 	return true
 }
+
+func (s *UserService) GetAllStatus(ctx context.Context) ([]*sdto.GetAllStatusOutput, *errorx.ServiceErr) {
+	users, err := dao.GetAllUsers(ctx)
+	if err != nil {
+		return nil, errorx.NewInternalErr()
+	}
+
+	var statusList []*sdto.GetAllStatusOutput
+	for _, user := range users {
+		isBanned := s.IsBanned(ctx, user.UserID)
+		statusList = append(statusList, &sdto.GetAllStatusOutput{
+			UserID:   user.UserID,
+			IsBanned: isBanned,
+		})
+	}
+
+	return statusList, nil
+}
