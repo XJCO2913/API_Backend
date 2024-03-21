@@ -297,7 +297,7 @@ func (u *UserController) IsBanned(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg:  "Check ban status successfully",
+		StatusMsg:  "Check status successfully",
 		Data: gin.H{
 			"isBanned": isBanned,
 		},
@@ -325,7 +325,7 @@ func (u *UserController) GetAllStatus(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg:  "Get all user statuses successfully",
+		StatusMsg:  "Check statuses successfully",
 		Data:       userStatusList,
 	})
 }
