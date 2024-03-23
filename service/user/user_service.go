@@ -483,7 +483,28 @@ func (s *UserService) GetAllStatus(ctx context.Context) ([]*sdto.GetAllStatusOut
 	return statusList, nil
 }
 
-func (s *UserService) UpdateByID(ctx context.Context, userID string, updates map[string]interface{}) *errorx.ServiceErr {
+func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.UpdateUserInput) *errorx.ServiceErr {
+	updates := make(map[string]interface{})
+
+	addUpdate := func(field string, value interface{}) {
+		if value != nil {
+			updates[field] = value
+		}
+	}
+
+	addUpdate("username", input.Username)
+	addUpdate("gender", input.Gender)
+	addUpdate("birthday", input.Birthday)
+	addUpdate("region", input.Region)
+	if input.Password != nil {
+		encryptedPassword, err := util.EncryptPassword(*input.Password)
+		if err != nil {
+			zlog.Error("Failed to encrypt password", zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+		addUpdate("password", encryptedPassword)
+	}
+
 	err := dao.UpdateUserByID(ctx, userID, updates)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

@@ -330,3 +330,51 @@ func (u *UserController) GetAllStatus(c *gin.Context) {
 		Data:       userStatusList,
 	})
 }
+
+func (u *UserController) UpdateByID(c *gin.Context) {
+	userID := c.Query("userID")
+
+	currentUserID, currentUserExists := c.Get("userID")
+	isAdmin, isAdminExists := c.Get("isAdmin")
+
+	// Check if the current user is an administrator,
+	// otherwise check if the requested userID is the same as the current userID.
+	if !isAdminExists || !currentUserExists || (!isAdmin.(bool) && userID != currentUserID.(string)) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
+	var req dto.UserUpdateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "wrong params: " + err.Error(),
+		})
+		return
+	}
+
+	input := sdto.UpdateUserInput{
+		Username: req.Username,
+		Password: req.Password,
+		Gender:   req.Gender,
+		Birthday: req.Birthday,
+		Region:   req.Region,
+	}
+
+	serviceErr := user.Service().UpdateByID(c.Request.Context(), userID, input)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Update user successfully",
+	})
+}
