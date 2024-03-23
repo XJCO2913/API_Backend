@@ -356,6 +356,14 @@ func (u *UserController) UpdateByID(c *gin.Context) {
 		return
 	}
 
+	if req.Gender != nil && (*req.Gender < 0 || *req.Gender > 2) {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "wrong params: gender field must be 0 or 1 or 2",
+		})
+		return
+	}
+
 	input := sdto.UpdateUserInput{
 		Username: req.Username,
 		Password: req.Password,
