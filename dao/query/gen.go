@@ -18,6 +18,7 @@ import (
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
 		db:        db,
+		Admin:     newAdmin(db, opts...),
 		Log:       newLog(db, opts...),
 		Organiser: newOrganiser(db, opts...),
 		User:      newUser(db, opts...),
@@ -27,6 +28,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 type Query struct {
 	db *gorm.DB
 
+	Admin     admin
 	Log       log
 	Organiser organiser
 	User      user
@@ -37,6 +39,7 @@ func (q *Query) Available() bool { return q.db != nil }
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
 		db:        db,
+		Admin:     q.Admin.clone(db),
 		Log:       q.Log.clone(db),
 		Organiser: q.Organiser.clone(db),
 		User:      q.User.clone(db),
@@ -54,6 +57,7 @@ func (q *Query) WriteDB() *Query {
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
 		db:        db,
+		Admin:     q.Admin.replaceDB(db),
 		Log:       q.Log.replaceDB(db),
 		Organiser: q.Organiser.replaceDB(db),
 		User:      q.User.replaceDB(db),
@@ -61,6 +65,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 }
 
 type queryCtx struct {
+	Admin     *adminDo
 	Log       *logDo
 	Organiser *organiserDo
 	User      *userDo
@@ -68,6 +73,7 @@ type queryCtx struct {
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
+		Admin:     q.Admin.WithContext(ctx),
 		Log:       q.Log.WithContext(ctx),
 		Organiser: q.Organiser.WithContext(ctx),
 		User:      q.User.WithContext(ctx),
