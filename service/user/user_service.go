@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -487,7 +488,11 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 	updates := make(map[string]interface{})
 
 	addUpdate := func(field string, value interface{}) {
-		if value != nil {
+		// Use reflection to check if the value is a pointer and not nil
+		v := reflect.ValueOf(value)
+		if v.Kind() == reflect.Ptr && !v.IsNil() {
+			updates[field] = v.Elem().Interface()
+		} else if v.Kind() != reflect.Ptr {
 			updates[field] = value
 		}
 	}
