@@ -84,11 +84,12 @@ func NewRouter() *gin.Engine {
 				"isAdmin": isAdmin,
 			})
 		})
-	}
 
-	admin := r.Group("/admin")
-	{
-		admin.POST("/login", adminController.Login)
+		// admin
+		admin := api.Group("/admin")
+		{
+			admin.POST("/login", adminController.Login)
+		}
 	}
 
 	return r
