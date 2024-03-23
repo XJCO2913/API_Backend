@@ -482,3 +482,18 @@ func (s *UserService) GetAllStatus(ctx context.Context) ([]*sdto.GetAllStatusOut
 
 	return statusList, nil
 }
+
+func (s *UserService) UpdateByID(ctx context.Context, userID string, updates map[string]interface{}) *errorx.ServiceErr {
+	err := dao.UpdateUserByID(ctx, userID, updates)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Failed to update user", zap.String("userID", userID), zap.Any("updates", updates), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	return nil
+}
