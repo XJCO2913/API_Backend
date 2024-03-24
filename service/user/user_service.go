@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
@@ -42,7 +43,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	if err != gorm.ErrRecordNotFound || user != nil {
 		return nil, errorx.NewServicerErr(
 			errorx.ErrExternal,
-			"user already exist",
+			"User already exist",
 			nil,
 		)
 	}
@@ -63,7 +64,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 			zlog.Error("Error while parse birthday " + in.Birthday)
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
-				"invalid birthday",
+				"Invalid birthday format",
 				nil,
 			)
 		}
@@ -110,7 +111,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	}
 	tokenStr, err := token.SignedString([]byte(secret))
 	if err != nil {
-		zlog.Error("error while sign jwt: " + err.Error())
+		zlog.Error("Error while sign jwt: " + err.Error())
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -126,7 +127,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
-				"user not found",
+				"User not found",
 				nil,
 			)
 		} else {
@@ -151,7 +152,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		if err == nil && time.Now().Before(lockedUntil) {
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
-				fmt.Sprintf("account is locked until %v", lockedUntil),
+				fmt.Sprintf("Account is locked until %v", lockedUntil),
 				map[string]any{
 					"remaining_attempts": 0,
 					"lock_expires":       lockedUntil,
@@ -184,7 +185,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 			zlog.Warn("Account locked due to too many failed login attempts", zap.String("username", in.Username))
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
-				fmt.Sprintf("account is locked until %v", lockExpiration),
+				fmt.Sprintf("Account is locked until %v", lockExpiration),
 				map[string]any{
 					"remaining_attempts": 0,
 					"lock_expires":       lockExpiration,
@@ -194,7 +195,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 			zlog.Info("Invalid login attempt", zap.String("username", in.Username))
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
-				fmt.Sprintf("invalid password, %d attempts remaining", maxLoginAttempts-attempts),
+				fmt.Sprintf("Invalid password, %d attempts remaining", maxLoginAttempts-attempts),
 				map[string]any{
 					"remaining_attempts": maxLoginAttempts - attempts,
 				},
@@ -208,7 +209,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	cachedToken, err := redis.RDB().Get(ctx, cacheTokenKey).Result()
 	if err != nil && err != redis.KEY_NOT_FOUND {
 		// error occur
-		zlog.Error("fail to get cached token", zap.Error(err), zap.String("cachedTokenKey", cacheTokenKey))
+		zlog.Error("Fail to get cached token", zap.Error(err), zap.String("cachedTokenKey", cacheTokenKey))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -242,7 +243,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		// store the token into cache
 		err = redis.RDB().Set(ctx, cacheTokenKey, tokenStr, 24*time.Hour).Err()
 		if err != nil {
-			zlog.Error("fail to store token into cache", zap.Error(err))
+			zlog.Error("Fail to store token into cache", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
 	}
@@ -481,4 +482,52 @@ func (s *UserService) GetAllStatus(ctx context.Context) ([]*sdto.GetAllStatusOut
 	}
 
 	return statusList, nil
+}
+
+func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.UpdateUserInput) *errorx.ServiceErr {
+	updates := make(map[string]interface{})
+
+	addUpdate := func(field string, value interface{}) {
+		// Use reflection to check if the value is a pointer and not nil
+		v := reflect.ValueOf(value)
+		if v.Kind() == reflect.Ptr && !v.IsNil() {
+			updates[field] = v.Elem().Interface()
+		} else if v.Kind() != reflect.Ptr {
+			updates[field] = value
+		}
+	}
+
+	addUpdate("username", input.Username)
+	addUpdate("gender", input.Gender)
+	addUpdate("region", input.Region)
+	if input.Password != nil {
+		encryptedPassword, err := util.EncryptPassword(*input.Password)
+		if err != nil {
+			zlog.Error("Failed to encrypt password", zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+		addUpdate("password", encryptedPassword)
+	}
+
+	if input.Birthday != nil {
+		_, err := time.Parse("2006-01-02", *input.Birthday)
+		if err != nil {
+			zlog.Error("Error while parsing birthday", zap.String("birthday", *input.Birthday), zap.Error(err))
+			return errorx.NewServicerErr(errorx.ErrExternal, "Invalid birthday format", nil)
+		}
+		addUpdate("birthday", *input.Birthday)
+	}
+
+	err := dao.UpdateUserByID(ctx, userID, updates)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Failed to update user", zap.String("userID", userID), zap.Any("updates", updates), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	return nil
 }

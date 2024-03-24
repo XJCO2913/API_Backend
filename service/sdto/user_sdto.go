@@ -45,6 +45,14 @@ type GetByIDOutput struct {
 }
 
 type GetAllStatusOutput struct {
-    UserID    string `json:"userId"`
-    IsBanned  bool   `json:"isBanned"`
+	UserID   string `json:"userId"`
+	IsBanned bool   `json:"isBanned"`
+}
+
+type UpdateUserInput struct {
+	Username *string
+	Password *string
+	Gender   *int32
+	Birthday *string
+	Region   *string
 }
