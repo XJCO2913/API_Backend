@@ -19,11 +19,12 @@ type AuthenticateInput struct {
 }
 
 type AuthenticateOutput struct {
-	UserID   string
-	Token    string
-	Gender   int32
-	Birthday string
-	Region   string
+	UserID    string
+	Token     string
+	Gender    int32
+	Birthday  string
+	Region    string
+	AvatarURL string
 }
 
 type GetAllOutput struct {
@@ -33,6 +34,7 @@ type GetAllOutput struct {
 	Birthday       string `json:"birthday"`
 	Region         string `json:"region"`
 	MembershipTime int64  `json:"membershipTime"`
+	AvatarURL      string `json:"avatarUrl"`
 }
 
 type GetByIDOutput struct {
@@ -42,6 +44,7 @@ type GetByIDOutput struct {
 	Birthday       string `json:"birthday"`
 	Region         string `json:"region"`
 	MembershipTime int64  `json:"membershipTime"`
+	AvatarURL      string `json:"avatarUrl"`
 }
 
 type GetAllStatusOutput struct {
