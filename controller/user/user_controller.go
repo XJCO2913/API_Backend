@@ -106,7 +106,7 @@ func (u *UserController) Login(c *gin.Context) {
 			"userInfo": gin.H{
 				"userId":         out.UserID,
 				"username":       req.Username,
-				"avatarUrl":      "",
+				"avatarUrl":      out.AvatarURL,
 				"isOrganiser":    0,
 				"membershipTime": time.Now().Unix(),
 				"gender":         out.Gender,
@@ -141,7 +141,7 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 		userInfos[i] = gin.H{
 			"userId":         user.UserID,
 			"username":       user.Username,
-			"avatarUrl":      "",
+			"avatarUrl":      user.AvatarURL,
 			"isOrganiser":    0,
 			"gender":         user.Gender,
 			"birthday":       user.Birthday,
@@ -185,7 +185,7 @@ func (u *UserController) GetByID(c *gin.Context) {
 	responseData := gin.H{
 		"userId":         userDetail.UserID,
 		"username":       userDetail.Username,
-		"avatarUrl":      "",
+		"avatarUrl":      userDetail.AvatarURL,
 		"isOrganiser":    0,
 		"gender":         userDetail.Gender,
 		"birthday":       userDetail.Birthday,
