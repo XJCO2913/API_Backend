@@ -16,6 +16,10 @@ database:
     port: "6379"
     password: "2021110003"
     db: 0
+  minio:
+    endpoint: "43.136.232.116:9000"
+    accessKeyId: "minioadmin"
+    secretAccessKey: "2021110003"
 
 jwt:
   secret: "Xbtxed0prpo7pxE42e"
