@@ -253,6 +253,17 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		birthdayStr = user.Birthday.Format("2006-01-02")
 	}
 
+	if user.AvatarURL != nil {
+		return &sdto.AuthenticateOutput{
+			UserID:    user.UserID,
+			Token:     tokenStr,
+			Gender:    user.Gender,
+			Birthday:  birthdayStr,
+			Region:    user.Region,
+			AvatarURL: *user.AvatarURL,
+		}, nil
+	}
+
 	return &sdto.AuthenticateOutput{
 		UserID:   user.UserID,
 		Token:    tokenStr,
@@ -284,6 +295,10 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 			Region:         user.Region,
 			MembershipTime: user.MembershipTime,
 		}
+
+		if user.AvatarURL != nil {
+			userDtos[i].AvatarURL = *user.AvatarURL
+		}
 	}
 
 	return userDtos, nil
@@ -313,6 +328,10 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		Birthday:       birthday,
 		Region:         user.Region,
 		MembershipTime: user.MembershipTime,
+	}
+
+	if user.AvatarURL != nil {
+		userDto.AvatarURL = *user.AvatarURL
 	}
 
 	return userDto, nil
