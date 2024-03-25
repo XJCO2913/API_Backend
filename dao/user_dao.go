@@ -77,3 +77,19 @@ func DeleteUsersByID(ctx context.Context, userIDs string) ([]string, []string, e
 
 	return deletedIDs, notFoundIDs, nil
 }
+
+func UpdateUserByID(ctx context.Context, userID string, updates map[string]interface{}) error {
+	_, err := GetUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	u := query.Use(DB).User
+
+	_, err = u.WithContext(ctx).Where(u.UserID.Eq(userID)).Updates(updates)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

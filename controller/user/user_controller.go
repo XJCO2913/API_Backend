@@ -160,12 +160,12 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 func (u *UserController) GetByID(c *gin.Context) {
 	userID := c.Query("userID")
 
-	currentUserID, _ := c.Get("userID")
-	isAdmin, _ := c.Get("isAdmin")
+	currentUserID, currentUserExists := c.Get("userID")
+	isAdmin, isAdminExists := c.Get("isAdmin")
 
 	// Check if the current user is an administrator,
 	// otherwise check if the requested userID is the same as the current userID.
-	if !isAdmin.(bool) && userID != currentUserID.(string) {
+	if !isAdminExists || !currentUserExists || !isAdmin.(bool) && userID != currentUserID.(string) {
 		c.JSON(403, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Forbidden: Only admins can access this resource",
@@ -278,5 +278,111 @@ func (u *UserController) UnbanByID(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Unban user(s) successfully",
+	})
+}
+
+func (u *UserController) IsBanned(c *gin.Context) {
+	userID := c.Query("userID")
+
+	isAdmin, exists := c.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
+	isBanned := user.Service().IsBanned(c.Request.Context(), userID)
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Check status successfully",
+		Data: gin.H{
+			"userId":   userID,
+			"isBanned": isBanned,
+		},
+	})
+}
+
+func (u *UserController) GetAllStatus(c *gin.Context) {
+	isAdmin, exists := c.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
+	userStatusList, serviceErr := user.Service().GetAllStatus(c.Request.Context())
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Check statuses successfully",
+		Data:       userStatusList,
+	})
+}
+
+func (u *UserController) UpdateByID(c *gin.Context) {
+	userID := c.Query("userID")
+
+	currentUserID, currentUserExists := c.Get("userID")
+	isAdmin, isAdminExists := c.Get("isAdmin")
+
+	// Check if the current user is an administrator,
+	// otherwise check if the requested userID is the same as the current userID.
+	if !isAdminExists || !currentUserExists || (!isAdmin.(bool) && userID != currentUserID.(string)) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
+	var req dto.UserUpdateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "wrong params: " + err.Error(),
+		})
+		return
+	}
+
+	if req.Gender != nil && (*req.Gender < 0 || *req.Gender > 2) {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "wrong params: gender field must be 0 or 1 or 2",
+		})
+		return
+	}
+
+	input := sdto.UpdateUserInput{
+		Username: req.Username,
+		Password: req.Password,
+		Gender:   req.Gender,
+		Birthday: req.Birthday,
+		Region:   req.Region,
+	}
+
+	serviceErr := user.Service().UpdateByID(c.Request.Context(), userID, input)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Update user successfully",
 	})
 }
