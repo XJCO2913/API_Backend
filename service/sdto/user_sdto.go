@@ -25,6 +25,7 @@ type GetAllOutput struct {
 	Region         string `json:"region"`
 	MembershipTime int64  `json:"membershipTime"`
 	AvatarURL      string `json:"avatarUrl"`
+	OrganiserID    string `json:"organiserId"`
 }
 
 type GetByIDOutput struct {
@@ -35,6 +36,7 @@ type GetByIDOutput struct {
 	Region         string `json:"region"`
 	MembershipTime int64  `json:"membershipTime"`
 	AvatarURL      string `json:"avatarUrl"`
+	OrganiserID    string `json:"organiserId"`
 }
 
 type GetAllStatusOutput struct {

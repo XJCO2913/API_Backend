@@ -238,11 +238,33 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 		return nil, errorx.NewInternalErr()
 	}
 
+	organisers, err := dao.GetAllOrganisers(ctx)
+	if err != nil {
+		zlog.Error("Failed to retrieve all organisers", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	// Check if a user is an organizer
+	organiserMap := make(map[string]bool)
+	for _, organiser := range organisers {
+		organiserMap[organiser.UserID] = true
+	}
+
 	userDtos := make([]*sdto.GetAllOutput, len(users))
 	for i, user := range users {
 		var birthday string
 		if user.Birthday != nil {
 			birthday = user.Birthday.Format("2006-01-02")
+		}
+
+		avatarURL := ""
+		if user.AvatarURL != nil {
+			avatarURL = *user.AvatarURL
+		}
+
+		organiserID := ""
+		if _, exists := organiserMap[user.UserID]; exists {
+			organiserID = user.UserID
 		}
 
 		userDtos[i] = &sdto.GetAllOutput{
@@ -252,10 +274,8 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 			Birthday:       birthday,
 			Region:         user.Region,
 			MembershipTime: user.MembershipTime,
-		}
-
-		if user.AvatarURL != nil {
-			userDtos[i].AvatarURL = *user.AvatarURL
+			AvatarURL:      avatarURL,
+			OrganiserID:    organiserID,
 		}
 	}
 
@@ -279,6 +299,17 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		birthday = user.Birthday.Format("2006-01-02")
 	}
 
+	avatarURL := ""
+	if user.AvatarURL != nil {
+		avatarURL = *user.AvatarURL
+	}
+
+	organiserID := ""
+	organiser, err := dao.GetOrganiserByID(ctx, userID)
+	if err == nil && organiser != nil {
+		organiserID = organiser.UserID
+	}
+
 	userDto := &sdto.GetByIDOutput{
 		UserID:         user.UserID,
 		Username:       user.Username,
@@ -286,10 +317,8 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		Birthday:       birthday,
 		Region:         user.Region,
 		MembershipTime: user.MembershipTime,
-	}
-
-	if user.AvatarURL != nil {
-		userDto.AvatarURL = *user.AvatarURL
+		AvatarURL:      avatarURL,
+		OrganiserID:    organiserID,
 	}
 
 	return userDto, nil
