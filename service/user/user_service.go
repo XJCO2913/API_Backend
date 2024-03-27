@@ -195,12 +195,19 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	if err != redis.KEY_NOT_FOUND {
 		tokenStr = cachedToken
 	} else {
-		// If not exist cached token, generate a new token
-		// Prepare claims for the token
+		organiser, err := dao.GetOrganiserByID(ctx, user.UserID)
+		isOrganiser := false
+		if err == nil && organiser != nil {
+			isOrganiser = true
+		}
+
+		// If not exist cached token, prepare claims for new token
 		claims := jwt.MapClaims{
-			"userID":  user.UserID,
-			"isAdmin": false,
-			"exp":     time.Now().Add(24 * time.Hour).Unix(),
+			"userID":         user.UserID,
+			"isAdmin":        false,
+			"exp":            time.Now().Add(24 * time.Hour).Unix(),
+			"isOrganiser":    isOrganiser,
+			"membershipType": user.MembershipType,
 		}
 
 		// Generate new token
