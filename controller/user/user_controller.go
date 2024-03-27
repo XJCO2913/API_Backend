@@ -115,11 +115,15 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 
 	userInfos := make([]gin.H, len(users))
 	for i, user := range users {
+		isOrganiser := false
+		if user.OrganiserID != "" {
+			isOrganiser = true
+		}
 		userInfos[i] = gin.H{
 			"userId":         user.UserID,
 			"username":       user.Username,
 			"avatarUrl":      user.AvatarURL,
-			"isOrganiser":    0,
+			"isOrganiser":    isOrganiser,
 			"gender":         user.Gender,
 			"birthday":       user.Birthday,
 			"region":         user.Region,
@@ -159,11 +163,12 @@ func (u *UserController) GetByID(c *gin.Context) {
 		return
 	}
 
+	isOrganiser := userDetail.OrganiserID != ""
 	responseData := gin.H{
 		"userId":         userDetail.UserID,
 		"username":       userDetail.Username,
 		"avatarUrl":      userDetail.AvatarURL,
-		"isOrganiser":    0,
+		"isOrganiser":    isOrganiser,
 		"gender":         userDetail.Gender,
 		"birthday":       userDetail.Birthday,
 		"region":         userDetail.Region,
