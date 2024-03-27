@@ -34,7 +34,7 @@ func (u *UserController) SignUp(c *gin.Context) {
 		return
 	}
 
-	out, err := user.Service().Create(c.Request.Context(), &sdto.CreateUserInput{
+	_, err := user.Service().Create(c.Request.Context(), &sdto.CreateUserInput{
 		Username: req.Username,
 		Password: req.Password,
 		Gender:   *req.Gender,
@@ -52,19 +52,6 @@ func (u *UserController) SignUp(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Register successfully",
-		Data: gin.H{
-			"token": out.Token,
-			"userInfo": gin.H{
-				"userId":         out.UserID,
-				"username":       req.Username,
-				"avatarUrl":      "",
-				"isOrganiser":    0,
-				"membershipTime": time.Now().Unix(),
-				"gender":         req.Gender,
-				"birthday":       req.Birthday,
-				"region":         req.Region,
-			},
-		},
 	})
 }
 
