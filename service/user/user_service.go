@@ -14,7 +14,6 @@ import (
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
 	"api.backend.xjco2913/util"
-	"api.backend.xjco2913/util/config"
 	"api.backend.xjco2913/util/zlog"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -181,8 +180,8 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		}
 	}
 
-	// first try to get jwt cache from redis
-	// key format => jwt:username
+	// First try to get jwt cache from redis
+	// Key format => jwt:username
 	cacheTokenKey := fmt.Sprintf("jwt:%v", in.Username)
 	cachedToken, err := redis.RDB().Get(ctx, cacheTokenKey).Result()
 	if err != nil && err != redis.KEY_NOT_FOUND {
@@ -191,34 +190,27 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		return nil, errorx.NewInternalErr()
 	}
 
-	// if exist cached token, return it immediately
+	// If exist cached token, return it immediately
 	var tokenStr string
 	if err != redis.KEY_NOT_FOUND {
 		tokenStr = cachedToken
 	} else {
-		// if not exist cached token, generate a new token
-		// Sign token
+		// If not exist cached token, generate a new token
+		// Prepare claims for the token
 		claims := jwt.MapClaims{
 			"userID":  user.UserID,
 			"isAdmin": false,
 			"exp":     time.Now().Add(24 * time.Hour).Unix(),
 		}
 
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		secret := config.Get("jwt.secret")
-
-		if util.IsEmpty(secret) {
-			zlog.Error("jwt.secret is empty in config")
-			return nil, errorx.NewInternalErr()
-		}
-
-		tokenStr, err = token.SignedString([]byte(secret))
+		// Generate new token
+		tokenStr, err = util.GenerateJWTToken(claims)
 		if err != nil {
-			zlog.Error("Error while signing jwt: " + err.Error())
+			zlog.Error("Error while generating jwt", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
 
-		// store the token into cache
+		// Store the token into cache
 		err = redis.RDB().Set(ctx, cacheTokenKey, tokenStr, 24*time.Hour).Err()
 		if err != nil {
 			zlog.Error("Fail to store token into cache", zap.Error(err))
