@@ -8,11 +8,6 @@ type CreateUserInput struct {
 	Region   string
 }
 
-type CreateUserOutput struct {
-	UserID string
-	Token  string
-}
-
 type AuthenticateInput struct {
 	Username string
 	Password string

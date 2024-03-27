@@ -34,7 +34,7 @@ func (u *UserController) SignUp(c *gin.Context) {
 		return
 	}
 
-	_, err := user.Service().Create(c.Request.Context(), &sdto.CreateUserInput{
+	err := user.Service().Create(c.Request.Context(), &sdto.CreateUserInput{
 		Username: req.Username,
 		Password: req.Password,
 		Gender:   *req.Gender,

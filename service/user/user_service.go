@@ -37,11 +37,11 @@ func Service() *UserService {
 	return &userService
 }
 
-func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sdto.CreateUserOutput, *errorx.ServiceErr) {
+func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *errorx.ServiceErr {
 	// check if user already exist or not
 	user, err := dao.FindUserByUsername(ctx, in.Username)
 	if err != gorm.ErrRecordNotFound || user != nil {
-		return nil, errorx.NewServicerErr(
+		return errorx.NewServicerErr(
 			errorx.ErrExternal,
 			"User already exist",
 			nil,
@@ -52,7 +52,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	uuid, err := uuid.NewUUID()
 	if err != nil {
 		zlog.Error("Error while generate uuid: " + err.Error())
-		return nil, errorx.NewInternalErr()
+		return errorx.NewInternalErr()
 	}
 	newUserID := uuid.String()
 
@@ -62,7 +62,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 		birthday, err := time.Parse("2006-01-02", in.Birthday)
 		if err != nil {
 			zlog.Error("Error while parse birthday " + in.Birthday)
-			return nil, errorx.NewServicerErr(
+			return errorx.NewServicerErr(
 				errorx.ErrExternal,
 				"Invalid birthday format",
 				nil,
@@ -76,13 +76,13 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	hashPwd, err := util.EncryptPassword(in.Password)
 	if err != nil {
 		zlog.Error("Error while encrypt password " + in.Password)
-		return nil, errorx.NewInternalErr()
+		return errorx.NewInternalErr()
 	}
 
-	// DB logic
+	// DB logic to create new user
 	err = dao.CreateNewUser(ctx, &model.User{
 		UserID:         newUserID,
-		AvatarURL:      nil, // avatar not implement yet
+		AvatarURL:      nil,
 		MembershipTime: time.Now().Unix(),
 		Gender:         in.Gender,
 		Region:         in.Region,
@@ -93,32 +93,10 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	})
 	if err != nil {
 		zlog.Error("Error while create new user: "+err.Error(), zap.String("username", in.Username))
-		return nil, errorx.NewInternalErr()
+		return errorx.NewInternalErr()
 	}
 
-	// sign token
-	claims := jwt.MapClaims{
-		"userID":  newUserID,
-		"isAdmin": false,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	secret := config.Get("jwt.secret")
-	if util.IsEmpty(secret) {
-		zlog.Error("jwt.secret is empty in config")
-		return nil, errorx.NewInternalErr()
-	}
-	tokenStr, err := token.SignedString([]byte(secret))
-	if err != nil {
-		zlog.Error("Error while sign jwt: " + err.Error())
-		return nil, errorx.NewInternalErr()
-	}
-
-	return &sdto.CreateUserOutput{
-		UserID: newUserID,
-		Token:  tokenStr,
-	}, nil
+	return nil
 }
 
 func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInput) (*sdto.AuthenticateOutput, *errorx.ServiceErr) {
