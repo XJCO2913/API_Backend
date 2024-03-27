@@ -90,16 +90,6 @@ func (u *UserController) Login(c *gin.Context) {
 		StatusMsg:  "Login successfully",
 		Data: gin.H{
 			"token": out.Token,
-			"userInfo": gin.H{
-				"userId":         out.UserID,
-				"username":       req.Username,
-				"avatarUrl":      out.AvatarURL,
-				"isOrganiser":    0,
-				"membershipTime": time.Now().Unix(),
-				"gender":         out.Gender,
-				"birthday":       out.Birthday,
-				"region":         out.Region,
-			},
 		},
 	})
 }
