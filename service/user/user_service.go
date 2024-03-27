@@ -226,28 +226,8 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		}
 	}
 
-	var birthdayStr string
-	if user.Birthday != nil {
-		birthdayStr = user.Birthday.Format("2006-01-02")
-	}
-
-	if user.AvatarURL != nil {
-		return &sdto.AuthenticateOutput{
-			UserID:    user.UserID,
-			Token:     tokenStr,
-			Gender:    user.Gender,
-			Birthday:  birthdayStr,
-			Region:    user.Region,
-			AvatarURL: *user.AvatarURL,
-		}, nil
-	}
-
 	return &sdto.AuthenticateOutput{
-		UserID:   user.UserID,
-		Token:    tokenStr,
-		Gender:   user.Gender,
-		Birthday: birthdayStr,
-		Region:   user.Region,
+		Token: tokenStr,
 	}, nil
 }
 
