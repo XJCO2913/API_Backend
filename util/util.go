@@ -1,13 +1,11 @@
 package util
 
 import (
+	"errors"
 	"reflect"
 
-	"api.backend.xjco2913/service/sdto/errorx"
 	"api.backend.xjco2913/util/config"
-	"api.backend.xjco2913/util/zlog"
 	"github.com/golang-jwt/jwt/v5"
-	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -53,14 +51,12 @@ func GenerateJWTToken(claims jwt.Claims) (string, error) {
 
 	secret := config.Get("jwt.secret")
 	if IsEmpty(secret) {
-		zlog.Error("jwt.secret is empty in config")
-		return "", errorx.NewInternalErr()
+		return "", errors.New("jwt secret not found in config")
 	}
 
 	tokenStr, err := token.SignedString([]byte(secret))
 	if err != nil {
-		zlog.Error("Error while signing jwt", zap.Error(err))
-		return "", errorx.NewInternalErr()
+		return "", errors.New("Error while signing jwt: " + err.Error())
 	}
 
 	return tokenStr, nil
