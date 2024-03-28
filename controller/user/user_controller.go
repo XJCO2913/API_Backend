@@ -34,7 +34,7 @@ func (u *UserController) SignUp(c *gin.Context) {
 		return
 	}
 
-	out, err := user.Service().Create(c.Request.Context(), &sdto.CreateUserInput{
+	err := user.Service().Create(c.Request.Context(), &sdto.CreateUserInput{
 		Username: req.Username,
 		Password: req.Password,
 		Gender:   *req.Gender,
@@ -52,19 +52,6 @@ func (u *UserController) SignUp(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Register successfully",
-		Data: gin.H{
-			"token": out.Token,
-			"userInfo": gin.H{
-				"userId":         out.UserID,
-				"username":       req.Username,
-				"avatarUrl":      "",
-				"isOrganiser":    0,
-				"membershipTime": time.Now().Unix(),
-				"gender":         req.Gender,
-				"birthday":       req.Birthday,
-				"region":         req.Region,
-			},
-		},
 	})
 }
 
@@ -103,16 +90,6 @@ func (u *UserController) Login(c *gin.Context) {
 		StatusMsg:  "Login successfully",
 		Data: gin.H{
 			"token": out.Token,
-			"userInfo": gin.H{
-				"userId":         out.UserID,
-				"username":       req.Username,
-				"avatarUrl":      out.AvatarURL,
-				"isOrganiser":    0,
-				"membershipTime": time.Now().Unix(),
-				"gender":         out.Gender,
-				"birthday":       out.Birthday,
-				"region":         out.Region,
-			},
 		},
 	})
 }
@@ -138,15 +115,21 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 
 	userInfos := make([]gin.H, len(users))
 	for i, user := range users {
+		isOrganiser := false
+		if user.OrganiserID != "" {
+			isOrganiser = true
+		}
 		userInfos[i] = gin.H{
 			"userId":         user.UserID,
 			"username":       user.Username,
 			"avatarUrl":      user.AvatarURL,
-			"isOrganiser":    0,
+			"isOrganiser":    isOrganiser,
 			"gender":         user.Gender,
 			"birthday":       user.Birthday,
 			"region":         user.Region,
 			"membershipTime": user.MembershipTime,
+			"membershipType": user.MembershipType,
+			"isSubscribed":   user.IsSubscribed,
 		}
 	}
 
@@ -182,15 +165,18 @@ func (u *UserController) GetByID(c *gin.Context) {
 		return
 	}
 
+	isOrganiser := userDetail.OrganiserID != ""
 	responseData := gin.H{
 		"userId":         userDetail.UserID,
 		"username":       userDetail.Username,
 		"avatarUrl":      userDetail.AvatarURL,
-		"isOrganiser":    0,
+		"isOrganiser":    isOrganiser,
 		"gender":         userDetail.Gender,
 		"birthday":       userDetail.Birthday,
 		"region":         userDetail.Region,
 		"membershipTime": userDetail.MembershipTime,
+		"membershipType": userDetail.MembershipType,
+		"isSubscribed":   userDetail.IsSubscribed,
 	}
 
 	c.JSON(200, dto.CommonRes{

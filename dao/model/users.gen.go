@@ -24,6 +24,8 @@ type User struct {
 	UpdatedAt      *time.Time `gorm:"column:updatedAt;default:CURRENT_TIMESTAMP" json:"updatedAt"`
 	Username       string     `gorm:"column:username;not null" json:"username"`
 	Password       string     `gorm:"column:password;not null" json:"password"`
+	MembershipType int32      `gorm:"column:membershipType;not null;comment:0 is non-member, 1 is starter, 2 is premium" json:"membershipType"` // 0 is non-member, 1 is starter, 2 is premium
+	IsSubscribed   int32      `gorm:"column:isSubscribed;not null;comment:is subscribed or not, 0 is false, 1 is true" json:"isSubscribed"`     // is subscribed or not, 0 is false, 1 is true
 }
 
 // TableName User's table name
