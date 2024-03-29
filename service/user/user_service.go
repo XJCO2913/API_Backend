@@ -444,11 +444,13 @@ func (s *UserService) UnbanByID(ctx context.Context, userIDs string) *errorx.Ser
 
 	// All specified users were not found
 	if len(notFoundIDs) == len(ids) {
+		zlog.Error("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
 	}
 
 	// All specified users were not banned
 	if len(notBannedIDs) == len(ids) {
+		zlog.Error("All specified users were not banned", zap.Strings("not_banned_ids", notBannedIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users were not banned", map[string]any{"not_banned_ids": notBannedIDs})
 	}
 
@@ -525,6 +527,11 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 			return errorx.NewServicerErr(errorx.ErrExternal, "Invalid birthday format", nil)
 		}
 		addUpdate("birthday", *input.Birthday)
+	}
+
+	if len(updates) == 0 {
+		zlog.Error("All update fields were not provided")
+		return errorx.NewServicerErr(errorx.ErrExternal, "All update fields were not provided", nil)
 	}
 
 	err := dao.UpdateUserByID(ctx, userID, updates)
