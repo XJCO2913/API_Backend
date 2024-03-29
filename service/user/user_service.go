@@ -444,11 +444,13 @@ func (s *UserService) UnbanByID(ctx context.Context, userIDs string) *errorx.Ser
 
 	// All specified users were not found
 	if len(notFoundIDs) == len(ids) {
+		zlog.Error("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
 	}
 
 	// All specified users were not banned
 	if len(notBannedIDs) == len(ids) {
+		zlog.Error("All specified users were not banned", zap.Strings("not_banned_ids", notBannedIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users were not banned", map[string]any{"not_banned_ids": notBannedIDs})
 	}
 
@@ -527,6 +529,11 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 		addUpdate("birthday", *input.Birthday)
 	}
 
+	if len(updates) == 0 {
+		zlog.Error("All update fields were not provided")
+		return errorx.NewServicerErr(errorx.ErrExternal, "All update fields were not provided", nil)
+	}
+
 	err := dao.UpdateUserByID(ctx, userID, updates)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -536,6 +543,48 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 			zlog.Error("Failed to update user", zap.String("userID", userID), zap.Any("updates", updates), zap.Error(err))
 			return errorx.NewInternalErr()
 		}
+	}
+
+	return nil
+}
+
+func (s *UserService) Subscribe(ctx context.Context, userID string, membershipType int) *errorx.ServiceErr {
+	user, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Failed to retrieve user by ID", zap.String("userID", userID), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	if user.IsSubscribed == 1 {
+		zlog.Error("User already has a subscription", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "User already has a subscription", nil)
+	}
+
+	var newExpiration int64
+	// If a user has refused to renew, but wants to resubscribe, and membership has not expired
+	if user.MembershipType != 0 {
+		// Extend from expiry date
+		newExpiration = user.MembershipTime + 30*24*60*60
+	} else {
+		// New users subscribe to membership
+		newExpiration = time.Now().Unix() + 30*24*60*60
+	}
+
+	updates := map[string]interface{}{
+		"membershipTime": newExpiration,
+		"isSubscribed":   1,
+		"membershipType": membershipType,
+	}
+
+	err = dao.UpdateUserByID(ctx, userID, updates)
+	if err != nil {
+		zlog.Error("Failed to update user", zap.String("userID", userID), zap.Any("updates", updates), zap.Error(err))
+		return errorx.NewInternalErr()
 	}
 
 	return nil

@@ -1,6 +1,7 @@
 package user
 
 import (
+	"strconv"
 	"time"
 
 	"api.backend.xjco2913/controller/dto"
@@ -20,7 +21,7 @@ func (u *UserController) SignUp(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "wrong params: " + err.Error(),
+			StatusMsg:  "Wrong params: " + err.Error(),
 		})
 		return
 	}
@@ -29,7 +30,7 @@ func (u *UserController) SignUp(c *gin.Context) {
 	if *req.Gender < 0 || *req.Gender > 2 {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "wrong params: gender field must be 0 or 1 or 2",
+			StatusMsg:  "Wrong params: gender field must be 0 or 1 or 2",
 		})
 		return
 	}
@@ -60,7 +61,7 @@ func (u *UserController) Login(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "wrong params: " + err.Error(),
+			StatusMsg:  "Wrong params: " + err.Error(),
 		})
 		return
 	}
@@ -337,7 +338,7 @@ func (u *UserController) UpdateByID(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "wrong params: " + err.Error(),
+			StatusMsg:  "Wrong params: " + err.Error(),
 		})
 		return
 	}
@@ -345,7 +346,7 @@ func (u *UserController) UpdateByID(c *gin.Context) {
 	if req.Gender != nil && (*req.Gender < 0 || *req.Gender > 2) {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "wrong params: gender field must be 0 or 1 or 2",
+			StatusMsg:  "Wrong params: gender field must be 0 or 1 or 2",
 		})
 		return
 	}
@@ -370,5 +371,42 @@ func (u *UserController) UpdateByID(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Update user successfully",
+	})
+}
+
+func (u *UserController) Subscribe(c *gin.Context) {
+	queryUserID := c.Query("userID")
+	membershipTypeStr := c.Query("membershipType")
+
+	currentUserID, currentUserExists := c.Get("userID")
+	if !currentUserExists || queryUserID != currentUserID.(string) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: UserID mismatch",
+		})
+		return
+	}
+
+	membershipType, err := strconv.Atoi(membershipTypeStr)
+	if err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Wrong membership type",
+		})
+		return
+	}
+
+	serviceErr := user.Service().Subscribe(c.Request.Context(), queryUserID, membershipType)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Subscribe successfully",
 	})
 }
