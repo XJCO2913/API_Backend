@@ -1,6 +1,7 @@
 package user
 
 import (
+	"strconv"
 	"time"
 
 	"api.backend.xjco2913/controller/dto"
@@ -370,5 +371,33 @@ func (u *UserController) UpdateByID(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Update user successfully",
+	})
+}
+
+func (u *UserController) Subscribe(c *gin.Context) {
+	userID := c.Query("userID")
+	membershipTypeStr := c.Query("membershipType")
+
+	membershipType, err := strconv.Atoi(membershipTypeStr)
+	if err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Invalid membership type",
+		})
+		return
+	}
+
+	serviceErr := user.Service().Subscribe(c.Request.Context(), userID, membershipType)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Subscribe successfully",
 	})
 }

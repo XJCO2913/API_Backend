@@ -548,10 +548,16 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 	return nil
 }
 
-func Subscribe(ctx context.Context, userID string, membershipType int) error {
+func (s *UserService) Subscribe(ctx context.Context, userID string, membershipType int) *errorx.ServiceErr {
 	user, err := dao.GetUserByID(ctx, userID)
 	if err != nil {
-		return err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Failed to retrieve user by ID", zap.String("userID", userID), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
 	}
 
 	if user.IsSubscribed == 1 {
@@ -577,7 +583,8 @@ func Subscribe(ctx context.Context, userID string, membershipType int) error {
 
 	err = dao.UpdateUserByID(ctx, userID, updates)
 	if err != nil {
-		return err
+		zlog.Error("Failed to update user", zap.String("userID", userID), zap.Any("updates", updates), zap.Error(err))
+		return errorx.NewInternalErr()
 	}
 
 	return nil
