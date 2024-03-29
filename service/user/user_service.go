@@ -547,3 +547,38 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 
 	return nil
 }
+
+func Subscribe(ctx context.Context, userID string, membershipType int) error {
+	user, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		return err
+	}
+
+	if user.IsSubscribed == 1 {
+		zlog.Error("User already has a subscription", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "User already has a subscription", nil)
+	}
+
+	var newExpiration int64
+	// If a user has refused to renew, but wants to resubscribe, and membership has not expired
+	if user.MembershipType != 0 {
+		// Extend from expiry date
+		newExpiration = user.MembershipTime + 30*24*60*60
+	} else {
+		// New users subscribe to membership
+		newExpiration = time.Now().Unix() + 30*24*60*60
+	}
+
+	updates := map[string]interface{}{
+		"membershipTime": newExpiration,
+		"isSubscribed":   1,
+		"membershipType": membershipType,
+	}
+
+	err = dao.UpdateUserByID(ctx, userID, updates)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
