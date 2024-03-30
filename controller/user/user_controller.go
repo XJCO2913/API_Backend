@@ -410,3 +410,30 @@ func (u *UserController) Subscribe(c *gin.Context) {
 		StatusMsg:  "Subscribe successfully",
 	})
 }
+
+func (u *UserController) CancelByID(c *gin.Context) {
+	queryUserID := c.Query("userID")
+
+	currentUserID, currentUserExists := c.Get("userID")
+	if !currentUserExists || queryUserID != currentUserID.(string) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: UserID mismatch",
+		})
+		return
+	}
+
+	serviceErr := user.Service().CancelByID(c.Request.Context(), queryUserID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Cancel subscription successfully",
+	})
+}
