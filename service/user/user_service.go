@@ -338,7 +338,7 @@ func (s *UserService) DeleteByID(ctx context.Context, userIDs string) *errorx.Se
 
 	// All specified users were not found
 	if len(notFoundIDs) == len(ids) {
-		zlog.Error("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+		zlog.Warn("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
 	}
 
@@ -386,13 +386,13 @@ func (s *UserService) BanByID(ctx context.Context, userIDs string) *errorx.Servi
 
 	// All specified users were not found
 	if len(notFoundIDs) == len(ids) {
-		zlog.Error("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+		zlog.Warn("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
 	}
 
 	// All specified users were already banned
 	if len(alreadyBannedIDs) == len(ids) {
-		zlog.Error("All specified users already banned", zap.Strings("already_banned_ids", alreadyBannedIDs))
+		zlog.Warn("All specified users already banned", zap.Strings("already_banned_ids", alreadyBannedIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users already banned", map[string]any{"already_banned_ids": alreadyBannedIDs})
 	}
 
@@ -444,13 +444,13 @@ func (s *UserService) UnbanByID(ctx context.Context, userIDs string) *errorx.Ser
 
 	// All specified users were not found
 	if len(notFoundIDs) == len(ids) {
-		zlog.Error("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+		zlog.Warn("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
 	}
 
 	// All specified users were not banned
 	if len(notBannedIDs) == len(ids) {
-		zlog.Error("All specified users were not banned", zap.Strings("not_banned_ids", notBannedIDs))
+		zlog.Warn("All specified users were not banned", zap.Strings("not_banned_ids", notBannedIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users were not banned", map[string]any{"not_banned_ids": notBannedIDs})
 	}
 
@@ -530,7 +530,7 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 	}
 
 	if len(updates) == 0 {
-		zlog.Error("All update fields were not provided")
+		zlog.Warn("All update fields were not provided")
 		return errorx.NewServicerErr(errorx.ErrExternal, "All update fields were not provided", nil)
 	}
 
@@ -561,8 +561,8 @@ func (s *UserService) Subscribe(ctx context.Context, userID string, membershipTy
 	}
 
 	if user.IsSubscribed == 1 {
-		zlog.Error("User already has a subscription", zap.String("userID", userID))
-		return errorx.NewServicerErr(errorx.ErrExternal, "User already has a subscription", nil)
+		zlog.Warn("User has already subscribed", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "User has already subscribed", nil)
 	}
 
 	var newExpiration int64
@@ -579,6 +579,37 @@ func (s *UserService) Subscribe(ctx context.Context, userID string, membershipTy
 		"membershipTime": newExpiration,
 		"isSubscribed":   1,
 		"membershipType": membershipType,
+	}
+
+	err = dao.UpdateUserByID(ctx, userID, updates)
+	if err != nil {
+		zlog.Error("Failed to update user", zap.String("userID", userID), zap.Any("updates", updates), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
+}
+
+func (s *UserService) CancelByID(ctx context.Context, userID string) *errorx.ServiceErr {
+	user, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Failed to retrieve user by ID", zap.String("userID", userID), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	if user.IsSubscribed == 0 {
+		zlog.Warn("User has not subscribed", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "User has not subscribed", nil)
+	}
+
+	updates := map[string]interface{}{
+		// No renewal next month
+		"isSubscribed": 0,
 	}
 
 	err = dao.UpdateUserByID(ctx, userID, updates)
