@@ -55,3 +55,8 @@ type UpdateUserInput struct {
 	Birthday *string
 	Region   *string
 }
+
+type UploadAvatarInput struct {
+	UserId     string
+	AvatarData []byte
+}

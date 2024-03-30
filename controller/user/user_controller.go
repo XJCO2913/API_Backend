@@ -1,6 +1,9 @@
 package user
 
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"strconv"
 	"time"
 
@@ -435,5 +438,66 @@ func (u *UserController) CancelByID(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Cancel subscription successfully",
+	})
+}
+
+func (u *UserController) UploadAvatar(c *gin.Context) {
+	userId := c.PostForm("userId")
+	avatarFileHeader, err := c.FormFile("avatar")
+	if err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  fmt.Sprintf("bad avatar file header: %s", err.Error()),
+		})
+		return
+	}
+
+	currentUserID, currentUserExists := c.Get("userID")
+	isAdmin, isAdminExists := c.Get("isAdmin")
+
+	// Check if the current user is an administrator,
+	// otherwise check if the requested userID is the same as the current userID.
+	if !isAdminExists || !currentUserExists || (!isAdmin.(bool) && userId != currentUserID.(string)) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: You cannot access this resource",
+		})
+		return
+	}
+
+	avatarFile, err := avatarFileHeader.Open()
+	if err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  fmt.Sprintf("fail to get avatar file: %s", err.Error()),
+		})
+		return
+	}
+	defer avatarFile.Close()
+
+	avatarBuf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(avatarBuf, avatarFile); err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  fmt.Sprintf("fail copy avatar data: %s", err.Error()),
+		})
+		return
+	}
+
+	errx := user.Service().UploadAvatar(c.Request.Context(), sdto.UploadAvatarInput{
+		UserId: userId,
+		AvatarData: avatarBuf.Bytes(),
+	})
+	if errx != nil {
+		c.JSON(errx.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  errx.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "upload avatar successfully",
 	})
 }
