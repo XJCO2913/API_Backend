@@ -48,6 +48,15 @@ func UploadUserAvatar(ctx context.Context, avatarName string, avatarData []byte)
 	return nil
 }
 
+func GetUserAvatarUrl(ctx context.Context, avatarName string) (string, error) {
+	avatarUrl, err := GetObjectUrl(ctx, AVATAR_BUCKET, avatarName, 0)
+	if err != nil {
+		return "", err
+	}
+
+	return avatarUrl.String(), nil
+}
+
 func UploadFile(ctx context.Context, bucketName, objectName string, reader io.Reader, objectSize int64, contentType string) error {
 	_, err := minioClient.PutObject(ctx, bucketName, objectName, reader, objectSize, minio.PutObjectOptions{
 		ContentType: contentType,

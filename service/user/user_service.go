@@ -257,9 +257,13 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 			birthday = user.Birthday.Format("2006-01-02")
 		}
 
+		// get avatar url from minio
 		avatarURL := ""
-		if user.AvatarURL != nil {
-			avatarURL = *user.AvatarURL
+		if user.AvatarURL != nil || !util.IsEmpty(user.AvatarURL) {
+			avatarURL, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+			if err != nil {
+				return nil, errorx.NewInternalErr()
+			}
 		}
 
 		organiserID := ""
@@ -301,9 +305,13 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		birthday = user.Birthday.Format("2006-01-02")
 	}
 
+	// get avatar url from minio
 	avatarURL := ""
-	if user.AvatarURL != nil {
-		avatarURL = *user.AvatarURL
+	if user.AvatarURL != nil || !util.IsEmpty(user.AvatarURL) {
+		avatarURL, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+		if err != nil {
+			return nil, errorx.NewInternalErr()
+		}
 	}
 
 	organiserID := ""
