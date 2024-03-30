@@ -18,7 +18,6 @@ type Activity struct {
 	Description *string    `gorm:"column:description" json:"description"`
 	RouteID     int32      `gorm:"column:routeId;not null" json:"routeId"`
 	CoverURL    string     `gorm:"column:coverUrl;not null" json:"coverUrl"`
-	Type        int32      `gorm:"column:type;not null;comment:member only or not" json:"type"` // member only or not
 	StartDate   time.Time  `gorm:"column:startDate;not null" json:"startDate"`
 	EndDate     time.Time  `gorm:"column:endDate;not null" json:"endDate"`
 	Tags        string     `gorm:"column:tags;not null" json:"tags"`

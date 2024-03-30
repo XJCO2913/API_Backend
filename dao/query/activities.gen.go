@@ -33,7 +33,6 @@ func newActivity(db *gorm.DB, opts ...gen.DOOption) activity {
 	_activity.Description = field.NewString(tableName, "description")
 	_activity.RouteID = field.NewInt32(tableName, "routeId")
 	_activity.CoverURL = field.NewString(tableName, "coverUrl")
-	_activity.Type = field.NewInt32(tableName, "type")
 	_activity.StartDate = field.NewTime(tableName, "startDate")
 	_activity.EndDate = field.NewTime(tableName, "endDate")
 	_activity.Tags = field.NewString(tableName, "tags")
@@ -57,7 +56,6 @@ type activity struct {
 	Description field.String
 	RouteID     field.Int32
 	CoverURL    field.String
-	Type        field.Int32 // member only or not
 	StartDate   field.Time
 	EndDate     field.Time
 	Tags        field.String
@@ -87,7 +85,6 @@ func (a *activity) updateTableName(table string) *activity {
 	a.Description = field.NewString(table, "description")
 	a.RouteID = field.NewInt32(table, "routeId")
 	a.CoverURL = field.NewString(table, "coverUrl")
-	a.Type = field.NewInt32(table, "type")
 	a.StartDate = field.NewTime(table, "startDate")
 	a.EndDate = field.NewTime(table, "endDate")
 	a.Tags = field.NewString(table, "tags")
@@ -119,14 +116,13 @@ func (a *activity) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (a *activity) fillFieldMap() {
-	a.fieldMap = make(map[string]field.Expr, 14)
+	a.fieldMap = make(map[string]field.Expr, 13)
 	a.fieldMap["id"] = a.ID
 	a.fieldMap["activityId"] = a.ActivityID
 	a.fieldMap["name"] = a.Name
 	a.fieldMap["description"] = a.Description
 	a.fieldMap["routeId"] = a.RouteID
 	a.fieldMap["coverUrl"] = a.CoverURL
-	a.fieldMap["type"] = a.Type
 	a.fieldMap["startDate"] = a.StartDate
 	a.fieldMap["endDate"] = a.EndDate
 	a.fieldMap["tags"] = a.Tags
