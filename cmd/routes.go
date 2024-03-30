@@ -77,6 +77,7 @@ func NewRouter() *gin.Engine {
 		api.GET("/user/statuses", userController.GetAllStatus)
 		api.PATCH("/user", userController.UpdateByID)
 		api.POST("/user/subscribe", userController.Subscribe)
+		api.POST("/user/cancel", userController.CancelByID)
 		api.GET("/test", func(c *gin.Context) {
 			userID := c.GetString("userID")
 			isAdmin := c.GetBool("isAdmin")
