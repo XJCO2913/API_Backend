@@ -87,6 +87,8 @@ func NewRouter() *gin.Engine {
 				"isAdmin": isAdmin,
 			})
 		})
+
+		api.POST("/user/avatar", userController.UploadAvatar)
 	}
 
 	return r

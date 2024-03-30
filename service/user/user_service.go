@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"api.backend.xjco2913/dao"
+	"api.backend.xjco2913/dao/minio"
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/dao/redis"
 	"api.backend.xjco2913/service/sdto"
@@ -256,9 +257,13 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 			birthday = user.Birthday.Format("2006-01-02")
 		}
 
+		// get avatar url from minio
 		avatarURL := ""
-		if user.AvatarURL != nil {
-			avatarURL = *user.AvatarURL
+		if user.AvatarURL != nil || !util.IsEmpty(user.AvatarURL) {
+			avatarURL, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+			if err != nil {
+				return nil, errorx.NewInternalErr()
+			}
 		}
 
 		organiserID := ""
@@ -300,9 +305,13 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		birthday = user.Birthday.Format("2006-01-02")
 	}
 
+	// get avatar url from minio
 	avatarURL := ""
-	if user.AvatarURL != nil {
-		avatarURL = *user.AvatarURL
+	if user.AvatarURL != nil || !util.IsEmpty(user.AvatarURL) {
+		avatarURL, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+		if err != nil {
+			return nil, errorx.NewInternalErr()
+		}
 	}
 
 	organiserID := ""
@@ -615,6 +624,47 @@ func (s *UserService) CancelByID(ctx context.Context, userID string) *errorx.Ser
 	err = dao.UpdateUserByID(ctx, userID, updates)
 	if err != nil {
 		zlog.Error("Failed to update user", zap.String("userID", userID), zap.Any("updates", updates), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
+}
+
+func (s *UserService) UploadAvatar(ctx context.Context, in sdto.UploadAvatarInput) *errorx.ServiceErr {
+	_, err := dao.GetUserByID(ctx, in.UserId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errorx.NewServicerErr(
+				errorx.ErrExternal,
+				"User not found",
+				nil,
+			)
+		} else {
+			zlog.Error("Error while finding user by userId", zap.String("userId", in.UserId), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	// generate a uuid for user avatar
+	avatarName, err := uuid.NewUUID()
+	if err != nil {
+		zlog.Error("Error while generate uuid: " + err.Error())
+		return errorx.NewInternalErr()
+	}
+
+	err = minio.UploadUserAvatar(ctx, avatarName.String(), in.AvatarData)
+	if err != nil {
+		zlog.Error("error while store user avatar into minio", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	// modify user avatar
+	avatarNameStr := avatarName.String()
+	err = dao.UpdateUserByID(ctx, in.UserId, map[string]interface{}{
+		"avatarUrl": avatarNameStr,
+	})
+	if err != nil {
+		zlog.Error("error while update user avatar", zap.String("userId", in.UserId), zap.Error(err))
 		return errorx.NewInternalErr()
 	}
 
