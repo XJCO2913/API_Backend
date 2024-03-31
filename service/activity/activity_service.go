@@ -10,6 +10,7 @@ import (
 	"api.backend.xjco2913/util/zlog"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 type ActivityService struct{}
@@ -23,15 +24,27 @@ func Service() *ActivityService {
 }
 
 func (s *ActivityService) CreateActivity(ctx context.Context, in *sdto.CreateActivityInput) *errorx.ServiceErr {
-	// Generate UUID for activityId
-	activityId, err := uuid.NewUUID()
+	// Check if activities already exist or not
+	activity, err := dao.FindActivityByName(ctx, in.Name)
+	if err != gorm.ErrRecordNotFound || activity != nil {
+		return errorx.NewServicerErr(
+			errorx.ErrExternal,
+			"Activity already exist",
+			nil,
+		)
+	}
+
+	// Generate uuid for activityId
+	uuid, err := uuid.NewUUID()
 	if err != nil {
-		zlog.Error("Error while generating UUID for activity: ", zap.Error(err))
+		zlog.Error("Error while generating uuid for activity: " + err.Error())
 		return errorx.NewInternalErr()
 	}
 
-	newActivity := model.Activity{
-		ActivityID:  activityId.String(),
+	newActivityID := uuid.String()
+
+	err = dao.CreateNewActivity(ctx, &model.Activity{
+		ActivityID:  newActivityID,
 		Name:        in.Name,
 		Description: in.Description,
 		RouteID:     in.RouteID,
@@ -41,11 +54,9 @@ func (s *ActivityService) CreateActivity(ctx context.Context, in *sdto.CreateAct
 		Tags:        in.Tags,
 		NumberLimit: in.NumberLimit,
 		Fee:         in.Fee,
-	}
-
-	// Call DAO layer to create new activity
-	if err := dao.CreateNewActivity(ctx, &newActivity); err != nil {
-		zlog.Error("Failed to create new activity", zap.Any("activity", newActivity), zap.Error(err))
+	})
+	if err != nil {
+		zlog.Error("Error while create new activity"+err.Error(), zap.String("username", in.Name))
 		return errorx.NewInternalErr()
 	}
 

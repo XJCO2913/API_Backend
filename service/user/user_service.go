@@ -38,7 +38,7 @@ func Service() *UserService {
 }
 
 func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *errorx.ServiceErr {
-	// check if user already exist or not
+	// Check if user already exist or not
 	user, err := dao.FindUserByUsername(ctx, in.Username)
 	if err != gorm.ErrRecordNotFound || user != nil {
 		return errorx.NewServicerErr(
@@ -48,7 +48,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *err
 		)
 	}
 
-	// generate uuid for userID
+	// Generate uuid for userID
 	uuid, err := uuid.NewUUID()
 	if err != nil {
 		zlog.Error("Error while generate uuid for user: " + err.Error())
@@ -56,7 +56,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *err
 	}
 	newUserID := uuid.String()
 
-	// parse birthday
+	// Parse birthday
 	var birthdayEntity *time.Time = nil
 	if !util.IsEmpty(in.Birthday) {
 		birthday, err := time.Parse("2006-01-02", in.Birthday)
