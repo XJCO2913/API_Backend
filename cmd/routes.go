@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"api.backend.xjco2913/controller/activity"
 	"api.backend.xjco2913/controller/user"
 	"api.backend.xjco2913/middleware"
 	"api.backend.xjco2913/util/config"
@@ -15,6 +16,7 @@ func NewRouter() *gin.Engine {
 	r := gin.Default()
 
 	userController := user.NewUserController()
+	activityController := activity.NewActivityController()
 
 	// global middleware
 	// prometheus
@@ -78,6 +80,7 @@ func NewRouter() *gin.Engine {
 		api.PATCH("/user", userController.UpdateByID)
 		api.POST("/user/subscribe", userController.Subscribe)
 		api.POST("/user/cancel", userController.CancelByID)
+		api.POST("/activity/create", activityController.Create)
 		api.GET("/test", func(c *gin.Context) {
 			userID := c.GetString("userID")
 			isAdmin := c.GetBool("isAdmin")
