@@ -51,7 +51,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *err
 	// generate uuid for userID
 	uuid, err := uuid.NewUUID()
 	if err != nil {
-		zlog.Error("Error while generate uuid: " + err.Error())
+		zlog.Error("Error while generate uuid for user: " + err.Error())
 		return errorx.NewInternalErr()
 	}
 	newUserID := uuid.String()
@@ -658,7 +658,7 @@ func (s *UserService) UploadAvatar(ctx context.Context, in sdto.UploadAvatarInpu
 
 	err = minio.UploadUserAvatar(ctx, avatarName.String(), in.AvatarData)
 	if err != nil {
-		zlog.Error("error while store user avatar into minio", zap.Error(err))
+		zlog.Error("Error while store user avatar into minio", zap.Error(err))
 		return errorx.NewInternalErr()
 	}
 
@@ -668,7 +668,7 @@ func (s *UserService) UploadAvatar(ctx context.Context, in sdto.UploadAvatarInpu
 		"avatarUrl": avatarNameStr,
 	})
 	if err != nil {
-		zlog.Error("error while update user avatar", zap.String("userId", in.UserId), zap.Error(err))
+		zlog.Error("Error while update user avatar", zap.String("userId", in.UserId), zap.Error(err))
 		return errorx.NewInternalErr()
 	}
 
