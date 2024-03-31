@@ -508,7 +508,7 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 	updates := make(map[string]interface{})
 
 	addUpdate := func(field string, value interface{}) {
-		// Use reflection to check if the value is a pointer and not nil
+		// Use reflection to check if the value is a pointer
 		v := reflect.ValueOf(value)
 		if v.Kind() == reflect.Ptr && !v.IsNil() {
 			updates[field] = v.Elem().Interface()
@@ -530,12 +530,16 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 	}
 
 	if input.Birthday != nil {
-		_, err := time.Parse("2006-01-02", *input.Birthday)
-		if err != nil {
-			zlog.Error("Error while parsing birthday", zap.String("birthday", *input.Birthday), zap.Error(err))
-			return errorx.NewServicerErr(errorx.ErrExternal, "Invalid birthday format", nil)
+		if *input.Birthday == "" {
+			addUpdate("birthday", nil)
+		} else {
+			_, err := time.Parse("2006-01-02", *input.Birthday)
+			if err != nil {
+				zlog.Error("Error while parsing birthday", zap.String("birthday", *input.Birthday), zap.Error(err))
+				return errorx.NewServicerErr(errorx.ErrExternal, "Invalid birthday format", nil)
+			}
+			addUpdate("birthday", *input.Birthday)
 		}
-		addUpdate("birthday", *input.Birthday)
 	}
 
 	if len(updates) == 0 {
