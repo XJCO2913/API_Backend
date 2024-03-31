@@ -23,7 +23,7 @@ func Service() *ActivityService {
 	return &activityService
 }
 
-func (s *ActivityService) CreateActivity(ctx context.Context, in *sdto.CreateActivityInput) *errorx.ServiceErr {
+func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInput) *errorx.ServiceErr {
 	// Check if activities already exist or not
 	activity, err := dao.FindActivityByName(ctx, in.Name)
 	if err != gorm.ErrRecordNotFound || activity != nil {
