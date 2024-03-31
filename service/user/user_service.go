@@ -674,3 +674,4 @@ func (s *UserService) UploadAvatar(ctx context.Context, in sdto.UploadAvatarInpu
 
 	return nil
 }
+
