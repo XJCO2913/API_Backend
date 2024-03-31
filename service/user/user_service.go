@@ -520,15 +520,6 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 	addUpdate("username", input.Username)
 	addUpdate("gender", input.Gender)
 	addUpdate("region", input.Region)
-	if input.Password != nil {
-		encryptedPassword, err := util.EncryptPassword(*input.Password)
-		if err != nil {
-			zlog.Error("Failed to encrypt password", zap.Error(err))
-			return errorx.NewInternalErr()
-		}
-		addUpdate("password", encryptedPassword)
-	}
-
 	if input.Birthday != nil {
 		if *input.Birthday == "" {
 			addUpdate("birthday", nil)

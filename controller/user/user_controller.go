@@ -356,7 +356,6 @@ func (u *UserController) UpdateByID(c *gin.Context) {
 
 	input := sdto.UpdateUserInput{
 		Username: req.Username,
-		Password: req.Password,
 		Gender:   req.Gender,
 		Birthday: req.Birthday,
 		Region:   req.Region,
@@ -485,7 +484,7 @@ func (u *UserController) UploadAvatar(c *gin.Context) {
 	}
 
 	errx := user.Service().UploadAvatar(c.Request.Context(), sdto.UploadAvatarInput{
-		UserId: userId,
+		UserId:     userId,
 		AvatarData: avatarBuf.Bytes(),
 	})
 	if errx != nil {
