@@ -117,3 +117,12 @@ func GetOrganiserByID(ctx context.Context, userID string) (*model.Organiser, err
 
 	return organiser, nil
 }
+
+func CreateNewActivity(ctx context.Context, newActivity *model.Activity) error {
+	err := query.Use(DB).WithContext(ctx).Activity.Create(newActivity)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
