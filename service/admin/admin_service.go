@@ -8,6 +8,7 @@ import (
 	"api.backend.xjco2913/dao"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
+	"api.backend.xjco2913/util"
 	"api.backend.xjco2913/util/config"
 	"api.backend.xjco2913/util/zlog"
 	"github.com/golang-jwt/jwt/v5"
@@ -52,12 +53,8 @@ func (a *AdminService) Authenticate(ctx context.Context, in *sdto.AdminAuthentic
 		"exp": time.Now().Add(24 * time.Hour).Unix(),
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	secret := config.Get("jwt.secret")
-
-	tokenStr, err := token.SignedString([]byte(secret))
+	tokenStr, err := util.GenerateJWTToken(claims)
 	if err != nil {
-		zlog.Error("Error while signing jwt: " + err.Error())
 		return nil, errorx.NewInternalErr()
 	}
 
