@@ -9,7 +9,6 @@ import (
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
 	"api.backend.xjco2913/util"
-	"api.backend.xjco2913/util/config"
 	"api.backend.xjco2913/util/zlog"
 	"github.com/golang-jwt/jwt/v5"
 	"go.uber.org/zap"
