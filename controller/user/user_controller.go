@@ -1,6 +1,10 @@
 package user
 
 import (
+	"bytes"
+	"fmt"
+	"io"
+	"strconv"
 	"time"
 
 	"api.backend.xjco2913/controller/dto"
@@ -20,7 +24,7 @@ func (u *UserController) SignUp(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "wrong params: " + err.Error(),
+			StatusMsg:  "Wrong params: " + err.Error(),
 		})
 		return
 	}
@@ -29,12 +33,12 @@ func (u *UserController) SignUp(c *gin.Context) {
 	if *req.Gender < 0 || *req.Gender > 2 {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "wrong params: gender field must be 0 or 1 or 2",
+			StatusMsg:  "Wrong params: gender field must be 0 or 1 or 2",
 		})
 		return
 	}
 
-	out, err := user.Service().Create(c.Request.Context(), &sdto.CreateUserInput{
+	err := user.Service().Create(c.Request.Context(), &sdto.CreateUserInput{
 		Username: req.Username,
 		Password: req.Password,
 		Gender:   *req.Gender,
@@ -52,19 +56,6 @@ func (u *UserController) SignUp(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Register successfully",
-		Data: gin.H{
-			"token": out.Token,
-			"userInfo": gin.H{
-				"userId":         out.UserID,
-				"username":       req.Username,
-				"avatarUrl":      "",
-				"isOrganiser":    0,
-				"membershipTime": time.Now().Unix(),
-				"gender":         req.Gender,
-				"birthday":       req.Birthday,
-				"region":         req.Region,
-			},
-		},
 	})
 }
 
@@ -73,7 +64,7 @@ func (u *UserController) Login(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "wrong params: " + err.Error(),
+			StatusMsg:  "Wrong params: " + err.Error(),
 		})
 		return
 	}
@@ -103,16 +94,6 @@ func (u *UserController) Login(c *gin.Context) {
 		StatusMsg:  "Login successfully",
 		Data: gin.H{
 			"token": out.Token,
-			"userInfo": gin.H{
-				"userId":         out.UserID,
-				"username":       req.Username,
-				"avatarUrl":      "",
-				"isOrganiser":    0,
-				"membershipTime": time.Now().Unix(),
-				"gender":         out.Gender,
-				"birthday":       out.Birthday,
-				"region":         out.Region,
-			},
 		},
 	})
 }
@@ -138,15 +119,21 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 
 	userInfos := make([]gin.H, len(users))
 	for i, user := range users {
+		isOrganiser := false
+		if user.OrganiserID != "" {
+			isOrganiser = true
+		}
 		userInfos[i] = gin.H{
 			"userId":         user.UserID,
 			"username":       user.Username,
-			"avatarUrl":      "",
-			"isOrganiser":    0,
+			"avatarUrl":      user.AvatarURL,
+			"isOrganiser":    isOrganiser,
 			"gender":         user.Gender,
 			"birthday":       user.Birthday,
 			"region":         user.Region,
 			"membershipTime": user.MembershipTime,
+			"membershipType": user.MembershipType,
+			"isSubscribed":   user.IsSubscribed,
 		}
 	}
 
@@ -160,12 +147,12 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 func (u *UserController) GetByID(c *gin.Context) {
 	userID := c.Query("userID")
 
-	currentUserID, _ := c.Get("userID")
-	isAdmin, _ := c.Get("isAdmin")
+	currentUserID, currentUserExists := c.Get("userID")
+	isAdmin, isAdminExists := c.Get("isAdmin")
 
 	// Check if the current user is an administrator,
 	// otherwise check if the requested userID is the same as the current userID.
-	if !isAdmin.(bool) && userID != currentUserID.(string) {
+	if !isAdminExists || !currentUserExists || !isAdmin.(bool) && userID != currentUserID.(string) {
 		c.JSON(403, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Forbidden: Only admins can access this resource",
@@ -182,15 +169,18 @@ func (u *UserController) GetByID(c *gin.Context) {
 		return
 	}
 
+	isOrganiser := userDetail.OrganiserID != ""
 	responseData := gin.H{
 		"userId":         userDetail.UserID,
 		"username":       userDetail.Username,
-		"avatarUrl":      "",
-		"isOrganiser":    0,
+		"avatarUrl":      userDetail.AvatarURL,
+		"isOrganiser":    isOrganiser,
 		"gender":         userDetail.Gender,
 		"birthday":       userDetail.Birthday,
 		"region":         userDetail.Region,
 		"membershipTime": userDetail.MembershipTime,
+		"membershipType": userDetail.MembershipType,
+		"isSubscribed":   userDetail.IsSubscribed,
 	}
 
 	c.JSON(200, dto.CommonRes{
@@ -278,5 +268,236 @@ func (u *UserController) UnbanByID(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Unban user(s) successfully",
+	})
+}
+
+func (u *UserController) IsBanned(c *gin.Context) {
+	userID := c.Query("userID")
+
+	isAdmin, exists := c.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
+	isBanned := user.Service().IsBanned(c.Request.Context(), userID)
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Check status successfully",
+		Data: gin.H{
+			"userId":   userID,
+			"isBanned": isBanned,
+		},
+	})
+}
+
+func (u *UserController) GetAllStatus(c *gin.Context) {
+	isAdmin, exists := c.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
+	userStatusList, serviceErr := user.Service().GetAllStatus(c.Request.Context())
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Check statuses successfully",
+		Data:       userStatusList,
+	})
+}
+
+func (u *UserController) UpdateByID(c *gin.Context) {
+	userID := c.Query("userID")
+
+	currentUserID, currentUserExists := c.Get("userID")
+	isAdmin, isAdminExists := c.Get("isAdmin")
+
+	// Check if the current user is an administrator,
+	// otherwise check if the requested userID is the same as the current userID.
+	if !isAdminExists || !currentUserExists || (!isAdmin.(bool) && userID != currentUserID.(string)) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
+	var req dto.UserUpdateReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Wrong params: " + err.Error(),
+		})
+		return
+	}
+
+	if req.Gender != nil && (*req.Gender < 0 || *req.Gender > 2) {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Wrong params: gender field must be 0 or 1 or 2",
+		})
+		return
+	}
+
+	input := sdto.UpdateUserInput{
+		Username: req.Username,
+		Password: req.Password,
+		Gender:   req.Gender,
+		Birthday: req.Birthday,
+		Region:   req.Region,
+	}
+
+	serviceErr := user.Service().UpdateByID(c.Request.Context(), userID, input)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Update user successfully",
+	})
+}
+
+func (u *UserController) Subscribe(c *gin.Context) {
+	queryUserID := c.Query("userID")
+	membershipTypeStr := c.Query("membershipType")
+
+	currentUserID, currentUserExists := c.Get("userID")
+	if !currentUserExists || queryUserID != currentUserID.(string) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: UserID mismatch",
+		})
+		return
+	}
+
+	membershipType, err := strconv.Atoi(membershipTypeStr)
+	if err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Wrong membership type",
+		})
+		return
+	}
+
+	serviceErr := user.Service().Subscribe(c.Request.Context(), queryUserID, membershipType)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Subscribe successfully",
+	})
+}
+
+func (u *UserController) CancelByID(c *gin.Context) {
+	queryUserID := c.Query("userID")
+
+	currentUserID, currentUserExists := c.Get("userID")
+	if !currentUserExists || queryUserID != currentUserID.(string) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: UserID mismatch",
+		})
+		return
+	}
+
+	serviceErr := user.Service().CancelByID(c.Request.Context(), queryUserID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Cancel subscription successfully",
+	})
+}
+
+func (u *UserController) UploadAvatar(c *gin.Context) {
+	userId := c.PostForm("userId")
+	avatarFileHeader, err := c.FormFile("avatar")
+	if err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  fmt.Sprintf("bad avatar file header: %s", err.Error()),
+		})
+		return
+	}
+
+	currentUserID, currentUserExists := c.Get("userID")
+	isAdmin, isAdminExists := c.Get("isAdmin")
+
+	// Check if the current user is an administrator,
+	// otherwise check if the requested userID is the same as the current userID.
+	if !isAdminExists || !currentUserExists || (!isAdmin.(bool) && userId != currentUserID.(string)) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: You cannot access this resource",
+		})
+		return
+	}
+
+	avatarFile, err := avatarFileHeader.Open()
+	if err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  fmt.Sprintf("fail to get avatar file: %s", err.Error()),
+		})
+		return
+	}
+	defer avatarFile.Close()
+
+	avatarBuf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(avatarBuf, avatarFile); err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  fmt.Sprintf("fail copy avatar data: %s", err.Error()),
+		})
+		return
+	}
+
+	errx := user.Service().UploadAvatar(c.Request.Context(), sdto.UploadAvatarInput{
+		UserId: userId,
+		AvatarData: avatarBuf.Bytes(),
+	})
+	if errx != nil {
+		c.JSON(errx.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  errx.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "upload avatar successfully",
 	})
 }

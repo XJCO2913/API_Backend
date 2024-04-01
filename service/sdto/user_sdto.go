@@ -8,22 +8,13 @@ type CreateUserInput struct {
 	Region   string
 }
 
-type CreateUserOutput struct {
-	UserID string
-	Token  string
-}
-
 type AuthenticateInput struct {
 	Username string
 	Password string
 }
 
 type AuthenticateOutput struct {
-	UserID   string
-	Token    string
-	Gender   int32
-	Birthday string
-	Region   string
+	Token string `json:"token"`
 }
 
 type GetAllOutput struct {
@@ -33,6 +24,10 @@ type GetAllOutput struct {
 	Birthday       string `json:"birthday"`
 	Region         string `json:"region"`
 	MembershipTime int64  `json:"membershipTime"`
+	AvatarURL      string `json:"avatarUrl"`
+	OrganiserID    string `json:"organiserId"`
+	MembershipType int32  `json:"membershipType"`
+	IsSubscribed   int32  `json:"isSubscribed"`
 }
 
 type GetByIDOutput struct {
@@ -42,4 +37,26 @@ type GetByIDOutput struct {
 	Birthday       string `json:"birthday"`
 	Region         string `json:"region"`
 	MembershipTime int64  `json:"membershipTime"`
+	AvatarURL      string `json:"avatarUrl"`
+	OrganiserID    string `json:"organiserId"`
+	MembershipType int32  `json:"membershipType"`
+	IsSubscribed   int32  `json:"isSubscribed"`
+}
+
+type GetAllStatusOutput struct {
+	UserID   string `json:"userId"`
+	IsBanned bool   `json:"isBanned"`
+}
+
+type UpdateUserInput struct {
+	Username *string
+	Password *string
+	Gender   *int32
+	Birthday *string
+	Region   *string
+}
+
+type UploadAvatarInput struct {
+	UserId     string
+	AvatarData []byte
 }

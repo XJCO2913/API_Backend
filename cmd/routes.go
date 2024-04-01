@@ -70,11 +70,16 @@ func NewRouter() *gin.Engine {
 
 		api.POST("/user/register", userController.SignUp)
 		api.POST("/user/login", userController.Login)
-		api.GET("/users", userController.GetAll)
 		api.GET("/user", userController.GetByID)
+		api.GET("/users", userController.GetAll)
 		api.DELETE("/user", userController.DeleteByID)
 		api.POST("/user/ban", userController.BanByID)
 		api.POST("/user/unban", userController.UnbanByID)
+		api.GET("/user/status", userController.IsBanned)
+		api.GET("/user/statuses", userController.GetAllStatus)
+		api.PATCH("/user", userController.UpdateByID)
+		api.POST("/user/subscribe", userController.Subscribe)
+		api.POST("/user/cancel", userController.CancelByID)
 		api.GET("/test", func(c *gin.Context) {
 			userID := c.GetString("userID")
 			isAdmin := c.GetBool("isAdmin")
@@ -84,6 +89,8 @@ func NewRouter() *gin.Engine {
 				"isAdmin": isAdmin,
 			})
 		})
+
+		api.POST("/user/avatar", userController.UploadAvatar)
 
 		// admin
 		admin := api.Group("/admin")

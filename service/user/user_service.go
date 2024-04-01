@@ -4,16 +4,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"reflect"
 	"strings"
 	"time"
 
 	"api.backend.xjco2913/dao"
+	"api.backend.xjco2913/dao/minio"
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/dao/redis"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
 	"api.backend.xjco2913/util"
-	"api.backend.xjco2913/util/config"
 	"api.backend.xjco2913/util/zlog"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/google/uuid"
@@ -36,13 +37,13 @@ func Service() *UserService {
 	return &userService
 }
 
-func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sdto.CreateUserOutput, *errorx.ServiceErr) {
+func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *errorx.ServiceErr {
 	// check if user already exist or not
 	user, err := dao.FindUserByUsername(ctx, in.Username)
 	if err != gorm.ErrRecordNotFound || user != nil {
-		return nil, errorx.NewServicerErr(
+		return errorx.NewServicerErr(
 			errorx.ErrExternal,
-			"user already exist",
+			"User already exist",
 			nil,
 		)
 	}
@@ -51,7 +52,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	uuid, err := uuid.NewUUID()
 	if err != nil {
 		zlog.Error("Error while generate uuid: " + err.Error())
-		return nil, errorx.NewInternalErr()
+		return errorx.NewInternalErr()
 	}
 	newUserID := uuid.String()
 
@@ -61,9 +62,9 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 		birthday, err := time.Parse("2006-01-02", in.Birthday)
 		if err != nil {
 			zlog.Error("Error while parse birthday " + in.Birthday)
-			return nil, errorx.NewServicerErr(
+			return errorx.NewServicerErr(
 				errorx.ErrExternal,
-				"invalid birthday",
+				"Invalid birthday format",
 				nil,
 			)
 		}
@@ -75,13 +76,13 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	hashPwd, err := util.EncryptPassword(in.Password)
 	if err != nil {
 		zlog.Error("Error while encrypt password " + in.Password)
-		return nil, errorx.NewInternalErr()
+		return errorx.NewInternalErr()
 	}
 
-	// DB logic
+	// DB logic to create new user
 	err = dao.CreateNewUser(ctx, &model.User{
 		UserID:         newUserID,
-		AvatarURL:      nil, // avatar not implement yet
+		AvatarURL:      nil,
 		MembershipTime: time.Now().Unix(),
 		Gender:         in.Gender,
 		Region:         in.Region,
@@ -92,32 +93,10 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) (*sd
 	})
 	if err != nil {
 		zlog.Error("Error while create new user: "+err.Error(), zap.String("username", in.Username))
-		return nil, errorx.NewInternalErr()
+		return errorx.NewInternalErr()
 	}
 
-	// sign token
-	claims := jwt.MapClaims{
-		"userID":  newUserID,
-		"isAdmin": false,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
-	}
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-
-	secret := config.Get("jwt.secret")
-	if util.IsEmpty(secret) {
-		zlog.Error("jwt.secret is empty in config")
-		return nil, errorx.NewInternalErr()
-	}
-	tokenStr, err := token.SignedString([]byte(secret))
-	if err != nil {
-		zlog.Error("error while sign jwt: " + err.Error())
-		return nil, errorx.NewInternalErr()
-	}
-
-	return &sdto.CreateUserOutput{
-		UserID: newUserID,
-		Token:  tokenStr,
-	}, nil
+	return nil
 }
 
 func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInput) (*sdto.AuthenticateOutput, *errorx.ServiceErr) {
@@ -126,7 +105,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
-				"user not found",
+				"User not found",
 				nil,
 			)
 		} else {
@@ -151,7 +130,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		if err == nil && time.Now().Before(lockedUntil) {
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
-				fmt.Sprintf("account is locked until %v", lockedUntil),
+				fmt.Sprintf("Account is locked until %v", lockedUntil),
 				map[string]any{
 					"remaining_attempts": 0,
 					"lock_expires":       lockedUntil,
@@ -184,7 +163,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 			zlog.Warn("Account locked due to too many failed login attempts", zap.String("username", in.Username))
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
-				fmt.Sprintf("account is locked until %v", lockExpiration),
+				fmt.Sprintf("Account is locked until %v", lockExpiration),
 				map[string]any{
 					"remaining_attempts": 0,
 					"lock_expires":       lockExpiration,
@@ -194,7 +173,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 			zlog.Info("Invalid login attempt", zap.String("username", in.Username))
 			return nil, errorx.NewServicerErr(
 				errorx.ErrExternal,
-				fmt.Sprintf("invalid password, %d attempts remaining", maxLoginAttempts-attempts),
+				fmt.Sprintf("Invalid password, %d attempts remaining", maxLoginAttempts-attempts),
 				map[string]any{
 					"remaining_attempts": maxLoginAttempts - attempts,
 				},
@@ -202,62 +181,53 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		}
 	}
 
-	// first try to get jwt cache from redis
-	// key format => jwt:username
+	// First try to get jwt cache from redis
+	// Key format => jwt:username
 	cacheTokenKey := fmt.Sprintf("jwt:%v", in.Username)
 	cachedToken, err := redis.RDB().Get(ctx, cacheTokenKey).Result()
 	if err != nil && err != redis.KEY_NOT_FOUND {
 		// error occur
-		zlog.Error("fail to get cached token", zap.Error(err), zap.String("cachedTokenKey", cacheTokenKey))
+		zlog.Error("Fail to get cached token", zap.Error(err), zap.String("cachedTokenKey", cacheTokenKey))
 		return nil, errorx.NewInternalErr()
 	}
 
-	// if exist cached token, return it immediately
+	// If exist cached token, return it immediately
 	var tokenStr string
 	if err != redis.KEY_NOT_FOUND {
 		tokenStr = cachedToken
 	} else {
-		// if not exist cached token, generate a new token
-		// Sign token
+		organiser, err := dao.GetOrganiserByID(ctx, user.UserID)
+		isOrganiser := false
+		if err == nil && organiser != nil {
+			isOrganiser = true
+		}
+
+		// If not exist cached token, prepare claims for new token
 		claims := jwt.MapClaims{
-			"userID":  user.UserID,
-			"isAdmin": false,
-			"exp":     time.Now().Add(24 * time.Hour).Unix(),
+			"userID":         user.UserID,
+			"isAdmin":        false,
+			"exp":            time.Now().Add(24 * time.Hour).Unix(),
+			"isOrganiser":    isOrganiser,
+			"membershipType": user.MembershipType,
 		}
 
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-		secret := config.Get("jwt.secret")
-
-		if util.IsEmpty(secret) {
-			zlog.Error("jwt.secret is empty in config")
-			return nil, errorx.NewInternalErr()
-		}
-
-		tokenStr, err = token.SignedString([]byte(secret))
+		// Generate new token
+		tokenStr, err = util.GenerateJWTToken(claims)
 		if err != nil {
-			zlog.Error("Error while signing jwt: " + err.Error())
+			zlog.Error("Error while generating jwt", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
 
-		// store the token into cache
+		// Store the token into cache
 		err = redis.RDB().Set(ctx, cacheTokenKey, tokenStr, 24*time.Hour).Err()
 		if err != nil {
-			zlog.Error("fail to store token into cache", zap.Error(err))
+			zlog.Error("Fail to store token into cache", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
-	}
-
-	var birthdayStr string
-	if user.Birthday != nil {
-		birthdayStr = user.Birthday.Format("2006-01-02")
 	}
 
 	return &sdto.AuthenticateOutput{
-		UserID:   user.UserID,
-		Token:    tokenStr,
-		Gender:   user.Gender,
-		Birthday: birthdayStr,
-		Region:   user.Region,
+		Token: tokenStr,
 	}, nil
 }
 
@@ -268,11 +238,37 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 		return nil, errorx.NewInternalErr()
 	}
 
+	organisers, err := dao.GetAllOrganisers(ctx)
+	if err != nil {
+		zlog.Error("Failed to retrieve all organisers", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	// Check if a user is an organizer
+	organiserMap := make(map[string]bool)
+	for _, organiser := range organisers {
+		organiserMap[organiser.UserID] = true
+	}
+
 	userDtos := make([]*sdto.GetAllOutput, len(users))
 	for i, user := range users {
 		var birthday string
 		if user.Birthday != nil {
 			birthday = user.Birthday.Format("2006-01-02")
+		}
+
+		// get avatar url from minio
+		avatarURL := ""
+		if user.AvatarURL != nil || !util.IsEmpty(user.AvatarURL) {
+			avatarURL, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+			if err != nil {
+				return nil, errorx.NewInternalErr()
+			}
+		}
+
+		organiserID := ""
+		if _, exists := organiserMap[user.UserID]; exists {
+			organiserID = user.UserID
 		}
 
 		userDtos[i] = &sdto.GetAllOutput{
@@ -282,6 +278,10 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 			Birthday:       birthday,
 			Region:         user.Region,
 			MembershipTime: user.MembershipTime,
+			AvatarURL:      avatarURL,
+			OrganiserID:    organiserID,
+			MembershipType: user.MembershipType,
+			IsSubscribed:   user.IsSubscribed,
 		}
 	}
 
@@ -305,6 +305,21 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		birthday = user.Birthday.Format("2006-01-02")
 	}
 
+	// get avatar url from minio
+	avatarURL := ""
+	if user.AvatarURL != nil || !util.IsEmpty(user.AvatarURL) {
+		avatarURL, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+		if err != nil {
+			return nil, errorx.NewInternalErr()
+		}
+	}
+
+	organiserID := ""
+	organiser, err := dao.GetOrganiserByID(ctx, userID)
+	if err == nil && organiser != nil {
+		organiserID = organiser.UserID
+	}
+
 	userDto := &sdto.GetByIDOutput{
 		UserID:         user.UserID,
 		Username:       user.Username,
@@ -312,6 +327,10 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		Birthday:       birthday,
 		Region:         user.Region,
 		MembershipTime: user.MembershipTime,
+		AvatarURL:      avatarURL,
+		OrganiserID:    organiserID,
+		MembershipType: user.MembershipType,
+		IsSubscribed:   user.IsSubscribed,
 	}
 
 	return userDto, nil
@@ -328,7 +347,7 @@ func (s *UserService) DeleteByID(ctx context.Context, userIDs string) *errorx.Se
 
 	// All specified users were not found
 	if len(notFoundIDs) == len(ids) {
-		zlog.Error("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+		zlog.Warn("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
 	}
 
@@ -376,13 +395,13 @@ func (s *UserService) BanByID(ctx context.Context, userIDs string) *errorx.Servi
 
 	// All specified users were not found
 	if len(notFoundIDs) == len(ids) {
-		zlog.Error("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
+		zlog.Warn("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
 	}
 
 	// All specified users were already banned
 	if len(alreadyBannedIDs) == len(ids) {
-		zlog.Error("All specified users already banned", zap.Strings("already_banned_ids", alreadyBannedIDs))
+		zlog.Warn("All specified users already banned", zap.Strings("already_banned_ids", alreadyBannedIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users already banned", map[string]any{"already_banned_ids": alreadyBannedIDs})
 	}
 
@@ -434,11 +453,13 @@ func (s *UserService) UnbanByID(ctx context.Context, userIDs string) *errorx.Ser
 
 	// All specified users were not found
 	if len(notFoundIDs) == len(ids) {
+		zlog.Warn("All specified users not found", zap.Strings("not_found_ids", notFoundIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users not found", map[string]any{"not_found_ids": notFoundIDs})
 	}
 
 	// All specified users were not banned
 	if len(notBannedIDs) == len(ids) {
+		zlog.Warn("All specified users were not banned", zap.Strings("not_banned_ids", notBannedIDs))
 		return errorx.NewServicerErr(errorx.ErrExternal, "All specified users were not banned", map[string]any{"not_banned_ids": notBannedIDs})
 	}
 
@@ -463,4 +484,189 @@ func (s *UserService) IsBanned(ctx context.Context, userID string) bool {
 		return false
 	}
 	return true
+}
+
+func (s *UserService) GetAllStatus(ctx context.Context) ([]*sdto.GetAllStatusOutput, *errorx.ServiceErr) {
+	users, err := dao.GetAllUsers(ctx)
+	if err != nil {
+		return nil, errorx.NewInternalErr()
+	}
+
+	var statusList []*sdto.GetAllStatusOutput
+	for _, user := range users {
+		isBanned := s.IsBanned(ctx, user.UserID)
+		statusList = append(statusList, &sdto.GetAllStatusOutput{
+			UserID:   user.UserID,
+			IsBanned: isBanned,
+		})
+	}
+
+	return statusList, nil
+}
+
+func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.UpdateUserInput) *errorx.ServiceErr {
+	updates := make(map[string]interface{})
+
+	addUpdate := func(field string, value interface{}) {
+		// Use reflection to check if the value is a pointer and not nil
+		v := reflect.ValueOf(value)
+		if v.Kind() == reflect.Ptr && !v.IsNil() {
+			updates[field] = v.Elem().Interface()
+		} else if v.Kind() != reflect.Ptr {
+			updates[field] = value
+		}
+	}
+
+	addUpdate("username", input.Username)
+	addUpdate("gender", input.Gender)
+	addUpdate("region", input.Region)
+	if input.Password != nil {
+		encryptedPassword, err := util.EncryptPassword(*input.Password)
+		if err != nil {
+			zlog.Error("Failed to encrypt password", zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+		addUpdate("password", encryptedPassword)
+	}
+
+	if input.Birthday != nil {
+		_, err := time.Parse("2006-01-02", *input.Birthday)
+		if err != nil {
+			zlog.Error("Error while parsing birthday", zap.String("birthday", *input.Birthday), zap.Error(err))
+			return errorx.NewServicerErr(errorx.ErrExternal, "Invalid birthday format", nil)
+		}
+		addUpdate("birthday", *input.Birthday)
+	}
+
+	if len(updates) == 0 {
+		zlog.Warn("All update fields were not provided")
+		return errorx.NewServicerErr(errorx.ErrExternal, "All update fields were not provided", nil)
+	}
+
+	err := dao.UpdateUserByID(ctx, userID, updates)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Failed to update user", zap.String("userID", userID), zap.Any("updates", updates), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	return nil
+}
+
+func (s *UserService) Subscribe(ctx context.Context, userID string, membershipType int) *errorx.ServiceErr {
+	user, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Failed to retrieve user by ID", zap.String("userID", userID), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	if user.IsSubscribed == 1 {
+		zlog.Warn("User has already subscribed", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "User has already subscribed", nil)
+	}
+
+	var newExpiration int64
+	// If a user has refused to renew, but wants to resubscribe, and membership has not expired
+	if user.MembershipType != 0 {
+		// Extend from expiry date
+		newExpiration = user.MembershipTime + 30*24*60*60
+	} else {
+		// New users subscribe to membership
+		newExpiration = time.Now().Unix() + 30*24*60*60
+	}
+
+	updates := map[string]interface{}{
+		"membershipTime": newExpiration,
+		"isSubscribed":   1,
+		"membershipType": membershipType,
+	}
+
+	err = dao.UpdateUserByID(ctx, userID, updates)
+	if err != nil {
+		zlog.Error("Failed to update user", zap.String("userID", userID), zap.Any("updates", updates), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
+}
+
+func (s *UserService) CancelByID(ctx context.Context, userID string) *errorx.ServiceErr {
+	user, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User not found", nil)
+		} else {
+			zlog.Error("Failed to retrieve user by ID", zap.String("userID", userID), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	if user.IsSubscribed == 0 {
+		zlog.Warn("User has not subscribed", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "User has not subscribed", nil)
+	}
+
+	updates := map[string]interface{}{
+		// No renewal next month
+		"isSubscribed": 0,
+	}
+
+	err = dao.UpdateUserByID(ctx, userID, updates)
+	if err != nil {
+		zlog.Error("Failed to update user", zap.String("userID", userID), zap.Any("updates", updates), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
+}
+
+func (s *UserService) UploadAvatar(ctx context.Context, in sdto.UploadAvatarInput) *errorx.ServiceErr {
+	_, err := dao.GetUserByID(ctx, in.UserId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errorx.NewServicerErr(
+				errorx.ErrExternal,
+				"User not found",
+				nil,
+			)
+		} else {
+			zlog.Error("Error while finding user by userId", zap.String("userId", in.UserId), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	// generate a uuid for user avatar
+	avatarName, err := uuid.NewUUID()
+	if err != nil {
+		zlog.Error("Error while generate uuid: " + err.Error())
+		return errorx.NewInternalErr()
+	}
+
+	err = minio.UploadUserAvatar(ctx, avatarName.String(), in.AvatarData)
+	if err != nil {
+		zlog.Error("error while store user avatar into minio", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	// modify user avatar
+	avatarNameStr := avatarName.String()
+	err = dao.UpdateUserByID(ctx, in.UserId, map[string]interface{}{
+		"avatarUrl": avatarNameStr,
+	})
+	if err != nil {
+		zlog.Error("error while update user avatar", zap.String("userId", in.UserId), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
 }

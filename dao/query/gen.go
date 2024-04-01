@@ -17,32 +17,44 @@ import (
 
 func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 	return &Query{
-		db:        db,
-		Admin:     newAdmin(db, opts...),
-		Log:       newLog(db, opts...),
-		Organiser: newOrganiser(db, opts...),
-		User:      newUser(db, opts...),
+		db:           db,
+		Activity:     newActivity(db, opts...),
+		ActivityUser: newActivityUser(db, opts...),
+		Admin:        newAdmin(db, opts...),
+		GPSRoute:     newGPSRoute(db, opts...),
+		Log:          newLog(db, opts...),
+		Moment:       newMoment(db, opts...),
+		Organiser:    newOrganiser(db, opts...),
+		User:         newUser(db, opts...),
 	}
 }
 
 type Query struct {
 	db *gorm.DB
 
-	Admin     admin
-	Log       log
-	Organiser organiser
-	User      user
+	Activity     activity
+	ActivityUser activityUser
+	Admin        admin
+	GPSRoute     gPSRoute
+	Log          log
+	Moment       moment
+	Organiser    organiser
+	User         user
 }
 
 func (q *Query) Available() bool { return q.db != nil }
 
 func (q *Query) clone(db *gorm.DB) *Query {
 	return &Query{
-		db:        db,
-		Admin:     q.Admin.clone(db),
-		Log:       q.Log.clone(db),
-		Organiser: q.Organiser.clone(db),
-		User:      q.User.clone(db),
+		db:           db,
+		Activity:     q.Activity.clone(db),
+		ActivityUser: q.ActivityUser.clone(db),
+		Admin:        q.Admin.clone(db),
+		GPSRoute:     q.GPSRoute.clone(db),
+		Log:          q.Log.clone(db),
+		Moment:       q.Moment.clone(db),
+		Organiser:    q.Organiser.clone(db),
+		User:         q.User.clone(db),
 	}
 }
 
@@ -56,27 +68,39 @@ func (q *Query) WriteDB() *Query {
 
 func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 	return &Query{
-		db:        db,
-		Admin:     q.Admin.replaceDB(db),
-		Log:       q.Log.replaceDB(db),
-		Organiser: q.Organiser.replaceDB(db),
-		User:      q.User.replaceDB(db),
+		db:           db,
+		Activity:     q.Activity.replaceDB(db),
+		ActivityUser: q.ActivityUser.replaceDB(db),
+		Admin:        q.Admin.replaceDB(db),
+		GPSRoute:     q.GPSRoute.replaceDB(db),
+		Log:          q.Log.replaceDB(db),
+		Moment:       q.Moment.replaceDB(db),
+		Organiser:    q.Organiser.replaceDB(db),
+		User:         q.User.replaceDB(db),
 	}
 }
 
 type queryCtx struct {
-	Admin     *adminDo
-	Log       *logDo
-	Organiser *organiserDo
-	User      *userDo
+	Activity     *activityDo
+	ActivityUser *activityUserDo
+	Admin        *adminDo
+	GPSRoute     *gPSRouteDo
+	Log          *logDo
+	Moment       *momentDo
+	Organiser    *organiserDo
+	User         *userDo
 }
 
 func (q *Query) WithContext(ctx context.Context) *queryCtx {
 	return &queryCtx{
-		Admin:     q.Admin.WithContext(ctx),
-		Log:       q.Log.WithContext(ctx),
-		Organiser: q.Organiser.WithContext(ctx),
-		User:      q.User.WithContext(ctx),
+		Activity:     q.Activity.WithContext(ctx),
+		ActivityUser: q.ActivityUser.WithContext(ctx),
+		Admin:        q.Admin.WithContext(ctx),
+		GPSRoute:     q.GPSRoute.WithContext(ctx),
+		Log:          q.Log.WithContext(ctx),
+		Moment:       q.Moment.WithContext(ctx),
+		Organiser:    q.Organiser.WithContext(ctx),
+		User:         q.User.WithContext(ctx),
 	}
 }
 
