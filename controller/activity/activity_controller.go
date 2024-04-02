@@ -1,6 +1,7 @@
 package activity
 
 import (
+	"io"
 	"time"
 
 	"api.backend.xjco2913/controller/dto"
@@ -17,10 +18,37 @@ func NewActivityController() *ActivityController {
 
 func (a *ActivityController) Create(c *gin.Context) {
 	var req dto.CreateActivityReq
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Wrong params: " + err.Error(),
+		})
+		return
+	}
+
+	file, serviceErr := c.FormFile("coverFile")
+	if serviceErr != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Cover file is required",
+		})
+		return
+	}
+	fileContent, serviceErr := file.Open()
+	if serviceErr != nil {
+		c.JSON(500, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Failed to open cover file",
+		})
+		return
+	}
+	defer fileContent.Close()
+
+	coverData, serviceErr := io.ReadAll(fileContent)
+	if serviceErr != nil {
+		c.JSON(500, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Failed to read cover file",
 		})
 		return
 	}
@@ -47,7 +75,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 		Name:        req.Name,
 		Description: req.Description,
 		RouteID:     req.RouteID,
-		CoverURL:    req.CoverURL,
+		CoverData:   coverData,
 		StartDate:   startDate,
 		EndDate:     endDate,
 		Tags:        req.Tags,
