@@ -262,6 +262,7 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 		if user.AvatarURL != nil || !util.IsEmpty(user.AvatarURL) {
 			avatarURL, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
 			if err != nil {
+				zlog.Error("error while get user avatarUrl", zap.Error(err))
 				return nil, errorx.NewInternalErr()
 			}
 		}
