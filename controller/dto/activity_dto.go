@@ -9,5 +9,4 @@ type CreateActivityReq struct {
 	EndDate     string  `json:"endDate" binding:"required"`
 	Tags        string  `json:"tags" binding:"required"`
 	NumberLimit int32   `json:"numberLimit" binding:"required"`
-	Fee         int32   `json:"fee" binding:"required"`
 }

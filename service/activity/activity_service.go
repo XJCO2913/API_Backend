@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"api.backend.xjco2913/dao"
+	"api.backend.xjco2913/dao/minio"
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
@@ -61,4 +62,23 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 	}
 
 	return nil
+}
+
+func (a *ActivityService) UploadCover(ctx context.Context, in sdto.UploadActivityInput) (*string, *errorx.ServiceErr) {
+	// Check by GetByID TBD...
+
+	coverName, err := uuid.NewUUID()
+	if err != nil {
+		zlog.Error("Error while generating uuid: " + err.Error())
+		return nil, errorx.NewInternalErr()
+	}
+	coverNameStr := coverName.String()
+
+	err = minio.UploadActivityCover(ctx, coverNameStr, in.ActivityData)
+	if err != nil {
+		zlog.Error("Error while storing activity cover in MinIO", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	return &coverNameStr, nil
 }

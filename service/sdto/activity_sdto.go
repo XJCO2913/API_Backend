@@ -16,3 +16,8 @@ type CreateActivityInput struct {
 	NumberLimit int32     `json:"numberLimit"`
 	Fee         int32     `json:"fee"`
 }
+
+type UploadActivityInput struct {
+	UserId       string
+	ActivityData []byte
+}

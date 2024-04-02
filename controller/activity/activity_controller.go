@@ -52,7 +52,6 @@ func (a *ActivityController) Create(c *gin.Context) {
 		EndDate:     endDate,
 		Tags:        req.Tags,
 		NumberLimit: req.NumberLimit,
-		Fee:         req.Fee,
 	}
 
 	err := activity.Service().Create(c.Request.Context(), input)
