@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"api.backend.xjco2913/controller/activity"
+	"api.backend.xjco2913/controller/admin"
 	"api.backend.xjco2913/controller/user"
 	"api.backend.xjco2913/middleware"
 	"api.backend.xjco2913/util/config"
@@ -17,6 +18,7 @@ func NewRouter() *gin.Engine {
 
 	userController := user.NewUserController()
 	activityController := activity.NewActivityController()
+	adminController := admin.NewAdminController()
 
 	// global middleware
 	// prometheus
@@ -92,6 +94,12 @@ func NewRouter() *gin.Engine {
 		})
 
 		api.POST("/user/avatar", userController.UploadAvatar)
+
+		// admin
+		admin := api.Group("/admin")
+		{
+			admin.POST("/login", adminController.Login)
+		}
 	}
 
 	return r
