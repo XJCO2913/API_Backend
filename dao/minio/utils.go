@@ -57,6 +57,26 @@ func GetUserAvatarUrl(ctx context.Context, avatarName string) (string, error) {
 	return avatarUrl.String(), nil
 }
 
+func UploadActivityCover(ctx context.Context, coverName string, coverData []byte) error {
+	coverReader := bytes.NewReader(coverData)
+	
+	err := UploadFile(ctx, ACTIVITY_BUCKET, coverName, coverReader, int64(len(coverData)), "image/jpeg")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetActivityCoverUrl(ctx context.Context, coverName string) (string, error) {
+	coverUrl, err := GetObjectUrl(ctx, ACTIVITY_BUCKET, coverName, 0)
+	if err != nil {
+		return "", err
+	}
+
+	return coverUrl.String(), nil
+}
+
 func UploadFile(ctx context.Context, bucketName, objectName string, reader io.Reader, objectSize int64, contentType string) error {
 	_, err := minioClient.PutObject(ctx, bucketName, objectName, reader, objectSize, minio.PutObjectOptions{
 		ContentType: contentType,
