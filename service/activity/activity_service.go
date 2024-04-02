@@ -25,23 +25,26 @@ func Service() *ActivityService {
 }
 
 func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInput) *errorx.ServiceErr {
-	// Check if activities already exist or not
 	activity, err := dao.FindActivityByName(ctx, in.Name)
 	if err != gorm.ErrRecordNotFound || activity != nil {
 		return errorx.NewServicerErr(
 			errorx.ErrExternal,
-			"Activity already exist",
+			"Activity already exists",
 			nil,
 		)
 	}
 
-	// Generate uuid for activityId
-	uuid, err := uuid.NewUUID()
-	if err != nil {
-		zlog.Error("Error while generating uuid for activity: " + err.Error())
-		return errorx.NewInternalErr()
+	coverName, uploadErr := a.UploadCover(ctx, in.CoverData)
+	if uploadErr != nil {
+		return uploadErr
 	}
 
+	// Generate a uuid for the new activity
+	uuid, err := uuid.NewUUID()
+	if err != nil {
+		zlog.Error("Error while generate uuid: " + err.Error())
+		return errorx.NewInternalErr()
+	}
 	newActivityID := uuid.String()
 
 	err = dao.CreateNewActivity(ctx, &model.Activity{
@@ -49,7 +52,7 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		Name:        in.Name,
 		Description: in.Description,
 		RouteID:     in.RouteID,
-		CoverURL:    in.CoverURL,
+		CoverURL:    coverName,
 		StartDate:   in.StartDate,
 		EndDate:     in.EndDate,
 		Tags:        in.Tags,
@@ -57,28 +60,29 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		Fee:         in.Fee,
 	})
 	if err != nil {
-		zlog.Error("Error while create new activity"+err.Error(), zap.String("username", in.Name))
+		zlog.Error("Error while create new activity: "+err.Error(), zap.String("name", in.Name))
 		return errorx.NewInternalErr()
 	}
 
 	return nil
 }
 
-func (a *ActivityService) UploadCover(ctx context.Context, in sdto.UploadActivityInput) (*string, *errorx.ServiceErr) {
+func (a *ActivityService) UploadCover(ctx context.Context, coverData []byte) (string, *errorx.ServiceErr) {
 	// Check by GetByID TBD...
 
 	coverName, err := uuid.NewUUID()
 	if err != nil {
-		zlog.Error("Error while generating uuid: " + err.Error())
-		return nil, errorx.NewInternalErr()
+		zlog.Error("Error while generate uuid: " + err.Error())
+		return "", errorx.NewInternalErr()
 	}
 	coverNameStr := coverName.String()
 
-	err = minio.UploadActivityCover(ctx, coverNameStr, in.ActivityData)
+	// Upload the cover to minio
+	err = minio.UploadActivityCover(ctx, coverNameStr, coverData)
 	if err != nil {
-		zlog.Error("Error while storing activity cover in MinIO", zap.Error(err))
-		return nil, errorx.NewInternalErr()
+		zlog.Error("Error while store activity cover into minio", zap.Error(err))
+		return "", errorx.NewInternalErr()
 	}
 
-	return &coverNameStr, nil
+	return coverNameStr, nil
 }

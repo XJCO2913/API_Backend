@@ -51,7 +51,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *err
 	// Generate uuid for userID
 	uuid, err := uuid.NewUUID()
 	if err != nil {
-		zlog.Error("Error while generate uuid for user: " + err.Error())
+		zlog.Error("Error while generate uuid: " + err.Error())
 		return errorx.NewInternalErr()
 	}
 	newUserID := uuid.String()
