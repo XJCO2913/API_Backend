@@ -71,6 +71,16 @@ func (a *ActivityController) Create(c *gin.Context) {
 		return
 	}
 
+	// Check if the activity spans more than one year
+	duration := endDate.Sub(startDate)
+	if duration > 365*24*time.Hour {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "The duration of the activity cannot exceed one year",
+		})
+		return
+	}
+
 	input := &sdto.CreateActivityInput{
 		Name:        req.Name,
 		Description: req.Description,
