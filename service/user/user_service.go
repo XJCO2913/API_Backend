@@ -479,6 +479,16 @@ func (s *UserService) UnbanByID(ctx context.Context, userIDs string) *errorx.Ser
 }
 
 func (s *UserService) IsBanned(ctx context.Context, userID string) bool {
+	_, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+		} else {
+			zlog.Error("Failed to retrieve user by ID", zap.String("userID", userID), zap.Error(err))
+		}
+		return false
+	}
+
 	banKey := fmt.Sprintf("ban:%s", userID)
 	exists, err := redis.RDB().Exists(ctx, banKey).Result()
 	if err != nil || exists == 0 {
