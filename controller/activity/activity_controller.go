@@ -17,6 +17,15 @@ func NewActivityController() *ActivityController {
 }
 
 func (a *ActivityController) Create(c *gin.Context) {
+	isOrganiser, exists := c.Get("isOrganiser")
+	if !exists || !isOrganiser.(bool) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only organisers can access this resource",
+		})
+		return
+	}
+
 	var req dto.CreateActivityReq
 	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
