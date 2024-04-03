@@ -50,7 +50,6 @@ type GetAllStatusOutput struct {
 
 type UpdateUserInput struct {
 	Username *string
-	Password *string
 	Gender   *int32
 	Birthday *string
 	Region   *string

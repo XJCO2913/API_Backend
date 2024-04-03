@@ -3,6 +3,7 @@ package main
 import (
 	"time"
 
+	"api.backend.xjco2913/controller/activity"
 	"api.backend.xjco2913/controller/admin"
 	"api.backend.xjco2913/controller/user"
 	"api.backend.xjco2913/middleware"
@@ -16,6 +17,7 @@ func NewRouter() *gin.Engine {
 	r := gin.Default()
 
 	userController := user.NewUserController()
+	activityController := activity.NewActivityController()
 	adminController := admin.NewAdminController()
 
 	// global middleware
@@ -49,6 +51,7 @@ func NewRouter() *gin.Engine {
 		claims := jwt.MapClaims{
 			"userID":  "123123123",
 			"isAdmin": true,
+			"isOrganiser": true,
 			"exp":     time.Now().Add(24 * time.Hour).Unix(),
 		}
 
@@ -80,6 +83,7 @@ func NewRouter() *gin.Engine {
 		api.PATCH("/user", userController.UpdateByID)
 		api.POST("/user/subscribe", userController.Subscribe)
 		api.POST("/user/cancel", userController.CancelByID)
+		api.POST("/activity/create", activityController.Create)
 		api.GET("/test", func(c *gin.Context) {
 			userID := c.GetString("userID")
 			isAdmin := c.GetBool("isAdmin")

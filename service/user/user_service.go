@@ -38,7 +38,7 @@ func Service() *UserService {
 }
 
 func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *errorx.ServiceErr {
-	// check if user already exist or not
+	// Check if user already exist or not
 	user, err := dao.FindUserByUsername(ctx, in.Username)
 	if err != gorm.ErrRecordNotFound || user != nil {
 		return errorx.NewServicerErr(
@@ -48,7 +48,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *err
 		)
 	}
 
-	// generate uuid for userID
+	// Generate uuid for userID
 	uuid, err := uuid.NewUUID()
 	if err != nil {
 		zlog.Error("Error while generate uuid: " + err.Error())
@@ -56,7 +56,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *err
 	}
 	newUserID := uuid.String()
 
-	// parse birthday
+	// Parse birthday
 	var birthdayEntity *time.Time = nil
 	if !util.IsEmpty(in.Birthday) {
 		birthday, err := time.Parse("2006-01-02", in.Birthday)
@@ -479,6 +479,16 @@ func (s *UserService) UnbanByID(ctx context.Context, userIDs string) *errorx.Ser
 }
 
 func (s *UserService) IsBanned(ctx context.Context, userID string) bool {
+	_, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User not found", zap.String("userID", userID))
+		} else {
+			zlog.Error("Failed to retrieve user by ID", zap.String("userID", userID), zap.Error(err))
+		}
+		return false
+	}
+
 	banKey := fmt.Sprintf("ban:%s", userID)
 	exists, err := redis.RDB().Exists(ctx, banKey).Result()
 	if err != nil || exists == 0 {
@@ -509,7 +519,7 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 	updates := make(map[string]interface{})
 
 	addUpdate := func(field string, value interface{}) {
-		// Use reflection to check if the value is a pointer and not nil
+		// Use reflection to check if the value is a pointer
 		v := reflect.ValueOf(value)
 		if v.Kind() == reflect.Ptr && !v.IsNil() {
 			updates[field] = v.Elem().Interface()
@@ -521,22 +531,17 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 	addUpdate("username", input.Username)
 	addUpdate("gender", input.Gender)
 	addUpdate("region", input.Region)
-	if input.Password != nil {
-		encryptedPassword, err := util.EncryptPassword(*input.Password)
-		if err != nil {
-			zlog.Error("Failed to encrypt password", zap.Error(err))
-			return errorx.NewInternalErr()
-		}
-		addUpdate("password", encryptedPassword)
-	}
-
 	if input.Birthday != nil {
-		_, err := time.Parse("2006-01-02", *input.Birthday)
-		if err != nil {
-			zlog.Error("Error while parsing birthday", zap.String("birthday", *input.Birthday), zap.Error(err))
-			return errorx.NewServicerErr(errorx.ErrExternal, "Invalid birthday format", nil)
+		if *input.Birthday == "" {
+			addUpdate("birthday", nil)
+		} else {
+			_, err := time.Parse("2006-01-02", *input.Birthday)
+			if err != nil {
+				zlog.Error("Error while parsing birthday", zap.String("birthday", *input.Birthday), zap.Error(err))
+				return errorx.NewServicerErr(errorx.ErrExternal, "Invalid birthday format", nil)
+			}
+			addUpdate("birthday", *input.Birthday)
 		}
-		addUpdate("birthday", *input.Birthday)
 	}
 
 	if len(updates) == 0 {
@@ -655,7 +660,7 @@ func (s *UserService) UploadAvatar(ctx context.Context, in sdto.UploadAvatarInpu
 
 	err = minio.UploadUserAvatar(ctx, avatarName.String(), in.AvatarData)
 	if err != nil {
-		zlog.Error("error while store user avatar into minio", zap.Error(err))
+		zlog.Error("Error while store user avatar into minio", zap.Error(err))
 		return errorx.NewInternalErr()
 	}
 
@@ -665,7 +670,7 @@ func (s *UserService) UploadAvatar(ctx context.Context, in sdto.UploadAvatarInpu
 		"avatarUrl": avatarNameStr,
 	})
 	if err != nil {
-		zlog.Error("error while update user avatar", zap.String("userId", in.UserId), zap.Error(err))
+		zlog.Error("Error while update user avatar", zap.String("userId", in.UserId), zap.Error(err))
 		return errorx.NewInternalErr()
 	}
 
