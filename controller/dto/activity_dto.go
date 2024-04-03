@@ -9,6 +9,6 @@ type CreateActivityReq struct {
 	CoverFile   *multipart.FileHeader `json:"coverFile" binding:"required"`
 	StartDate   string                `json:"startDate" binding:"required"`
 	EndDate     string                `json:"endDate" binding:"required"`
-	Tags        string                `json:"tags" binding:"required"`
+	Tags        string                `json:"tags"`
 	NumberLimit int32                 `json:"numberLimit" binding:"required"`
 }
