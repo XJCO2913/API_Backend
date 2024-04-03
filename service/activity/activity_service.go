@@ -36,27 +36,33 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		)
 	}
 
-	// Split tag IDs and accumulate prices
-	tagIDs := strings.Split(in.Tags, "|")
 	var ExtraFee int32 = 0
-	var validTagIDs []string
-	for _, tagID := range tagIDs {
-		id, err := strconv.Atoi(tagID)
-		if err != nil {
-			zlog.Error("Failed to convert tagID to int", zap.String("tagID", tagID), zap.Error(err))
-			continue
-		}
+	var joinedTags string
+	// Check if tags are provided
+	if in.Tags != "" {
+		// Split tag IDs and accumulate prices
+		tagIDs := strings.Split(in.Tags, "|")
+		var validTagIDs []string
+		for _, tagID := range tagIDs {
+			id, err := strconv.Atoi(tagID)
+			if err != nil {
+				zlog.Error("Failed to convert tagID to int", zap.String("tagID", tagID), zap.Error(err))
+				continue
+			}
 
-		tag, err := dao.GetTagByID(ctx, int32(id))
-		if err != nil {
-			zlog.Error("Failed to retrieve tag by ID", zap.Int("tagID", id), zap.Error(err))
-			continue
-		}
+			tag, err := dao.GetTagByID(ctx, int32(id))
+			if err != nil {
+				zlog.Error("Failed to retrieve tag by ID", zap.Int("tagID", id), zap.Error(err))
+				continue
+			}
 
-		ExtraFee += tag.Price
-		validTagIDs = append(validTagIDs, tagID)
+			ExtraFee += tag.Price
+			validTagIDs = append(validTagIDs, tagID)
+		}
+		if len(validTagIDs) > 0 {
+			joinedTags = strings.Join(validTagIDs, "|")
+		}
 	}
-	joinedTags := strings.Join(validTagIDs, "|")
 
 	coverName, uploadErr := a.UploadCover(ctx, in.CoverData)
 	if uploadErr != nil {
