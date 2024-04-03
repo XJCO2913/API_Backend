@@ -89,7 +89,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 		StartDate:   startDate,
 		EndDate:     endDate,
 		Tags:        req.Tags,
-		NumberLimit: req.NumberLimit,
+		Level:       req.Level,
 	}
 
 	err := activity.Service().Create(c.Request.Context(), input)

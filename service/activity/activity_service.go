@@ -63,6 +63,21 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		}
 	}
 
+	var numberLimit int32
+	switch in.Level {
+	case "small":
+		numberLimit = 10
+	case "medium":
+		numberLimit = 30
+	default:
+		zlog.Error("Unsupported level: " + in.Level)
+		return errorx.NewServicerErr(
+			errorx.ErrInternal,
+			"Unsupported activity level",
+			nil,
+		)
+	}
+
 	coverName, uploadErr := a.UploadCover(ctx, in.CoverData)
 	if uploadErr != nil {
 		zlog.Error("Error while upload cover: "+uploadErr.Error(), zap.Error(uploadErr))
@@ -86,7 +101,7 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		StartDate:   in.StartDate,
 		EndDate:     in.EndDate,
 		Tags:        &joinedTags,
-		NumberLimit: in.NumberLimit,
+		NumberLimit: numberLimit,
 		Fee:         ExtraFee,
 	})
 	if err != nil {
