@@ -120,7 +120,7 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 }
 
 func (a *ActivityService) UploadCover(ctx context.Context, coverData []byte) (string, *errorx.ServiceErr) {
-	// Check by GetByID TBD...
+	// Check by GetActivityByID TBD...
 
 	coverName, err := uuid.NewUUID()
 	if err != nil {

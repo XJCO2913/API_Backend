@@ -26,3 +26,14 @@ func FindActivityByName(ctx context.Context, name string) (*model.Activity, erro
 
 	return activity, nil
 }
+
+func GetAllActivities(ctx context.Context) ([]*model.Activity, error) {
+	a := query.Use(DB).Activity
+
+	activities, err := a.WithContext(ctx).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	return activities, nil
+}
