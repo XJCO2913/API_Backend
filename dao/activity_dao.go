@@ -37,3 +37,13 @@ func GetAllActivities(ctx context.Context) ([]*model.Activity, error) {
 
 	return activities, nil
 }
+
+func GetActivityByID(ctx context.Context, id int32) (*model.Activity, error) {
+	a := query.Use(DB).Activity
+
+	activity, err := a.WithContext(ctx).Where(a.ID.Eq(id)).First()
+	if err != nil {
+		return nil, err
+	}
+	return activity, nil
+}
