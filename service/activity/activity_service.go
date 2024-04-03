@@ -84,6 +84,11 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 	}
 
 	finalFee := baseFee + ExtraFee
+	membershipType, _ := ctx.Value("membershipType").(int)
+	// 20% off for second level members
+	if membershipType == 2 {
+		finalFee = finalFee * 8 / 10
+	}
 
 	coverName, uploadErr := a.UploadCover(ctx, in.CoverData)
 	if uploadErr != nil {

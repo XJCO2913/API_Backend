@@ -1,7 +1,7 @@
 package activity
 
 import (
-	"fmt"
+	"context"
 	"io"
 	"time"
 
@@ -19,6 +19,7 @@ func NewActivityController() *ActivityController {
 
 func (a *ActivityController) Create(c *gin.Context) {
 	isOrganiser, exists := c.Get("isOrganiser")
+	membershipType, exists := c.Get("isOrganiser")
 	if !exists || !isOrganiser.(bool) {
 		c.JSON(403, dto.CommonRes{
 			StatusCode: -1,
@@ -35,8 +36,6 @@ func (a *ActivityController) Create(c *gin.Context) {
 		})
 		return
 	}
-
-	fmt.Println(req)
 
 	file, serviceErr := c.FormFile("coverFile")
 	if serviceErr != nil {
@@ -104,7 +103,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 		Level:       req.Level,
 	}
 
-	err := activity.Service().Create(c.Request.Context(), input)
+	err := activity.Service().Create(context.WithValue(c.Request.Context(), "membershipType", membershipType), input)
 	if err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
