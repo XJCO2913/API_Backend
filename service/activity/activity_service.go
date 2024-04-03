@@ -36,10 +36,10 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		)
 	}
 
-	var ExtraFee int32 = 0
+	var ExtraFee int32
 	var joinedTags string
 	if in.Tags != "" {
-		// Split tag IDs and accumulate prices
+		// Split tag IDs and accumulate extra fee
 		tagIDs := strings.Split(in.Tags, "|")
 		var validTagIDs []string
 		for _, tagID := range tagIDs {
@@ -63,20 +63,27 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		}
 	}
 
+	var baseFee int32
 	var numberLimit int32
+	// Set number limit and basic fee based on level
 	switch in.Level {
 	case "small":
 		numberLimit = 10
+		baseFee = 0
 	case "medium":
 		numberLimit = 30
+		baseFee = 10
+	// case "large": TBD
 	default:
 		zlog.Error("Unsupported level: " + in.Level)
 		return errorx.NewServicerErr(
-			errorx.ErrInternal,
+			errorx.ErrExternal,
 			"Unsupported activity level",
 			nil,
 		)
 	}
+
+	finalFee := baseFee + ExtraFee
 
 	coverName, uploadErr := a.UploadCover(ctx, in.CoverData)
 	if uploadErr != nil {
@@ -102,7 +109,7 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		EndDate:     in.EndDate,
 		Tags:        &joinedTags,
 		NumberLimit: numberLimit,
-		Fee:         ExtraFee,
+		Fee:         finalFee,
 	})
 	if err != nil {
 		zlog.Error("Error while create new activity: "+err.Error(), zap.String("name", in.Name))
