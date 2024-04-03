@@ -14,5 +14,4 @@ type CreateActivityInput struct {
 	EndDate     time.Time `json:"endDate" binding:"required"`
 	Tags        string    `json:"tags"`
 	NumberLimit int32     `json:"numberLimit" binding:"required"`
-	Fee         int32     `json:"fee" binding:"required"`
 }

@@ -2,6 +2,8 @@ package activity
 
 import (
 	"context"
+	"strconv"
+	"strings"
 
 	"api.backend.xjco2913/dao"
 	"api.backend.xjco2913/dao/minio"
@@ -34,6 +36,28 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		)
 	}
 
+	// Split tag IDs and accumulate prices
+	tagIDs := strings.Split(in.Tags, "|")
+	var ExtraFee int32 = 0
+	var validTagIDs []string
+	for _, tagID := range tagIDs {
+		id, err := strconv.Atoi(tagID)
+		if err != nil {
+			zlog.Error("Failed to convert tagID to int", zap.String("tagID", tagID), zap.Error(err))
+			continue
+		}
+
+		tag, err := dao.GetTagByID(ctx, int32(id))
+		if err != nil {
+			zlog.Error("Failed to retrieve tag by ID", zap.Int("tagID", id), zap.Error(err))
+			continue
+		}
+
+		ExtraFee += tag.Price
+		validTagIDs = append(validTagIDs, tagID)
+	}
+	joinedTags := strings.Join(validTagIDs, "|")
+
 	coverName, uploadErr := a.UploadCover(ctx, in.CoverData)
 	if uploadErr != nil {
 		return uploadErr
@@ -55,9 +79,9 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		CoverURL:    coverName,
 		StartDate:   in.StartDate,
 		EndDate:     in.EndDate,
-		Tags:        in.Tags,
+		Tags:        joinedTags,
 		NumberLimit: in.NumberLimit,
-		Fee:         in.Fee,
+		Fee:         ExtraFee,
 	})
 	if err != nil {
 		zlog.Error("Error while create new activity: "+err.Error(), zap.String("name", in.Name))
