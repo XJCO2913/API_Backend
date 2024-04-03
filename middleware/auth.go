@@ -97,8 +97,12 @@ func VerifyToken() gin.HandlerFunc {
 		// set userId into context
 		userID := claims["userID"]
 		isAdmin := claims["isAdmin"]
+		isOrganiser := claims["isOrganiser"]
+		membershipType := claims["membershipType"]
 		ctx.Set("userID", userID)
 		ctx.Set("isAdmin", isAdmin)
+		ctx.Set("isOrganiser", isOrganiser)
+		ctx.Set("membershipType", membershipType)
 
 		ctx.Next()
 	}

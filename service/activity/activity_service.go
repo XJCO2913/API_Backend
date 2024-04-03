@@ -103,7 +103,7 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		ActivityID:  newActivityID,
 		Name:        in.Name,
 		Description: in.Description,
-		RouteID:     in.RouteID,
+		RouteID:     1,
 		CoverURL:    coverName,
 		StartDate:   in.StartDate,
 		EndDate:     in.EndDate,

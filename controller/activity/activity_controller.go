@@ -1,6 +1,7 @@
 package activity
 
 import (
+	"fmt"
 	"io"
 	"time"
 
@@ -27,13 +28,15 @@ func (a *ActivityController) Create(c *gin.Context) {
 	}
 
 	var req dto.CreateActivityReq
-	if err := c.ShouldBind(&req); err != nil {
+	if err := c.Bind(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Wrong params: " + err.Error(),
 		})
 		return
 	}
+
+	fmt.Println(req)
 
 	file, serviceErr := c.FormFile("coverFile")
 	if serviceErr != nil {
@@ -62,7 +65,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 		return
 	}
 
-	startDate, serviceErr := time.Parse(time.RFC3339, req.StartDate)
+	startDate, serviceErr := time.Parse(time.DateOnly, req.StartDate)
 	if serviceErr != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
@@ -71,7 +74,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 		return
 	}
 
-	endDate, serviceErr := time.Parse(time.RFC3339, req.EndDate)
+	endDate, serviceErr := time.Parse(time.DateOnly, req.EndDate)
 	if serviceErr != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,

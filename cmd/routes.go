@@ -51,6 +51,7 @@ func NewRouter() *gin.Engine {
 		claims := jwt.MapClaims{
 			"userID":  "123123123",
 			"isAdmin": true,
+			"isOrganiser": true,
 			"exp":     time.Now().Add(24 * time.Hour).Unix(),
 		}
 
