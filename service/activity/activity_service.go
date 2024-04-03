@@ -38,7 +38,6 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 
 	var ExtraFee int32 = 0
 	var joinedTags string
-	// Check if tags are provided
 	if in.Tags != "" {
 		// Split tag IDs and accumulate prices
 		tagIDs := strings.Split(in.Tags, "|")
@@ -66,7 +65,8 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 
 	coverName, uploadErr := a.UploadCover(ctx, in.CoverData)
 	if uploadErr != nil {
-		return uploadErr
+		zlog.Error("Error while upload cover: "+uploadErr.Error(), zap.Error(uploadErr))
+		return errorx.NewInternalErr()
 	}
 
 	// Generate a uuid for the new activity
@@ -85,7 +85,7 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		CoverURL:    coverName,
 		StartDate:   in.StartDate,
 		EndDate:     in.EndDate,
-		Tags:        joinedTags,
+		Tags:        &joinedTags,
 		NumberLimit: in.NumberLimit,
 		Fee:         ExtraFee,
 	})
