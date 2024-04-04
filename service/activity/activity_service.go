@@ -178,7 +178,7 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 			ActivityID:  activity.ActivityID,
 			Name:        activity.Name,
 			Description: description,
-			RouteID:     activity.RouteID,
+			// RouteID:     activity.RouteID,
 			CoverURL:    coverURL,
 			StartDate:   activity.StartDate.Format("2006-01-02"),
 			EndDate:     activity.EndDate.Format("2006-01-02"),
