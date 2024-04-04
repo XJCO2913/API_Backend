@@ -57,15 +57,20 @@ func (m *MomentController) Create(c *gin.Context) {
 	}
 
 	// 处理文件
-	// 只能传一个文件, 其他数量的文件都是逻辑错误的
+	// 1. 在content为空的情况下只能传一个文件, 其他数量(包括0)的文件都是逻辑错误的
+	// 2. 如果content不为空, 那么可以不传文件
 	switch {
 	case fileCnt == 0:
-		// 文件数量为0
-		c.JSON(400, dto.CommonRes{
-			StatusCode: -1,
-			StatusMsg:  "not found any file",
-		})
-		return
+		if content == "" {
+			// 文件数量为0
+			c.JSON(400, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  "moment cannot be empty",
+			})
+			return
+		}
+
+		validFileHeader = "null"
 
 	case fileCnt > 1:
 		// 文件数量过多
@@ -82,7 +87,7 @@ func (m *MomentController) Create(c *gin.Context) {
 		// parser gpx file logic
 		c.JSON(501, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg: "gpx file is not supported yet",
+			StatusMsg:  "gpx file is not supported yet",
 		})
 	case "imageFile":
 		imageFile, err := fileHeader.Open()
@@ -112,7 +117,7 @@ func (m *MomentController) Create(c *gin.Context) {
 		if sErr != nil {
 			c.JSON(sErr.Code(), dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg: sErr.Error(),
+				StatusMsg:  sErr.Error(),
 			})
 			return
 		}
@@ -136,10 +141,14 @@ func (m *MomentController) Create(c *gin.Context) {
 			})
 			return
 		}
+
+	case "null":
+		// 只有content, 没有文件
+		
 	}
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg: "Create new moment successfully",
+		StatusMsg:  "Create new moment successfully",
 	})
 }

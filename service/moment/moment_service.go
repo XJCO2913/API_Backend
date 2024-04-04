@@ -23,6 +23,19 @@ func Service() *MomentService {
 	return &momentService
 }
 
+func (m *MomentService) Create(ctx context.Context, in *sdto.CreateMomentInput) *errorx.ServiceErr {
+	err := dao.CreateNewMoment(ctx, &model.Moment{
+		AuthorID: in.UserID,
+		Content: &in.Content,
+	})
+	if err != nil {
+		zlog.Error("error while create new moment", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
+}
+
 func (m *MomentService) CreateWithImage(ctx context.Context, in *sdto.CreateMomentImageInput) *errorx.ServiceErr {
 	imageName := uuid.New()
 	err := minio.UploadMomentImage(ctx, imageName.String(), in.ImageData)
