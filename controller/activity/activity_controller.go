@@ -165,3 +165,38 @@ func (a *ActivityController) GetAll(ctx *gin.Context) {
 		Data:       activityInfos,
 	})
 }
+
+func (a *ActivityController) GetByID(c *gin.Context) {
+	activityID := c.Query("activityID")
+
+	// If the user is not an administrator,
+	// check whether the activity creator ID and user ID are consistent. (TBD)
+
+	activityDetail, serviceErr := activity.Service().GetByID(c.Request.Context(), activityID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	responseData := gin.H{
+		"activityId":  activityDetail.ActivityID,
+		"name":        activityDetail.Name,
+		"description": activityDetail.Description,
+		// "routeId":     activityDetail.RouteID,
+		"coverUrl":    activityDetail.CoverURL,
+		"startDate":   activityDetail.StartDate,
+		"endDate":     activityDetail.EndDate,
+		"tags":        activityDetail.Tags,
+		"numberLimit": activityDetail.NumberLimit,
+		"fee":         activityDetail.Fee,
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get activity successfully",
+		Data:       responseData,
+	})
+}

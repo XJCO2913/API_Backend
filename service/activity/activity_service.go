@@ -191,10 +191,10 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 	return activityDtos, nil
 }
 
-func (s *ActivityService) GetByID(ctx context.Context, id int32) (*sdto.GetActivityByIDOutput, *errorx.ServiceErr) {
-	activity, err := dao.GetActivityByID(ctx, id)
+func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto.GetActivityByIDOutput, *errorx.ServiceErr) {
+	activity, err := dao.GetActivityByID(ctx, activityID)
 	if err != nil {
-		zlog.Error("Failed to retrieve activity by ID", zap.Int32("id", id), zap.Error(err))
+		zlog.Error("Failed to retrieve activity by ID", zap.String("activityID", activityID), zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
