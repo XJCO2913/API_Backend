@@ -84,10 +84,15 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 	}
 
 	finalFee := baseFee + ExtraFee
-	membershipType, _ := ctx.Value("membershipType").(int)
-	// 20% off for second level members
-	if membershipType == 2 {
-		finalFee = finalFee * 8 / 10
+
+	membershipType, exists := ctx.Value("membershipType").(int)
+	if !exists {
+		zlog.Error("MembershipType not found")
+	} else {
+		// 20% off for second level members
+		if membershipType == 2 {
+			finalFee = finalFee * 8 / 10
+		}
 	}
 
 	coverName, uploadErr := a.UploadCover(ctx, in.CoverData)
@@ -159,6 +164,7 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 			tags = *activity.Tags
 		}
 
+		// get cover url from minio
 		coverURL := ""
 		if activity.CoverURL != "" {
 			coverURL, err = minio.GetActivityCoverUrl(ctx, activity.CoverURL)

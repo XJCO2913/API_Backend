@@ -17,9 +17,14 @@ func NewActivityController() *ActivityController {
 	return &ActivityController{}
 }
 
+type contextKey string
+
+const (
+	keyMembershipType contextKey = "membershipType"
+)
+
 func (a *ActivityController) Create(c *gin.Context) {
 	isOrganiser, exists := c.Get("isOrganiser")
-	membershipType, exists := c.Get("isOrganiser")
 	if !exists || !isOrganiser.(bool) {
 		c.JSON(403, dto.CommonRes{
 			StatusCode: -1,
@@ -103,7 +108,8 @@ func (a *ActivityController) Create(c *gin.Context) {
 		Level:       req.Level,
 	}
 
-	err := activity.Service().Create(context.WithValue(c.Request.Context(), "membershipType", membershipType), input)
+	membershipType, _ := c.Get("membershipType")
+	err := activity.Service().Create(context.WithValue(c.Request.Context(), keyMembershipType, membershipType), input)
 	if err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
