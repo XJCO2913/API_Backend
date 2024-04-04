@@ -117,6 +117,10 @@ func GetMomentVideoUrl(ctx context.Context, momentVideoName string) (string, err
 	return videoUrl.String(), nil
 }
 
+func RemoveObjectFromMoment(ctx context.Context, objectName string) error {
+	return minioClient.RemoveObject(ctx, MOMENT_BUCKET, objectName, minio.RemoveObjectOptions{})
+}
+
 func UploadFile(ctx context.Context, bucketName, objectName string, reader io.Reader, objectSize int64, contentType string) error {
 	_, err := minioClient.PutObject(ctx, bucketName, objectName, reader, objectSize, minio.PutObjectOptions{
 		ContentType: contentType,
