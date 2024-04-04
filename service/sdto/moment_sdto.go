@@ -10,3 +10,9 @@ type CreateMomentImageInput struct {
 	Content   string
 	ImageData []byte
 }
+
+type CreateMomentVideoInput struct {
+	UserID    string
+	Content   string
+	VideoData []byte
+}

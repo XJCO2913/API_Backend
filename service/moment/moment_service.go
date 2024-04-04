@@ -24,9 +24,9 @@ func Service() *MomentService {
 }
 
 func (m *MomentService) Create(ctx context.Context, in *sdto.CreateMomentInput) *errorx.ServiceErr {
-	err := dao.CreateNewMoment(ctx, &model.Moment{
+	_, err := dao.CreateNewMoment(ctx, &model.Moment{
 		AuthorID: in.UserID,
-		Content: &in.Content,
+		Content:  &in.Content,
 	})
 	if err != nil {
 		zlog.Error("error while create new moment", zap.Error(err))
@@ -45,7 +45,7 @@ func (m *MomentService) CreateWithImage(ctx context.Context, in *sdto.CreateMome
 	}
 
 	imageNameStr := imageName.String()
-	err = dao.CreateNewMoment(ctx, &model.Moment{
+	_, err = dao.CreateNewMoment(ctx, &model.Moment{
 		AuthorID: in.UserID,
 		Content:  &in.Content,
 		ImageURL: &imageNameStr,
@@ -60,6 +60,33 @@ func (m *MomentService) CreateWithImage(ctx context.Context, in *sdto.CreateMome
 
 		return errorx.NewInternalErr()
 	}
+
+	return nil
+}
+
+func (m *MomentService) CreateWithVideo(ctx context.Context, in *sdto.CreateMomentVideoInput) *errorx.ServiceErr {
+	videoName := uuid.New()
+	videoNameStr := videoName.String()
+
+	newMomentID, err := dao.CreateNewMoment(ctx, &model.Moment{
+		AuthorID: in.UserID,
+		Content:  &in.Content,
+		VideoURL: &videoNameStr,
+	})
+	if err != nil {
+		zlog.Error("error while create new moment", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	// async upload video
+	go func() {
+		err := minio.UploadMomentVideo(ctx, videoNameStr, in.VideoData)
+		if err != nil {
+			// error, remove moment record in mysql
+			zlog.Error("error while async upload moment video", zap.Error(err))
+			dao.DeleteMomentByID(ctx, newMomentID)
+		}
+	}()
 
 	return nil
 }
