@@ -190,3 +190,43 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 
 	return activityDtos, nil
 }
+
+func (s *ActivityService) GetByID(ctx context.Context, id int32) (*sdto.GetActivityByIDOutput, *errorx.ServiceErr) {
+	activity, err := dao.GetActivityByID(ctx, id)
+	if err != nil {
+		zlog.Error("Failed to retrieve activity by ID", zap.Int32("id", id), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	var description, tags string
+	if activity.Description != nil {
+		description = *activity.Description
+	}
+	if activity.Tags != nil {
+		tags = *activity.Tags
+	}
+
+	coverURL := ""
+	if activity.CoverURL != "" {
+		coverURL, err = minio.GetActivityCoverUrl(ctx, activity.CoverURL)
+		if err != nil {
+			zlog.Error("Error while getting activity cover URL", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+	}
+
+	output := &sdto.GetActivityByIDOutput{
+		ActivityID:  activity.ActivityID,
+		Name:        activity.Name,
+		Description: description,
+		// RouteID:     activity.RouteID,
+		CoverURL:    coverURL,
+		StartDate:   activity.StartDate.Format("2006-01-02"),
+		EndDate:     activity.EndDate.Format("2006-01-02"),
+		Tags:        tags,
+		NumberLimit: activity.NumberLimit,
+		Fee:         activity.Fee,
+	}
+
+	return output, nil
+}
