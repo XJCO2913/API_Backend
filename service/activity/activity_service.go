@@ -84,10 +84,15 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 	}
 
 	finalFee := baseFee + ExtraFee
-	membershipType, _ := ctx.Value("membershipType").(int)
-	// 20% off for second level members
-	if membershipType == 2 {
-		finalFee = finalFee * 8 / 10
+
+	membershipType, exists := ctx.Value("membershipType").(int)
+	if !exists {
+		zlog.Error("MembershipType not found")
+	} else {
+		// 20% off for second level members
+		if membershipType == 2 {
+			finalFee = finalFee * 8 / 10
+		}
 	}
 
 	coverName, uploadErr := a.UploadCover(ctx, in.CoverData)
@@ -140,4 +145,48 @@ func (a *ActivityService) UploadCover(ctx context.Context, coverData []byte) (st
 	}
 
 	return coverNameStr, nil
+}
+
+func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOutput, *errorx.ServiceErr) {
+	activities, err := dao.GetAllActivities(ctx)
+	if err != nil {
+		zlog.Error("Failed to retrieve all activities", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	activityDtos := make([]*sdto.GetAllActivityOutput, len(activities))
+	for i, activity := range activities {
+		var description, tags string
+		if activity.Description != nil {
+			description = *activity.Description
+		}
+		if activity.Tags != nil {
+			tags = *activity.Tags
+		}
+
+		// get cover url from minio
+		coverURL := ""
+		if activity.CoverURL != "" {
+			coverURL, err = minio.GetActivityCoverUrl(ctx, activity.CoverURL)
+			if err != nil {
+				zlog.Error("Error while get activity cover URL", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+		}
+
+		activityDtos[i] = &sdto.GetAllActivityOutput{
+			ActivityID:  activity.ActivityID,
+			Name:        activity.Name,
+			Description: description,
+			// RouteID:     activity.RouteID,
+			CoverURL:    coverURL,
+			StartDate:   activity.StartDate.Format("2006-01-02"),
+			EndDate:     activity.EndDate.Format("2006-01-02"),
+			Tags:        tags,
+			NumberLimit: activity.NumberLimit,
+			Fee:         activity.Fee,
+		}
+	}
+
+	return activityDtos, nil
 }

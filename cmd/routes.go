@@ -49,10 +49,10 @@ func NewRouter() *gin.Engine {
 		}
 
 		claims := jwt.MapClaims{
-			"userID":  "123123123",
-			"isAdmin": true,
+			"userID":      "123123123",
+			"isAdmin":     true,
 			"isOrganiser": true,
-			"exp":     time.Now().Add(24 * time.Hour).Unix(),
+			"exp":         time.Now().Add(24 * time.Hour).Unix(),
 		}
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -84,6 +84,7 @@ func NewRouter() *gin.Engine {
 		api.POST("/user/subscribe", userController.Subscribe)
 		api.POST("/user/cancel", userController.CancelByID)
 		api.POST("/activity/create", activityController.Create)
+		api.GET("/activities", activityController.GetAll)
 		api.GET("/test", func(c *gin.Context) {
 			userID := c.GetString("userID")
 			isAdmin := c.GetBool("isAdmin")
