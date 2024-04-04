@@ -80,6 +80,10 @@ func (m *MomentController) Create(c *gin.Context) {
 	switch validFileHeader {
 	case "gpxFile":
 		// parser gpx file logic
+		c.JSON(501, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg: "gpx file is not supported yet",
+		})
 	case "imageFile":
 		imageFile, err := fileHeader.Open()
 		if err != nil {
@@ -133,4 +137,9 @@ func (m *MomentController) Create(c *gin.Context) {
 			return
 		}
 	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg: "Create new moment successfully",
+	})
 }
