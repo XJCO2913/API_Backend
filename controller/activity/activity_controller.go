@@ -125,15 +125,6 @@ func (a *ActivityController) Create(c *gin.Context) {
 }
 
 func (a *ActivityController) GetAll(ctx *gin.Context) {
-	isAdmin, exists := ctx.Get("isAdmin")
-	if !exists || !isAdmin.(bool) {
-		ctx.JSON(403, dto.CommonRes{
-			StatusCode: -1,
-			StatusMsg:  "Forbidden: Only admins can access this resource",
-		})
-		return
-	}
-
 	activities, err := activity.Service().GetAll(ctx.Request.Context())
 	if err != nil {
 		ctx.JSON(err.Code(), dto.CommonRes{
@@ -163,5 +154,37 @@ func (a *ActivityController) GetAll(ctx *gin.Context) {
 		StatusCode: 0,
 		StatusMsg:  "Get activities successfully",
 		Data:       activityInfos,
+	})
+}
+
+func (a *ActivityController) GetByID(c *gin.Context) {
+	activityID := c.Query("activityID")
+
+	activityDetail, serviceErr := activity.Service().GetByID(c.Request.Context(), activityID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	responseData := gin.H{
+		"activityId":  activityDetail.ActivityID,
+		"name":        activityDetail.Name,
+		"description": activityDetail.Description,
+		// "routeId":     activityDetail.RouteID,
+		"coverUrl":    activityDetail.CoverURL,
+		"startDate":   activityDetail.StartDate,
+		"endDate":     activityDetail.EndDate,
+		"tags":        activityDetail.Tags,
+		"numberLimit": activityDetail.NumberLimit,
+		"fee":         activityDetail.Fee,
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get activity successfully",
+		Data:       responseData,
 	})
 }
