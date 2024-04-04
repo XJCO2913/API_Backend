@@ -24,3 +24,7 @@ func DeleteMomentByID(ctx context.Context, momentID int32) error {
 
 	return nil
 }
+
+func GetAllMoment(ctx context.Context) ([]*model.Moment, error) {
+	return query.Use(DB).WithContext(ctx).Moment.Find()
+}

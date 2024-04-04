@@ -2,6 +2,7 @@ package moment
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"mime/multipart"
@@ -142,9 +143,33 @@ func (m *MomentController) Create(c *gin.Context) {
 			return
 		}
 
+		sErr := moment.Service().CreateWithVideo(context.Background(), &sdto.CreateMomentVideoInput{
+			UserID: userId.(string),
+			Content: content,
+			VideoData: videoBuf.Bytes(),
+		})
+		if sErr != nil {
+			c.JSON(sErr.Code(), dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  sErr.Error(),
+			})
+			return
+		}
+
 	case "null":
 		// 只有content, 没有文件
-		
+		sErr := moment.Service().Create(c.Request.Context(), &sdto.CreateMomentInput{
+			UserID: userId.(string),
+			Content: content,
+		})
+		if sErr != nil {
+			c.JSON(sErr.Code(), dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  sErr.Error(),
+			})
+			return
+		}
+
 	}
 
 	c.JSON(200, dto.CommonRes{
