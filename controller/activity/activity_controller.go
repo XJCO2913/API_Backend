@@ -125,15 +125,6 @@ func (a *ActivityController) Create(c *gin.Context) {
 }
 
 func (a *ActivityController) GetAll(ctx *gin.Context) {
-	isAdmin, exists := ctx.Get("isAdmin")
-	if !exists || !isAdmin.(bool) {
-		ctx.JSON(403, dto.CommonRes{
-			StatusCode: -1,
-			StatusMsg:  "Forbidden: Only admins can access this resource",
-		})
-		return
-	}
-
 	activities, err := activity.Service().GetAll(ctx.Request.Context())
 	if err != nil {
 		ctx.JSON(err.Code(), dto.CommonRes{
@@ -168,9 +159,6 @@ func (a *ActivityController) GetAll(ctx *gin.Context) {
 
 func (a *ActivityController) GetByID(c *gin.Context) {
 	activityID := c.Query("activityID")
-
-	// If the user is not an administrator,
-	// check whether the activity creator ID and user ID are consistent. (TBD)
 
 	activityDetail, serviceErr := activity.Service().GetByID(c.Request.Context(), activityID)
 	if serviceErr != nil {
