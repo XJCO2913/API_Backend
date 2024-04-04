@@ -31,7 +31,7 @@ func (m *MomentController) Create(c *gin.Context) {
 	content := c.PostForm("content")
 
 	videoFileHeader, errVideo := c.FormFile("videoFile")
-	imageFileHeader, errImage := c.FormFile("imagaFile")
+	imageFileHeader, errImage := c.FormFile("imageFile")
 	GPXFileHeader, errGPX := c.FormFile("gpxFile")
 
 	// 获取文件数量和可用文件头
