@@ -110,6 +110,7 @@ func NewRouter() *gin.Engine {
 		moment := api.Group("/moment")
 		{
 			moment.POST("/create", momentController.Create)
+			moment.GET("/feed", momentController.Feed)
 		}
 	}
 

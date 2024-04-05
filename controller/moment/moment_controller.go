@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"mime/multipart"
+	"strconv"
 
 	"api.backend.xjco2913/controller/dto"
 	"api.backend.xjco2913/service/moment"
@@ -145,8 +146,8 @@ func (m *MomentController) Create(c *gin.Context) {
 		}
 
 		sErr := moment.Service().CreateWithVideo(context.Background(), &sdto.CreateMomentVideoInput{
-			UserID: userId.(string),
-			Content: content,
+			UserID:    userId.(string),
+			Content:   content,
 			VideoData: videoBuf.Bytes(),
 		})
 		if sErr != nil {
@@ -160,7 +161,7 @@ func (m *MomentController) Create(c *gin.Context) {
 	case "null":
 		// 只有content, 没有文件
 		sErr := moment.Service().Create(c.Request.Context(), &sdto.CreateMomentInput{
-			UserID: userId.(string),
+			UserID:  userId.(string),
 			Content: content,
 		})
 		if sErr != nil {
@@ -176,5 +177,69 @@ func (m *MomentController) Create(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Create new moment successfully",
+	})
+}
+
+func (m *MomentController) Feed(c *gin.Context) {
+	userId := c.GetString("userID")
+	if userId == "" {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "missing user Id in token",
+		})
+		return
+	}
+
+	var latestTime int64
+	var err error
+	if latest := c.Query("latestTime"); latest == "" {
+		latestTime = 0
+	} else {
+		latestTime, err = strconv.ParseInt(latest, 0, 64)
+		if err != nil {
+			c.JSON(400, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  "invalid latestTime: " + err.Error(),
+			})
+			return
+		}
+	}
+
+	res, sErr := moment.Service().Feed(context.Background(), &sdto.FeedMomentInput{
+		UserID:     userId,
+		LatestTime: latestTime,
+	})
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	moments := make([]gin.H, len(res.Moments))
+	for i := range res.Moments {
+		moments[i] = gin.H{
+			"id":        res.Moments[i].MomentID,
+			"createdAt": res.Moments[i].CreatedAt,
+			"message":   res.Moments[i].Content,
+		}
+
+		// check and set media url
+		if res.Moments[i].ImageURL != nil {
+			moments[i]["media"] = res.Moments[i].ImageURL
+		}
+		if res.Moments[i].VideoURL != nil {
+			moments[i]["media"] = res.Moments[i].VideoURL
+		}
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get feed moments successfully",
+		Data: gin.H{
+			"moments":  moments,
+			"nextTime": res.NextTime,
+		},
 	})
 }

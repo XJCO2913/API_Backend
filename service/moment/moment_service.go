@@ -2,6 +2,7 @@ package moment
 
 import (
 	"context"
+	"time"
 
 	"api.backend.xjco2913/dao"
 	"api.backend.xjco2913/dao/minio"
@@ -11,6 +12,10 @@ import (
 	"api.backend.xjco2913/util/zlog"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+)
+
+const (
+	MOMENT_FEED_LIMIT = 10
 )
 
 type MomentService struct{}
@@ -98,4 +103,45 @@ func (m *MomentService) CreateWithVideo(ctx context.Context, in *sdto.CreateMome
 	}()
 
 	return nil
+}
+
+func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sdto.FeedMomentOutput, *errorx.ServiceErr) {
+	moments, err := dao.GetMomentsByTime(ctx, MOMENT_FEED_LIMIT, time.UnixMilli(in.LatestTime))
+	if err != nil {
+		zlog.Error("error while get moment feed by latest time", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	var nextTime int64
+	if len(moments) == 0 {
+		nextTime = time.Now().UnixMilli()
+	} else {
+		nextTime = moments[len(moments)-1].CreatedAt.UnixMilli()
+	}
+
+	for _, moment := range moments {
+		if moment.ImageURL != nil {
+			url, err := minio.GetMomentImageUrl(ctx, *moment.ImageURL)
+			if err != nil {
+				zlog.Error("error while get moment image url from minio", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+
+			moment.ImageURL = &url
+		}
+		if moment.VideoURL != nil {
+			url, err := minio.GetMomentImageUrl(ctx, *moment.VideoURL)
+			if err != nil {
+				zlog.Error("error while get moment video url from minio", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+
+			moment.VideoURL = &url
+		}
+	}
+
+	return &sdto.FeedMomentOutput{
+		Moments:  moments,
+		NextTime: nextTime,
+	}, nil
 }
