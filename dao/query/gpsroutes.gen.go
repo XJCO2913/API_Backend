@@ -28,7 +28,6 @@ func newGPSRoute(db *gorm.DB, opts ...gen.DOOption) gPSRoute {
 	tableName := _gPSRoute.gPSRouteDo.TableName()
 	_gPSRoute.ALL = field.NewAsterisk(tableName)
 	_gPSRoute.ID = field.NewInt32(tableName, "id")
-	_gPSRoute.Name = field.NewString(tableName, "name")
 	_gPSRoute.Path = field.NewString(tableName, "path")
 
 	_gPSRoute.fillFieldMap()
@@ -41,7 +40,6 @@ type gPSRoute struct {
 
 	ALL  field.Asterisk
 	ID   field.Int32
-	Name field.String
 	Path field.String
 
 	fieldMap map[string]field.Expr
@@ -60,7 +58,6 @@ func (g gPSRoute) As(alias string) *gPSRoute {
 func (g *gPSRoute) updateTableName(table string) *gPSRoute {
 	g.ALL = field.NewAsterisk(table)
 	g.ID = field.NewInt32(table, "id")
-	g.Name = field.NewString(table, "name")
 	g.Path = field.NewString(table, "path")
 
 	g.fillFieldMap()
@@ -86,9 +83,8 @@ func (g *gPSRoute) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (g *gPSRoute) fillFieldMap() {
-	g.fieldMap = make(map[string]field.Expr, 3)
+	g.fieldMap = make(map[string]field.Expr, 2)
 	g.fieldMap["id"] = g.ID
-	g.fieldMap["name"] = g.Name
 	g.fieldMap["path"] = g.Path
 }
 

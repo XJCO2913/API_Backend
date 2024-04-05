@@ -35,6 +35,7 @@ func newMoment(db *gorm.DB, opts ...gen.DOOption) moment {
 	_moment.RouteID = field.NewInt32(tableName, "routeId")
 	_moment.CreatedAt = field.NewTime(tableName, "createdAt")
 	_moment.UpdatedAt = field.NewTime(tableName, "updatedAt")
+	_moment.MomentID = field.NewString(tableName, "momentId")
 
 	_moment.fillFieldMap()
 
@@ -53,6 +54,7 @@ type moment struct {
 	RouteID   field.Int32
 	CreatedAt field.Time
 	UpdatedAt field.Time
+	MomentID  field.String
 
 	fieldMap map[string]field.Expr
 }
@@ -77,6 +79,7 @@ func (m *moment) updateTableName(table string) *moment {
 	m.RouteID = field.NewInt32(table, "routeId")
 	m.CreatedAt = field.NewTime(table, "createdAt")
 	m.UpdatedAt = field.NewTime(table, "updatedAt")
+	m.MomentID = field.NewString(table, "momentId")
 
 	m.fillFieldMap()
 
@@ -101,7 +104,7 @@ func (m *moment) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (m *moment) fillFieldMap() {
-	m.fieldMap = make(map[string]field.Expr, 8)
+	m.fieldMap = make(map[string]field.Expr, 9)
 	m.fieldMap["id"] = m.ID
 	m.fieldMap["authorId"] = m.AuthorID
 	m.fieldMap["content"] = m.Content
@@ -110,6 +113,7 @@ func (m *moment) fillFieldMap() {
 	m.fieldMap["routeId"] = m.RouteID
 	m.fieldMap["createdAt"] = m.CreatedAt
 	m.fieldMap["updatedAt"] = m.UpdatedAt
+	m.fieldMap["momentId"] = m.MomentID
 }
 
 func (m moment) clone(db *gorm.DB) moment {
