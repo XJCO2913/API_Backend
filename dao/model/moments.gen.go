@@ -20,6 +20,7 @@ type Moment struct {
 	RouteID   *int32     `gorm:"column:routeId" json:"routeId"`
 	CreatedAt *time.Time `gorm:"column:createdAt;default:CURRENT_TIMESTAMP" json:"createdAt"`
 	UpdatedAt *time.Time `gorm:"column:updatedAt;default:CURRENT_TIMESTAMP" json:"updatedAt"`
+	MomentID  string     `gorm:"column:momentId;not null" json:"momentId"`
 }
 
 // TableName Moment's table name

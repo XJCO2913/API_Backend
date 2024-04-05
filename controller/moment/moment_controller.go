@@ -90,6 +90,7 @@ func (m *MomentController) Create(c *gin.Context) {
 			StatusCode: -1,
 			StatusMsg:  "gpx file is not supported yet",
 		})
+		return
 	case "imageFile":
 		imageFile, err := fileHeader.Open()
 		if err != nil {

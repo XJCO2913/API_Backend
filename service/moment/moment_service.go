@@ -24,9 +24,12 @@ func Service() *MomentService {
 }
 
 func (m *MomentService) Create(ctx context.Context, in *sdto.CreateMomentInput) *errorx.ServiceErr {
+	momentId := uuid.New()
+	momentIdStr := momentId.String()
 	_, err := dao.CreateNewMoment(ctx, &model.Moment{
 		AuthorID: in.UserID,
 		Content:  &in.Content,
+		MomentID: momentIdStr,
 	})
 	if err != nil {
 		zlog.Error("error while create new moment", zap.Error(err))
@@ -45,10 +48,13 @@ func (m *MomentService) CreateWithImage(ctx context.Context, in *sdto.CreateMome
 	}
 
 	imageNameStr := imageName.String()
+	momentId := uuid.New()
+	momentIdStr := momentId.String()
 	_, err = dao.CreateNewMoment(ctx, &model.Moment{
 		AuthorID: in.UserID,
 		Content:  &in.Content,
 		ImageURL: &imageNameStr,
+		MomentID: momentIdStr,
 	})
 	if err != nil {
 		zlog.Error("error while create new moment", zap.Error(err))
@@ -68,10 +74,13 @@ func (m *MomentService) CreateWithVideo(ctx context.Context, in *sdto.CreateMome
 	videoName := uuid.New()
 	videoNameStr := videoName.String()
 
+	momentId := uuid.New()
+	momentIdStr := momentId.String()
 	newMomentID, err := dao.CreateNewMoment(ctx, &model.Moment{
 		AuthorID: in.UserID,
 		Content:  &in.Content,
 		VideoURL: &videoNameStr,
+		MomentID: momentIdStr,
 	})
 	if err != nil {
 		zlog.Error("error while create new moment", zap.Error(err))
