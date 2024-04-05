@@ -87,11 +87,38 @@ func (m *MomentController) Create(c *gin.Context) {
 	switch validFileHeader {
 	case "gpxFile":
 		// parser gpx file logic
-		c.JSON(501, dto.CommonRes{
-			StatusCode: -1,
-			StatusMsg:  "gpx file is not supported yet",
+		gpxFile, err := fileHeader.Open()
+		if err != nil {
+			c.JSON(400, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  fmt.Sprintf("Fail to get gpx file: %s", err.Error()),
+			})
+			return
+		}
+		defer gpxFile.Close()
+
+		gpxBuf := bytes.NewBuffer(nil)
+		if _, err := io.Copy(gpxBuf, gpxFile); err != nil {
+			c.JSON(400, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  fmt.Sprintf("Fail copy image data: %s", err.Error()),
+			})
+			return
+		}
+
+		sErr := moment.Service().CreateWithGPX(context.Background(), &sdto.CreateMomentGPXInput{
+			UserID:  userId.(string),
+			Content: content,
+			GPXData: gpxBuf.Bytes(),
 		})
-		return
+		if sErr != nil {
+			c.JSON(sErr.Code(), dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  sErr.Error(),
+			})
+			return
+		}
+		
 	case "imageFile":
 		imageFile, err := fileHeader.Open()
 		if err != nil {

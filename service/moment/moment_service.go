@@ -2,6 +2,7 @@ package moment
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"api.backend.xjco2913/dao"
@@ -9,6 +10,7 @@ import (
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
+	"api.backend.xjco2913/util"
 	"api.backend.xjco2913/util/zlog"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -101,6 +103,51 @@ func (m *MomentService) CreateWithVideo(ctx context.Context, in *sdto.CreateMome
 			dao.DeleteMomentByID(ctx, newMomentID)
 		}
 	}()
+
+	return nil
+}
+
+func (m *MomentService) CreateWithGPX(ctx context.Context, in *sdto.CreateMomentGPXInput) *errorx.ServiceErr {
+	gpxLonLatData, err := util.GPXToLonLat(in.GPXData)
+	if err != nil {
+		return errorx.NewServicerErr(errorx.ErrExternal, "invalid gpx format", nil)
+	}
+
+	linestring := gpxLonLatData[0]
+	for i := 1; i < len(gpxLonLatData); i++ {
+		linestring += ", "
+		linestring += gpxLonLatData[i]
+	}
+	// ST_GeomFromText('LINESTRING(?)')
+	err = dao.DB.WithContext(ctx).Exec(
+		fmt.Sprintf(
+			"INSERT INTO GPSRoutes (path) VALUES (ST_GeomFromText('LINESTRING(%s)'));",
+			linestring,
+		),
+	).Error
+	if err != nil {
+		zlog.Error("error while store gpx route into mysql", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	// get last inserted route
+	lastGPXRoute, err := dao.GetLastGPSRoute(ctx)
+	if err != nil {
+		zlog.Error("error while get last inserted gps route", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+	momentId := uuid.New()
+	momentIdStr := momentId.String()
+	_, err = dao.CreateNewMoment(ctx, &model.Moment{
+		AuthorID: in.UserID,
+		Content:  &in.Content,
+		RouteID:  &lastGPXRoute.ID,
+		MomentID: momentIdStr,
+	})
+	if err != nil {
+		zlog.Error("error while create new moment", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
 
 	return nil
 }

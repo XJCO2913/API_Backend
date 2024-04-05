@@ -19,12 +19,18 @@ type CreateMomentVideoInput struct {
 	VideoData []byte
 }
 
+type CreateMomentGPXInput struct {
+	UserID  string
+	Content string
+	GPXData []byte
+}
+
 type FeedMomentInput struct {
-	UserID      string
+	UserID     string
 	LatestTime int64
 }
 
 type FeedMomentOutput struct {
-	Moments []*model.Moment
+	Moments  []*model.Moment
 	NextTime int64
 }
