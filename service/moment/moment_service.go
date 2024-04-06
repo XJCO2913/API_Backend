@@ -166,7 +166,10 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 		nextTime = moments[len(moments)-1].CreatedAt.UnixMilli()
 	}
 
-	for _, moment := range moments {
+	res := &sdto.FeedMomentOutput{
+		GPXRouteText: make(map[int]string),
+	}
+	for i, moment := range moments {
 		if moment.ImageURL != nil {
 			url, err := minio.GetMomentImageUrl(ctx, *moment.ImageURL)
 			if err != nil {
@@ -185,10 +188,25 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 
 			moment.VideoURL = &url
 		}
+		if moment.RouteID != nil {
+			path, err := dao.GetPathAsText(ctx, *moment.RouteID)
+			if err != nil {
+				zlog.Error("error while get GPX route from mysql", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+
+			pathText, err := util.GPXRoute(path)
+			if err != nil {
+				zlog.Error("error while parse gpx route to text", zap.String("path", path))
+				return nil, errorx.NewInternalErr()
+			}
+
+			res.GPXRouteText[i] = pathText
+		}
 	}
 
-	return &sdto.FeedMomentOutput{
-		Moments:  moments,
-		NextTime: nextTime,
-	}, nil
+	res.Moments = moments
+	res.NextTime = nextTime
+
+	return res, nil
 }

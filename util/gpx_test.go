@@ -1,6 +1,9 @@
 package util
 
-import "testing"
+import (
+	"fmt"
+	"testing"
+)
 
 func TestGPXParser(t *testing.T) {
 	data := `<?xml version="1.0" encoding="UTF-8"?>
@@ -762,7 +765,7 @@ func TestGPXParser(t *testing.T) {
 	for _, track := range gpxHandler.Tracks {
 		for _, segment := range track.Segments {
 			for _, point := range segment.Points {
-				t.Log(point.Latitude, point.Longitude)
+				fmt.Println(point.Latitude, point.Longitude)
 			}
 		}
 	}

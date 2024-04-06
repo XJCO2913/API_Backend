@@ -259,6 +259,9 @@ func (m *MomentController) Feed(c *gin.Context) {
 		if res.Moments[i].VideoURL != nil {
 			moments[i]["media"] = res.Moments[i].VideoURL
 		}
+		if GPXPath, ok := res.GPXRouteText[i]; ok {
+			moments[i]["media"] = GPXPath
+		}
 	}
 
 	c.JSON(200, dto.CommonRes{
