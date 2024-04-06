@@ -2,6 +2,7 @@ package util
 
 import (
 	"fmt"
+	"regexp"
 
 	"github.com/tkrajina/gpxgo/gpx"
 )
@@ -33,4 +34,18 @@ func GPXToLonLat(gpxDataBytes []byte) ([]string, error) {
 	}
 
 	return res, nil
+}
+
+// Convert LINESTRING(x x, y y, z z,...) to x x, y y, z z,...
+func GPXRoute(linestring string) (string, error) {
+	re := regexp.MustCompile(`\((.*?)\)`)
+
+	matches := re.FindStringSubmatch(linestring)
+	if len(matches) > 1 {
+		// match
+		return matches[1], nil
+	}
+
+	// not match
+	return "", fmt.Errorf("invalid linestring format")
 }
