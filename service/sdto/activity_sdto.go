@@ -5,38 +5,40 @@ import (
 )
 
 type CreateActivityInput struct {
-	Name        string    `json:"name" binding:"required"`
-	Description *string   `json:"description" binding:"required"`
-	RouteID     int32     `json:"routeId" binding:"required"`
-	CoverData   []byte    `json:"coverData" binding:"required"`
-	StartDate   time.Time `json:"startDate" binding:"required"`
-	EndDate     time.Time `json:"endDate" binding:"required"`
-	Tags        string    `json:"tags"`
-	Level       string    `json:"level" binding:"required"`
+	Name        string
+	Description *string
+	RouteID     int32
+	CoverData   []byte
+	StartDate   time.Time
+	EndDate     time.Time
+	Tags        string
+	Level       string
 }
 
 type GetAllActivityOutput struct {
-	ActivityID  string `json:"activityId"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	RouteID     int32  `json:"routeId"`
-	CoverURL    string `json:"coverUrl"`
-	StartDate   string `json:"startDate"`
-	EndDate     string `json:"endDate"`
-	Tags        string `json:"tags,omitempty"`
-	NumberLimit int32  `json:"numberLimit"`
-	Fee         int32  `json:"fee"`
+	ActivityID  string
+	Name        string
+	Description string
+	RouteID     int32
+	CoverURL    string
+	StartDate   string
+	EndDate     string
+	Tags        string
+	NumberLimit int32
+	Fee         int32
+	CreatedAt   string
 }
 
 type GetActivityByIDOutput struct {
-	ActivityID  string `json:"activityId"`
-	Name        string `json:"name"`
-	Description string `json:"description,omitempty"`
-	RouteID     int32  `json:"routeId"`
-	CoverURL    string `json:"coverUrl"`
-	StartDate   string `json:"startDate"`
-	EndDate     string `json:"endDate"`
-	Tags        string `json:"tags,omitempty"`
-	NumberLimit int32  `json:"numberLimit"`
-	Fee         int32  `json:"fee"`
+	ActivityID  string
+	Name        string
+	Description string
+	RouteID     int32
+	CoverURL    string
+	StartDate   string
+	EndDate     string
+	Tags        string
+	NumberLimit int32
+	Fee         int32
+	CreatedAt   string
 }

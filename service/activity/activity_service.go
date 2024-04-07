@@ -174,6 +174,11 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 			}
 		}
 
+		var createdAtStr string
+		if activity.CreatedAt != nil {
+			createdAtStr = activity.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
+		}
+
 		activityDtos[i] = &sdto.GetAllActivityOutput{
 			ActivityID:  activity.ActivityID,
 			Name:        activity.Name,
@@ -185,6 +190,7 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 			Tags:        tags,
 			NumberLimit: activity.NumberLimit,
 			Fee:         activity.Fee,
+			CreatedAt:   createdAtStr,
 		}
 	}
 
@@ -215,6 +221,11 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 		}
 	}
 
+	var createdAtStr string
+	if activity.CreatedAt != nil {
+		createdAtStr = activity.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
+	}
+
 	output := &sdto.GetActivityByIDOutput{
 		ActivityID:  activity.ActivityID,
 		Name:        activity.Name,
@@ -226,6 +237,7 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 		Tags:        tags,
 		NumberLimit: activity.NumberLimit,
 		Fee:         activity.Fee,
+		CreatedAt:   createdAtStr,
 	}
 
 	return output, nil
