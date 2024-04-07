@@ -85,9 +85,6 @@ func NewRouter() *gin.Engine {
 		api.PATCH("/user", userController.UpdateByID)
 		api.POST("/user/subscribe", userController.Subscribe)
 		api.POST("/user/cancel", userController.CancelByID)
-		api.POST("/activity/create", activityController.Create)
-		api.GET("/activity", activityController.GetByID)
-		api.GET("/activities", activityController.GetAll)
 		api.GET("/test", func(c *gin.Context) {
 			userID := c.GetString("userID")
 			isAdmin := c.GetBool("isAdmin")
@@ -111,6 +108,14 @@ func NewRouter() *gin.Engine {
 		{
 			moment.POST("/create", momentController.Create)
 			moment.GET("/feed", momentController.Feed)
+		}
+
+		// activity
+		activity := api.Group("/activity")
+		{
+			activity.POST("/create", activityController.Create)
+			activity.GET("", activityController.GetByID)
+			activity.GET("/all", activityController.GetAll)
 		}
 	}
 
