@@ -126,8 +126,8 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 		return
 	}
 
-	membershipType, exists := c.Get("membershipType")
-	if !exists || membershipType == nil {
+	membershipTypeValue, exists := c.Get("membershipType")
+	if !exists || membershipTypeValue == nil {
 		c.JSON(500, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Membership type does not exist",
@@ -135,7 +135,7 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 		return
 	}
 
-	membershipType, convertSuccess := membershipType.(float64)
+	membershipType, convertSuccess := membershipTypeValue.(float64)
 	if !convertSuccess {
 		c.JSON(500, dto.CommonRes{
 			StatusCode: -1,
@@ -188,8 +188,8 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		return
 	}
 
-	membershipType, exists := c.Get("membershipType")
-	if !exists || membershipType == nil {
+	membershipTypeValue, exists := c.Get("membershipType")
+	if !exists || membershipTypeValue == nil {
 		c.JSON(500, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Membership type does not exist",
@@ -197,7 +197,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		return
 	}
 
-	membershipType, convertSuccess := membershipType.(float64)
+	membershipType, convertSuccess := membershipTypeValue.(float64)
 	if !convertSuccess {
 		c.JSON(500, dto.CommonRes{
 			StatusCode: -1,
