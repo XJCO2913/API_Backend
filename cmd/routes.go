@@ -51,10 +51,11 @@ func NewRouter() *gin.Engine {
 		}
 
 		claims := jwt.MapClaims{
-			"userID":      "123123123",
-			"isAdmin":     true,
-			"isOrganiser": true,
-			"exp":         time.Now().Add(24 * time.Hour).Unix(),
+			"userID":         "123123123",
+			"isAdmin":        true,
+			"isOrganiser":    true,
+			"membershipType": 2,
+			"exp":            time.Now().Add(24 * time.Hour).Unix(),
 		}
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
