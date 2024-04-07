@@ -1,7 +1,6 @@
 package activity
 
 import (
-	"context"
 	"io"
 	"time"
 
@@ -16,12 +15,6 @@ type ActivityController struct{}
 func NewActivityController() *ActivityController {
 	return &ActivityController{}
 }
-
-type contextKey string
-
-const (
-	keyMembershipType contextKey = "membershipType"
-)
 
 func (a *ActivityController) Create(c *gin.Context) {
 	isOrganiser, exists := c.Get("isOrganiser")
@@ -108,8 +101,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 		Level:       req.Level,
 	}
 
-	membershipType, _ := c.Get("membershipType")
-	err := activity.Service().Create(context.WithValue(c.Request.Context(), keyMembershipType, membershipType), input)
+	err := activity.Service().Create(c.Request.Context(), input)
 	if err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
@@ -124,33 +116,43 @@ func (a *ActivityController) Create(c *gin.Context) {
 	})
 }
 
-func (a *ActivityController) GetAll(ctx *gin.Context) {
-	activities, err := activity.Service().GetAll(ctx.Request.Context())
+func (a *ActivityController) GetAll(c *gin.Context) {
+	activities, err := activity.Service().GetAll(c.Request.Context())
 	if err != nil {
-		ctx.JSON(err.Code(), dto.CommonRes{
+		c.JSON(err.Code(), dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  err.Error(),
 		})
 		return
 	}
 
+	membershipType, exists := c.Get("membershipType")
+	var discount int32 = 10
+	if exists && membershipType == 2 {
+		discount = 8
+	}
+
 	activityInfos := make([]gin.H, len(activities))
 	for i, activity := range activities {
+		finalFee := activity.OriginalFee
+		finalFee = finalFee * discount / 10
+
 		activityInfos[i] = gin.H{
 			"activityId":  activity.ActivityID,
 			"name":        activity.Name,
 			"description": activity.Description,
-			// "routeId":     activity.RouteID,
 			"coverUrl":    activity.CoverURL,
 			"startDate":   activity.StartDate,
 			"endDate":     activity.EndDate,
 			"tags":        activity.Tags,
 			"numberLimit": activity.NumberLimit,
-			"fee":         activity.Fee,
+			"originalFee": activity.OriginalFee,
+			"finalFee":    finalFee,
+			"createdAt":   activity.CreatedAt,
 		}
 	}
 
-	ctx.JSON(200, dto.CommonRes{
+	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Get activities successfully",
 		Data:       activityInfos,
@@ -160,7 +162,7 @@ func (a *ActivityController) GetAll(ctx *gin.Context) {
 func (a *ActivityController) GetByID(c *gin.Context) {
 	activityID := c.Query("activityID")
 
-	activityDetail, serviceErr := activity.Service().GetByID(c.Request.Context(), activityID)
+	activity, serviceErr := activity.Service().GetByID(c.Request.Context(), activityID)
 	if serviceErr != nil {
 		c.JSON(serviceErr.Code(), dto.CommonRes{
 			StatusCode: -1,
@@ -169,17 +171,27 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		return
 	}
 
+	membershipType, exists := c.Get("membershipType")
+	var discount int32 = 10
+	if exists && membershipType == 2 {
+		discount = 8
+	}
+
+	finalFee := activity.OriginalFee
+	finalFee = finalFee * discount / 10
+
 	responseData := gin.H{
-		"activityId":  activityDetail.ActivityID,
-		"name":        activityDetail.Name,
-		"description": activityDetail.Description,
-		// "routeId":     activityDetail.RouteID,
-		"coverUrl":    activityDetail.CoverURL,
-		"startDate":   activityDetail.StartDate,
-		"endDate":     activityDetail.EndDate,
-		"tags":        activityDetail.Tags,
-		"numberLimit": activityDetail.NumberLimit,
-		"fee":         activityDetail.Fee,
+		"activityId":  activity.ActivityID,
+		"name":        activity.Name,
+		"description": activity.Description,
+		"coverUrl":    activity.CoverURL,
+		"startDate":   activity.StartDate,
+		"endDate":     activity.EndDate,
+		"tags":        activity.Tags,
+		"numberLimit": activity.NumberLimit,
+		"originalFee": activity.OriginalFee,
+		"finalFee":    finalFee,
+		"createdAt":   activity.CreatedAt,
 	}
 
 	c.JSON(200, dto.CommonRes{
