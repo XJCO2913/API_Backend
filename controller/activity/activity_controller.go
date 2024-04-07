@@ -140,13 +140,13 @@ func (a *ActivityController) GetAll(ctx *gin.Context) {
 			"activityId":  activity.ActivityID,
 			"name":        activity.Name,
 			"description": activity.Description,
-			// "routeId":     activity.RouteID,
 			"coverUrl":    activity.CoverURL,
 			"startDate":   activity.StartDate,
 			"endDate":     activity.EndDate,
 			"tags":        activity.Tags,
 			"numberLimit": activity.NumberLimit,
 			"fee":         activity.Fee,
+			"createdAt":   activity.CreatedAt,
 		}
 	}
 
@@ -160,7 +160,7 @@ func (a *ActivityController) GetAll(ctx *gin.Context) {
 func (a *ActivityController) GetByID(c *gin.Context) {
 	activityID := c.Query("activityID")
 
-	activityDetail, serviceErr := activity.Service().GetByID(c.Request.Context(), activityID)
+	activity, serviceErr := activity.Service().GetByID(c.Request.Context(), activityID)
 	if serviceErr != nil {
 		c.JSON(serviceErr.Code(), dto.CommonRes{
 			StatusCode: -1,
@@ -170,16 +170,16 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 	}
 
 	responseData := gin.H{
-		"activityId":  activityDetail.ActivityID,
-		"name":        activityDetail.Name,
-		"description": activityDetail.Description,
-		// "routeId":     activityDetail.RouteID,
-		"coverUrl":    activityDetail.CoverURL,
-		"startDate":   activityDetail.StartDate,
-		"endDate":     activityDetail.EndDate,
-		"tags":        activityDetail.Tags,
-		"numberLimit": activityDetail.NumberLimit,
-		"fee":         activityDetail.Fee,
+		"activityId":  activity.ActivityID,
+		"name":        activity.Name,
+		"description": activity.Description,
+		"coverUrl":    activity.CoverURL,
+		"startDate":   activity.StartDate,
+		"endDate":     activity.EndDate,
+		"tags":        activity.Tags,
+		"numberLimit": activity.NumberLimit,
+		"fee":         activity.Fee,
+		"createdAt":   activity.CreatedAt,
 	}
 
 	c.JSON(200, dto.CommonRes{
