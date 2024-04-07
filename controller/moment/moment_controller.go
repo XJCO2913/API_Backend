@@ -254,10 +254,10 @@ func (m *MomentController) Feed(c *gin.Context) {
 
 		// check and set media url
 		if res.Moments[i].ImageURL != nil {
-			moments[i]["media"] = res.Moments[i].ImageURL
+			moments[i]["media_image"] = res.Moments[i].ImageURL
 		}
 		if res.Moments[i].VideoURL != nil {
-			moments[i]["media"] = res.Moments[i].VideoURL
+			moments[i]["media_video"] = res.Moments[i].VideoURL
 		}
 		if GPXPath, ok := res.GPXRouteText[i]; ok {
 			moments[i]["media"] = GPXPath
