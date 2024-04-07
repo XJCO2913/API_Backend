@@ -25,7 +25,8 @@ type GetAllActivityOutput struct {
 	EndDate     string
 	Tags        string
 	NumberLimit int32
-	Fee         int32
+	OriginalFee int32
+	FinalFee    int32
 	CreatedAt   string
 }
 
@@ -39,6 +40,7 @@ type GetActivityByIDOutput struct {
 	EndDate     string
 	Tags        string
 	NumberLimit int32
-	Fee         int32
+	OriginalFee int32
+	FinalFee    int32
 	CreatedAt   string
 }

@@ -85,16 +85,6 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 
 	finalFee := baseFee + ExtraFee
 
-	membershipType, exists := ctx.Value("membershipType").(int)
-	if !exists {
-		zlog.Error("MembershipType not found")
-	} else {
-		// 20% off for second level members
-		if membershipType == 2 {
-			finalFee = finalFee * 8 / 10
-		}
-	}
-
 	coverName, uploadErr := a.UploadCover(ctx, in.CoverData)
 	if uploadErr != nil {
 		zlog.Error("Error while upload cover: "+uploadErr.Error(), zap.Error(uploadErr))
@@ -179,6 +169,9 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 			createdAtStr = activity.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
 		}
 
+		originalFee := activity.Fee
+		finalFee := originalFee
+
 		activityDtos[i] = &sdto.GetAllActivityOutput{
 			ActivityID:  activity.ActivityID,
 			Name:        activity.Name,
@@ -188,7 +181,8 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 			EndDate:     activity.EndDate.Format("2006-01-02"),
 			Tags:        tags,
 			NumberLimit: activity.NumberLimit,
-			Fee:         activity.Fee,
+			OriginalFee: originalFee,
+			FinalFee:    finalFee,
 			CreatedAt:   createdAtStr,
 		}
 	}
@@ -225,6 +219,9 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 		createdAtStr = activity.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
 	}
 
+	originalFee := activity.Fee
+	finalFee := originalFee
+
 	output := &sdto.GetActivityByIDOutput{
 		ActivityID:  activity.ActivityID,
 		Name:        activity.Name,
@@ -234,7 +231,8 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 		EndDate:     activity.EndDate.Format("2006-01-02"),
 		Tags:        tags,
 		NumberLimit: activity.NumberLimit,
-		Fee:         activity.Fee,
+		OriginalFee: originalFee,
+		FinalFee:    finalFee,
 		CreatedAt:   createdAtStr,
 	}
 
