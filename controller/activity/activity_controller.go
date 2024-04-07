@@ -128,7 +128,7 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 
 	membershipType, exists := c.Get("membershipType")
 	var discount int32 = 10
-	if exists && membershipType == 2 {
+	if exists && membershipType.(int) == 2 {
 		discount = 8
 	}
 
@@ -173,7 +173,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 
 	membershipType, exists := c.Get("membershipType")
 	var discount int32 = 10
-	if exists && membershipType == 2 {
+	if exists && membershipType.(int) == 2 {
 		discount = 8
 	}
 
