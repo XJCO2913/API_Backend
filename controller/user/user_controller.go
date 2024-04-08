@@ -94,6 +94,12 @@ func (u *UserController) Login(c *gin.Context) {
 		StatusMsg:  "Login successfully",
 		Data: gin.H{
 			"token": out.Token,
+			"userInfo": gin.H{
+				"username": req.Username,
+				"gender":   out.Gender,
+				"birthday": out.Birthday,
+				"region":   out.Region,
+			},
 		},
 	})
 }
