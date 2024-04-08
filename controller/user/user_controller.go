@@ -56,6 +56,14 @@ func (u *UserController) SignUp(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Register successfully",
+		Data: gin.H{
+			"userInfo": gin.H{
+				"username": req.Username,
+				"gender":   req.Gender,
+				"birthday": req.Birthday,
+				"region":   req.Region,
+			},
+		},
 	})
 }
 
