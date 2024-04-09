@@ -4,6 +4,7 @@ import (
 	"context"
 	"strconv"
 	"strings"
+	"sync"
 
 	"api.backend.xjco2913/dao"
 	"api.backend.xjco2913/dao/minio"
@@ -85,34 +86,74 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 
 	finalFee := baseFee + ExtraFee
 
-	coverName, uploadErr := a.UploadCover(ctx, in.CoverData)
-	if uploadErr != nil {
-		zlog.Error("Error while upload cover: "+uploadErr.Error(), zap.Error(uploadErr))
-		return errorx.NewInternalErr()
-	}
-
 	// Generate a uuid for the new activity
 	uuid, err := uuid.NewUUID()
 	if err != nil {
 		zlog.Error("Error while generate uuid: " + err.Error())
 		return errorx.NewInternalErr()
 	}
-	newActivityID := uuid.String()
+	activityID := uuid.String()
 
-	err = dao.CreateNewActivity(ctx, &model.Activity{
-		ActivityID:  newActivityID,
-		Name:        in.Name,
-		Description: in.Description,
-		RouteID:     1,
-		CoverURL:    coverName,
-		StartDate:   in.StartDate,
-		EndDate:     in.EndDate,
-		Tags:        &joinedTags,
-		NumberLimit: numberLimit,
-		Fee:         finalFee,
-	})
-	if err != nil {
-		zlog.Error("Error while create new activity: "+err.Error(), zap.String("name", in.Name))
+	var wg sync.WaitGroup
+	var uploadErr, createErr error
+	var coverName string
+
+	wg.Add(2)
+
+	// Concurrent coroutine 1: upload a cover
+	go func() {
+		defer wg.Done()
+		coverName, err = a.UploadCover(ctx, in.CoverData)
+		if err != nil {
+			uploadErr = err
+			zlog.Error("Error while upload new cover", zap.Error(err))
+		}
+	}()
+
+	// Concurrent coroutine 2: create activity records
+	go func() {
+		defer wg.Done()
+		err := dao.CreateNewActivity(ctx, &model.Activity{
+			ActivityID:  activityID,
+			Name:        in.Name,
+			Description: in.Description,
+			RouteID:     1,
+			CoverURL:    coverName,
+			StartDate:   in.StartDate,
+			EndDate:     in.EndDate,
+			Tags:        &joinedTags,
+			NumberLimit: numberLimit,
+			Fee:         finalFee,
+		})
+		if err != nil {
+			createErr = err
+			zlog.Error("Error while create new activity", zap.String("activityID", activityID), zap.Error(err))
+		}
+	}()
+
+	wg.Wait()
+
+	if uploadErr != nil {
+		if createErr == nil {
+			go func() {
+				// If activity is created successfully but cover upload fails, clear activity records
+				_, _, err := dao.DeleteActivitiesByID(ctx, activityID)
+				if err != nil {
+					zlog.Error("Failed to delete activity", zap.String("activityID", activityID), zap.Error(err))
+				}
+			}()
+		}
+	} else if createErr != nil {
+		go func() {
+			// If cover is uploaded successfully but activity creation fails, clear the cover
+			err := minio.DeleteActivityCover(ctx, coverName)
+			if err != nil {
+				zlog.Error("Failed to delete cover", zap.String("coverName", coverName), zap.Error(err))
+			}
+		}()
+	}
+
+	if uploadErr != nil || createErr != nil {
 		return errorx.NewInternalErr()
 	}
 
