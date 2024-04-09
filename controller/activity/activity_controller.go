@@ -126,27 +126,32 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 		return
 	}
 
-	membershipTypeValue, exists := c.Get("membershipType")
-	if !exists || membershipTypeValue == nil {
-		c.JSON(500, dto.CommonRes{
-			StatusCode: -1,
-			StatusMsg:  "Membership type does not exist",
-		})
-		return
-	}
-
-	membershipType, convertSuccess := membershipTypeValue.(float64)
-	if !convertSuccess {
-		c.JSON(500, dto.CommonRes{
-			StatusCode: -1,
-			StatusMsg:  "Fail to convert MembershipType",
-		})
-		return
-	}
-
+	isAdmin, exists := c.Get("isAdmin")
 	var discount int32 = 10
-	if membershipType == 2 {
-		discount = 8
+	if exists && isAdmin.(bool) {
+		discount = 10
+	} else {
+		membershipTypeValue, exists := c.Get("membershipType")
+		if !exists || membershipTypeValue == nil {
+			c.JSON(500, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  "Membership type does not exist",
+			})
+			return
+		}
+
+		membershipType, convertSuccess := membershipTypeValue.(float64)
+		if !convertSuccess {
+			c.JSON(500, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  "Fail to convert MembershipType",
+			})
+			return
+		}
+
+		if membershipType == 2 {
+			discount = 8
+		}
 	}
 
 	activityInfos := make([]gin.H, len(activities))
