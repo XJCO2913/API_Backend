@@ -77,6 +77,15 @@ func GetActivityCoverUrl(ctx context.Context, coverName string) (string, error) 
 	return coverUrl.String(), nil
 }
 
+func DeleteActivityCover(ctx context.Context, coverName string) error {
+	err := minioClient.RemoveObject(ctx, ACTIVITY_BUCKET, coverName, minio.RemoveObjectOptions{})
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 func UploadMomentImage(ctx context.Context, momentImageName string, momentImageData []byte) error {
 	imageReader := bytes.NewReader(momentImageData)
 
