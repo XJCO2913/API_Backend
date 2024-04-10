@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"strings"
 
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/dao/query"
@@ -46,4 +47,32 @@ func GetActivityByID(ctx context.Context, activityID string) (*model.Activity, e
 		return nil, err
 	}
 	return activity, nil
+}
+
+func DeleteActivitiesByID(ctx context.Context, activityIDs string) ([]string, []string, error) {
+	ids := strings.Split(activityIDs, "|")
+	var deletedIDs []string
+	var notFoundIDs []string
+
+	for _, id := range ids {
+		_, err := GetActivityByID(ctx, id)
+		if err != nil {
+			notFoundIDs = append(notFoundIDs, id)
+			continue
+		}
+
+		a := query.Use(DB).Activity
+		result, err := a.WithContext(ctx).Where(a.ActivityID.Eq(id)).Delete()
+		if err != nil {
+			return nil, nil, err
+		}
+
+		if result.RowsAffected > 0 {
+			deletedIDs = append(deletedIDs, id)
+		} else {
+			notFoundIDs = append(notFoundIDs, id)
+		}
+	}
+
+	return deletedIDs, notFoundIDs, nil
 }

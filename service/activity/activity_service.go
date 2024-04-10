@@ -97,10 +97,10 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		zlog.Error("Error while generate uuid: " + err.Error())
 		return errorx.NewInternalErr()
 	}
-	newActivityID := uuid.String()
 
+	activityID := uuid.String()
 	err = dao.CreateNewActivity(ctx, &model.Activity{
-		ActivityID:  newActivityID,
+		ActivityID:  activityID,
 		Name:        in.Name,
 		Description: in.Description,
 		RouteID:     1,
@@ -112,7 +112,16 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		Fee:         finalFee,
 	})
 	if err != nil {
-		zlog.Error("Error while create new activity: "+err.Error(), zap.String("name", in.Name))
+		zlog.Error("Error while create activity: "+err.Error(), zap.String("name", in.Name))
+
+		go func() {
+			// Asynchronously delete the uploaded cover
+			cleanupErr := minio.DeleteActivityCover(ctx, coverName)
+			if cleanupErr != nil {
+				zlog.Error("Failed to delete cover in Minio", zap.String("coverName", coverName), zap.Error(cleanupErr))
+			}
+		}()
+
 		return errorx.NewInternalErr()
 	}
 
