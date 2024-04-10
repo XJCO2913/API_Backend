@@ -59,7 +59,7 @@ func GetUserAvatarUrl(ctx context.Context, avatarName string) (string, error) {
 
 func UploadActivityCover(ctx context.Context, coverName string, coverData []byte) error {
 	coverReader := bytes.NewReader(coverData)
-	
+
 	err := UploadFile(ctx, ACTIVITY_BUCKET, coverName, coverReader, int64(len(coverData)), "image/jpeg")
 	if err != nil {
 		return err
@@ -75,6 +75,50 @@ func GetActivityCoverUrl(ctx context.Context, coverName string) (string, error) 
 	}
 
 	return coverUrl.String(), nil
+}
+
+func UploadMomentImage(ctx context.Context, momentImageName string, momentImageData []byte) error {
+	imageReader := bytes.NewReader(momentImageData)
+
+	err := UploadFile(ctx, MOMENT_BUCKET, momentImageName, imageReader, int64(len(momentImageData)), "image/jpeg")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetMomentImageUrl(ctx context.Context, momentImageName string) (string, error) {
+	imageUrl, err := GetObjectUrl(ctx, MOMENT_BUCKET, momentImageName, 0)
+	if err != nil {
+		return "", err
+	}
+
+	return imageUrl.String(), nil
+}
+
+func UploadMomentVideo(ctx context.Context, momentVideoName string, momentVideoData []byte) error {
+	videoReader := bytes.NewReader(momentVideoData)
+
+	err := UploadFile(ctx, MOMENT_BUCKET, momentVideoName, videoReader, int64(len(momentVideoData)), "video/mp4")
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func GetMomentVideoUrl(ctx context.Context, momentVideoName string) (string, error) {
+	videoUrl, err := GetObjectUrl(ctx, MOMENT_BUCKET, momentVideoName, 0)
+	if err != nil {
+		return "", err
+	}
+
+	return videoUrl.String(), nil
+}
+
+func RemoveObjectFromMoment(ctx context.Context, objectName string) error {
+	return minioClient.RemoveObject(ctx, MOMENT_BUCKET, objectName, minio.RemoveObjectOptions{})
 }
 
 func UploadFile(ctx context.Context, bucketName, objectName string, reader io.Reader, objectSize int64, contentType string) error {

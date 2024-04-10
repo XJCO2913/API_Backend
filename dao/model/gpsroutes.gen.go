@@ -9,7 +9,6 @@ const TableNameGPSRoute = "GPSRoutes"
 // GPSRoute mapped from table <GPSRoutes>
 type GPSRoute struct {
 	ID   int32  `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
-	Name string `gorm:"column:name;not null" json:"name"`
 	Path string `gorm:"column:path;not null" json:"path"`
 }
 

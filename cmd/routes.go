@@ -3,7 +3,9 @@ package main
 import (
 	"time"
 
+	"api.backend.xjco2913/controller/activity"
 	"api.backend.xjco2913/controller/admin"
+	"api.backend.xjco2913/controller/moment"
 	"api.backend.xjco2913/controller/user"
 	"api.backend.xjco2913/middleware"
 	"api.backend.xjco2913/util/config"
@@ -16,7 +18,9 @@ func NewRouter() *gin.Engine {
 	r := gin.Default()
 
 	userController := user.NewUserController()
+	activityController := activity.NewActivityController()
 	adminController := admin.NewAdminController()
+	momentController := moment.NewMomentController()
 
 	// global middleware
 	// prometheus
@@ -47,9 +51,11 @@ func NewRouter() *gin.Engine {
 		}
 
 		claims := jwt.MapClaims{
-			"userID":  "123123123",
-			"isAdmin": true,
-			"exp":     time.Now().Add(24 * time.Hour).Unix(),
+			"userID":         "123123123",
+			"isAdmin":        true,
+			"isOrganiser":    true,
+			"membershipType": 2,
+			"exp":            time.Now().Add(24 * time.Hour).Unix(),
 		}
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -96,6 +102,21 @@ func NewRouter() *gin.Engine {
 		admin := api.Group("/admin")
 		{
 			admin.POST("/login", adminController.Login)
+		}
+
+		// moments
+		moment := api.Group("/moment")
+		{
+			moment.POST("/create", momentController.Create)
+			moment.GET("/feed", momentController.Feed)
+		}
+
+		// activity
+		activity := api.Group("/activity")
+		{
+			activity.POST("/create", activityController.Create)
+			activity.GET("", activityController.GetByID)
+			activity.GET("/all", activityController.GetAll)
 		}
 	}
 

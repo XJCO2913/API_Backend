@@ -10,6 +10,7 @@ require (
 	github.com/minio/minio-go/v7 v7.0.69
 	github.com/prometheus/client_golang v1.19.0
 	github.com/spf13/viper v1.18.2
+	github.com/tkrajina/gpxgo v1.3.1
 	go.uber.org/zap v1.26.0
 	golang.org/x/crypto v0.19.0
 	gorm.io/driver/mysql v1.5.2

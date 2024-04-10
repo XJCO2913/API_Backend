@@ -56,6 +56,14 @@ func (u *UserController) SignUp(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Register successfully",
+		Data: gin.H{
+			"userInfo": gin.H{
+				"username": req.Username,
+				"gender":   req.Gender,
+				"birthday": req.Birthday,
+				"region":   req.Region,
+			},
+		},
 	})
 }
 
@@ -94,6 +102,12 @@ func (u *UserController) Login(c *gin.Context) {
 		StatusMsg:  "Login successfully",
 		Data: gin.H{
 			"token": out.Token,
+			"userInfo": gin.H{
+				"username": req.Username,
+				"gender":   out.Gender,
+				"birthday": out.Birthday,
+				"region":   out.Region,
+			},
 		},
 	})
 }
@@ -356,7 +370,6 @@ func (u *UserController) UpdateByID(c *gin.Context) {
 
 	input := sdto.UpdateUserInput{
 		Username: req.Username,
-		Password: req.Password,
 		Gender:   req.Gender,
 		Birthday: req.Birthday,
 		Region:   req.Region,
@@ -447,7 +460,7 @@ func (u *UserController) UploadAvatar(c *gin.Context) {
 	if err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  fmt.Sprintf("bad avatar file header: %s", err.Error()),
+			StatusMsg:  fmt.Sprintf("Bad avatar file header: %s", err.Error()),
 		})
 		return
 	}
@@ -469,7 +482,7 @@ func (u *UserController) UploadAvatar(c *gin.Context) {
 	if err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  fmt.Sprintf("fail to get avatar file: %s", err.Error()),
+			StatusMsg:  fmt.Sprintf("Fail to get avatar file: %s", err.Error()),
 		})
 		return
 	}
@@ -479,13 +492,13 @@ func (u *UserController) UploadAvatar(c *gin.Context) {
 	if _, err := io.Copy(avatarBuf, avatarFile); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  fmt.Sprintf("fail copy avatar data: %s", err.Error()),
+			StatusMsg:  fmt.Sprintf("Fail copy avatar data: %s", err.Error()),
 		})
 		return
 	}
 
 	errx := user.Service().UploadAvatar(c.Request.Context(), sdto.UploadAvatarInput{
-		UserId: userId,
+		UserId:     userId,
 		AvatarData: avatarBuf.Bytes(),
 	})
 	if errx != nil {
@@ -498,6 +511,6 @@ func (u *UserController) UploadAvatar(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg:  "upload avatar successfully",
+		StatusMsg:  "Upload avatar successfully",
 	})
 }

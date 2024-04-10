@@ -20,7 +20,7 @@ type Activity struct {
 	CoverURL    string     `gorm:"column:coverUrl;not null" json:"coverUrl"`
 	StartDate   time.Time  `gorm:"column:startDate;not null" json:"startDate"`
 	EndDate     time.Time  `gorm:"column:endDate;not null" json:"endDate"`
-	Tags        string     `gorm:"column:tags;not null" json:"tags"`
+	Tags        *string    `gorm:"column:tags" json:"tags"`
 	NumberLimit int32      `gorm:"column:numberLimit;not null" json:"numberLimit"`
 	Fee         int32      `gorm:"column:fee;not null;comment:can be free" json:"fee"` // can be free
 	CreatedAt   *time.Time `gorm:"column:createdAt;default:CURRENT_TIMESTAMP" json:"createdAt"`

@@ -25,6 +25,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		Log:          newLog(db, opts...),
 		Moment:       newMoment(db, opts...),
 		Organiser:    newOrganiser(db, opts...),
+		Tag:          newTag(db, opts...),
 		User:         newUser(db, opts...),
 	}
 }
@@ -39,6 +40,7 @@ type Query struct {
 	Log          log
 	Moment       moment
 	Organiser    organiser
+	Tag          tag
 	User         user
 }
 
@@ -54,6 +56,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		Log:          q.Log.clone(db),
 		Moment:       q.Moment.clone(db),
 		Organiser:    q.Organiser.clone(db),
+		Tag:          q.Tag.clone(db),
 		User:         q.User.clone(db),
 	}
 }
@@ -76,6 +79,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		Log:          q.Log.replaceDB(db),
 		Moment:       q.Moment.replaceDB(db),
 		Organiser:    q.Organiser.replaceDB(db),
+		Tag:          q.Tag.replaceDB(db),
 		User:         q.User.replaceDB(db),
 	}
 }
@@ -88,6 +92,7 @@ type queryCtx struct {
 	Log          *logDo
 	Moment       *momentDo
 	Organiser    *organiserDo
+	Tag          *tagDo
 	User         *userDo
 }
 
@@ -100,6 +105,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		Log:          q.Log.WithContext(ctx),
 		Moment:       q.Moment.WithContext(ctx),
 		Organiser:    q.Organiser.WithContext(ctx),
+		Tag:          q.Tag.WithContext(ctx),
 		User:         q.User.WithContext(ctx),
 	}
 }
