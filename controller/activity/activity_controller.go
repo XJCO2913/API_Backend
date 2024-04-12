@@ -126,27 +126,32 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 		return
 	}
 
-	membershipTypeValue, exists := c.Get("membershipType")
-	if !exists || membershipTypeValue == nil {
-		c.JSON(500, dto.CommonRes{
-			StatusCode: -1,
-			StatusMsg:  "Membership type does not exist",
-		})
-		return
-	}
-
-	membershipType, convertSuccess := membershipTypeValue.(float64)
-	if !convertSuccess {
-		c.JSON(500, dto.CommonRes{
-			StatusCode: -1,
-			StatusMsg:  "Fail to convert MembershipType",
-		})
-		return
-	}
-
+	isAdmin, exists := c.Get("isAdmin")
 	var discount int32 = 10
-	if membershipType == 2 {
-		discount = 8
+	if exists && isAdmin.(bool) {
+		discount = 10
+	} else {
+		membershipTypeValue, exists := c.Get("membershipType")
+		if !exists || membershipTypeValue == nil {
+			c.JSON(500, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  "Membership type does not exist",
+			})
+			return
+		}
+
+		membershipType, convertSuccess := membershipTypeValue.(float64)
+		if !convertSuccess {
+			c.JSON(500, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  "Fail to convert MembershipType",
+			})
+			return
+		}
+
+		if membershipType == 2 {
+			discount = 8
+		}
 	}
 
 	activityInfos := make([]gin.H, len(activities))
@@ -188,27 +193,32 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		return
 	}
 
-	membershipTypeValue, exists := c.Get("membershipType")
-	if !exists || membershipTypeValue == nil {
-		c.JSON(500, dto.CommonRes{
-			StatusCode: -1,
-			StatusMsg:  "Membership type does not exist",
-		})
-		return
-	}
-
-	membershipType, convertSuccess := membershipTypeValue.(float64)
-	if !convertSuccess {
-		c.JSON(500, dto.CommonRes{
-			StatusCode: -1,
-			StatusMsg:  "Fail to convert MembershipType",
-		})
-		return
-	}
-
+	isAdmin, exists := c.Get("isAdmin")
 	var discount int32 = 10
-	if membershipType == 2 {
-		discount = 8
+	if exists && isAdmin.(bool) {
+		discount = 10
+	} else {
+		membershipTypeValue, exists := c.Get("membershipType")
+		if !exists || membershipTypeValue == nil {
+			c.JSON(500, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  "Membership type does not exist",
+			})
+			return
+		}
+
+		membershipType, convertSuccess := membershipTypeValue.(float64)
+		if !convertSuccess {
+			c.JSON(500, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  "Fail to convert MembershipType",
+			})
+			return
+		}
+
+		if membershipType == 2 {
+			discount = 8
+		}
 	}
 
 	finalFee := activity.OriginalFee
@@ -232,5 +242,22 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		StatusCode: 0,
 		StatusMsg:  "Get activity successfully",
 		Data:       responseData,
+	})
+}
+
+func (a *ActivityController) Feed(c *gin.Context) {
+	activities, err := activity.Service().Feed(c.Request.Context())
+	if err != nil {
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "activity feed successfully",
+		Data:       activities,
 	})
 }

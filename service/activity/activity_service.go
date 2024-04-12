@@ -16,6 +16,10 @@ import (
 	"gorm.io/gorm"
 )
 
+const (
+	ACTIVITY_FEED_LIMIT = 3
+)
+
 type ActivityService struct{}
 
 var (
@@ -97,10 +101,10 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		zlog.Error("Error while generate uuid: " + err.Error())
 		return errorx.NewInternalErr()
 	}
-	newActivityID := uuid.String()
 
+	activityID := uuid.String()
 	err = dao.CreateNewActivity(ctx, &model.Activity{
-		ActivityID:  newActivityID,
+		ActivityID:  activityID,
 		Name:        in.Name,
 		Description: in.Description,
 		RouteID:     1,
@@ -112,7 +116,16 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		Fee:         finalFee,
 	})
 	if err != nil {
-		zlog.Error("Error while create new activity: "+err.Error(), zap.String("name", in.Name))
+		zlog.Error("Error while create activity: "+err.Error(), zap.String("name", in.Name))
+
+		go func() {
+			// Asynchronously delete the uploaded cover
+			cleanupErr := minio.DeleteActivityCover(ctx, coverName)
+			if cleanupErr != nil {
+				zlog.Error("Failed to delete cover in Minio", zap.String("coverName", coverName), zap.Error(cleanupErr))
+			}
+		}()
+
 		return errorx.NewInternalErr()
 	}
 
@@ -237,4 +250,35 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 	}
 
 	return output, nil
+}
+
+func (s *ActivityService) Feed(ctx context.Context) (*sdto.ActivityFeedOutput, *errorx.ServiceErr) {
+	activitiesModels, err := dao.GetActivityLimit(ctx, ACTIVITY_FEED_LIMIT)
+	if err != nil {
+		zlog.Error("error while feed activities", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	activities := make([]*sdto.ActivityFeed, len(activitiesModels))
+	for i, activity := range activitiesModels {
+		activities[i] = &sdto.ActivityFeed{
+			ActivityID: activity.ActivityID,
+			Name:       activity.Name,
+		}
+
+		if activity.Description != nil {
+			activities[i].Description = *activity.Description
+		}
+
+		coverUrl, err := minio.GetActivityCoverUrl(ctx, activity.CoverURL)
+		if err != nil {
+			zlog.Error("error while get activity cover url", zap.Error(err), zap.String("activityID", activity.ActivityID))
+			return nil, errorx.NewInternalErr()
+		}
+		activities[i].CoverUrl = coverUrl
+	}
+
+	return &sdto.ActivityFeedOutput{
+		Activities: activities,
+	}, nil
 }
