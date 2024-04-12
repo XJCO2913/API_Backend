@@ -247,3 +247,27 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 
 	return output, nil
 }
+
+func (s *ActivityService) DeleteByID(ctx context.Context, activityIDs string) *errorx.ServiceErr {
+	ids := strings.Split(activityIDs, "|")
+	deletedIDs, notFoundIDs, err := dao.DeleteActivitiesByID(ctx, activityIDs)
+
+	if err != nil {
+		zlog.Error("Failed to delete activities", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	// All specified activities were not found
+	if len(notFoundIDs) == len(ids) {
+		zlog.Warn("All specified activities not found", zap.Strings("not_found_ids", notFoundIDs))
+		return errorx.NewServicerErr(errorx.ErrExternal, "All specified activities not found", map[string]any{"not_found_ids": notFoundIDs})
+	}
+
+	zlog.Info("Specified activities deleted", zap.Strings("deleted_activity_ids", deletedIDs))
+	// Part of specified activities were not found
+	if len(notFoundIDs) > 0 {
+		zlog.Warn("Some specified activities not found", zap.Strings("not_found_ids", notFoundIDs))
+	}
+
+	return nil
+}
