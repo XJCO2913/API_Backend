@@ -74,6 +74,7 @@ func NewRouter() *gin.Engine {
 		// group middleware
 		api.Use(middleware.VerifyToken())
 
+		api.POST("/user/refresh", userController.RefreshToken)
 		api.POST("/user/register", userController.SignUp)
 		api.POST("/user/login", userController.Login)
 		api.GET("/user", userController.GetByID)
