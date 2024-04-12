@@ -40,6 +40,7 @@ func newActivity(db *gorm.DB, opts ...gen.DOOption) activity {
 	_activity.Fee = field.NewInt32(tableName, "fee")
 	_activity.CreatedAt = field.NewTime(tableName, "createdAt")
 	_activity.UpdatedAt = field.NewTime(tableName, "updatedAt")
+	_activity.CreatorID = field.NewString(tableName, "creatorID")
 
 	_activity.fillFieldMap()
 
@@ -63,6 +64,7 @@ type activity struct {
 	Fee         field.Int32 // can be free
 	CreatedAt   field.Time
 	UpdatedAt   field.Time
+	CreatorID   field.String
 
 	fieldMap map[string]field.Expr
 }
@@ -92,6 +94,7 @@ func (a *activity) updateTableName(table string) *activity {
 	a.Fee = field.NewInt32(table, "fee")
 	a.CreatedAt = field.NewTime(table, "createdAt")
 	a.UpdatedAt = field.NewTime(table, "updatedAt")
+	a.CreatorID = field.NewString(table, "creatorID")
 
 	a.fillFieldMap()
 
@@ -116,7 +119,7 @@ func (a *activity) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (a *activity) fillFieldMap() {
-	a.fieldMap = make(map[string]field.Expr, 13)
+	a.fieldMap = make(map[string]field.Expr, 14)
 	a.fieldMap["id"] = a.ID
 	a.fieldMap["activityId"] = a.ActivityID
 	a.fieldMap["name"] = a.Name
@@ -130,6 +133,7 @@ func (a *activity) fillFieldMap() {
 	a.fieldMap["fee"] = a.Fee
 	a.fieldMap["createdAt"] = a.CreatedAt
 	a.fieldMap["updatedAt"] = a.UpdatedAt
+	a.fieldMap["creatorID"] = a.CreatorID
 }
 
 func (a activity) clone(db *gorm.DB) activity {
