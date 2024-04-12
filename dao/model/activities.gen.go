@@ -25,6 +25,7 @@ type Activity struct {
 	Fee         int32      `gorm:"column:fee;not null;comment:can be free" json:"fee"` // can be free
 	CreatedAt   *time.Time `gorm:"column:createdAt;default:CURRENT_TIMESTAMP" json:"createdAt"`
 	UpdatedAt   *time.Time `gorm:"column:updatedAt;default:CURRENT_TIMESTAMP" json:"updatedAt"`
+	CreatorID   string     `gorm:"column:creatorID;not null" json:"creatorID"`
 }
 
 // TableName Activity's table name

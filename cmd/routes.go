@@ -117,6 +117,7 @@ func NewRouter() *gin.Engine {
 			activity.POST("/create", activityController.Create)
 			activity.GET("", activityController.GetByID)
 			activity.GET("/all", activityController.GetAll)
+			activity.GET("/feed", activityController.Feed)
 		}
 	}
 

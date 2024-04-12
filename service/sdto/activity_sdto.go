@@ -44,3 +44,14 @@ type GetActivityByIDOutput struct {
 	FinalFee    int32
 	CreatedAt   string
 }
+
+type ActivityFeed struct {
+	ActivityID  string
+	Name        string
+	Description string
+	CoverUrl    string
+}
+
+type ActivityFeedOutput struct {
+	Activities []*ActivityFeed
+}

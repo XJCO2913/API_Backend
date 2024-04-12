@@ -76,3 +76,14 @@ func DeleteActivitiesByID(ctx context.Context, activityIDs string) ([]string, []
 
 	return deletedIDs, notFoundIDs, nil
 }
+
+func GetActivityLimit(ctx context.Context, limit int) ([]*model.Activity, error) {
+	a := query.Use(DB).Activity
+
+	res, err := a.WithContext(ctx).Limit(limit).Order(a.CreatedAt.Asc()).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	return res, nil
+}

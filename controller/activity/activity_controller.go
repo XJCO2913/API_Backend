@@ -244,3 +244,20 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		Data:       responseData,
 	})
 }
+
+func (a *ActivityController) Feed(c *gin.Context) {
+	activities, err := activity.Service().Feed(c.Request.Context())
+	if err != nil {
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "activity feed successfully",
+		Data:       activities,
+	})
+}

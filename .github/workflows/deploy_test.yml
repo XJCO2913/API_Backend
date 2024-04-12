@@ -1,0 +1,25 @@
+name: CD Test_Environment
+
+on:
+  push:
+    branches:
+      - develop
+
+jobs:
+  build:
+    environment:
+      name: xjco2913
+
+    name: Deploy
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy to Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USERNAME }}
+          key: ${{ secrets.SSH_KEY }}
+          port: ${{ secrets.PORT }}
+          script: |
+            cd /home/lighthouse/xjco2913
+            bash deploy_backend_test.sh
