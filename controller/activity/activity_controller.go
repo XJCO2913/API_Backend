@@ -261,3 +261,43 @@ func (a *ActivityController) Feed(c *gin.Context) {
 		Data:       activities,
 	})
 }
+
+func (a *ActivityController) DeleteByID(c *gin.Context) {
+	activityID := c.Query("activityID")
+
+	isAdmin, exists := c.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		// Non-admins must be the creator to delete the activity
+		activityDetail, serviceErr := activity.Service().GetByID(c.Request.Context(), activityID)
+		if serviceErr != nil {
+			c.JSON(serviceErr.Code(), dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  serviceErr.Error(),
+			})
+			return
+		}
+
+		userID, _ := c.Get("userID")
+		if activityDetail.CreatorID != userID.(string) {
+			c.JSON(403, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  "Forbidden: You are not the creator of this activity",
+			})
+			return
+		}
+	}
+
+	serviceErr := activity.Service().DeleteByID(c.Request.Context(), activityID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Delete activity successfully",
+	})
+}
