@@ -2,6 +2,7 @@ package activity
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 
@@ -208,8 +209,13 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto.GetActivityByIDOutput, *errorx.ServiceErr) {
 	activity, err := dao.GetActivityByID(ctx, activityID)
 	if err != nil {
-		zlog.Error("Failed to retrieve activity by ID", zap.String("activityID", activityID), zap.Error(err))
-		return nil, errorx.NewInternalErr()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("Activity not found", zap.String("activityID", activityID))
+			return nil, errorx.NewServicerErr(errorx.ErrExternal, "Activity not found", nil)
+		} else {
+			zlog.Error("Failed to retrieve activity by ID", zap.String("activityID", activityID), zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
 	}
 
 	var description, tags string

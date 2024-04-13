@@ -18,7 +18,7 @@ func (a *AdminController) Login(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "wrong params: " + err.Error(),
+			StatusMsg:  "Wrong params: " + err.Error(),
 		})
 		return
 	}
