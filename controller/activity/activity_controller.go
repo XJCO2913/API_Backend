@@ -303,6 +303,6 @@ func (a *ActivityController) DeleteByID(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg:  "Delete activity successfully",
+		StatusMsg:  "Delete activity(ies) successfully",
 	})
 }
