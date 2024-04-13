@@ -3,7 +3,6 @@ package activity
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strconv"
 	"strings"
 
@@ -328,8 +327,6 @@ func (s *ActivityService) SignUpByActivityID(ctx context.Context, input *sdto.Si
 			return errorx.NewInternalErr()
 		}
 	}
-
-	fmt.Printf("MembershipType: %d\n", input.MembershipType)
 
 	if activity.Fee > 0 && input.MembershipType == 0 {
 		zlog.Error("Ordinary user attempts to sign up for a paid activity", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
