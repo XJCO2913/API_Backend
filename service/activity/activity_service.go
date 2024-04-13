@@ -317,7 +317,7 @@ func (s *ActivityService) Feed(ctx context.Context) (*sdto.ActivityFeedOutput, *
 }
 
 func (s *ActivityService) SignUpByIDs(ctx context.Context, input *sdto.SignUpActivityInput) *errorx.ServiceErr {
-	_, err := dao.GetActivityByID(ctx, input.ActivityID)
+	activity, err := dao.GetActivityByID(ctx, input.ActivityID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			zlog.Warn("Activity not found", zap.String("activityID", input.ActivityID))
@@ -328,10 +328,21 @@ func (s *ActivityService) SignUpByIDs(ctx context.Context, input *sdto.SignUpAct
 		}
 	}
 
+	if activity.Fee > 0 {
+		zlog.Error("Ordinary user attempts to sign up for a paid activity", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "Ordinary user cannot sign up for paid activities", nil)
+	}
+
+	finalFee := calculateFinalFee(activity.Fee, input.MembershipTime)
+	if finalFee == -1 {
+		zlog.Error("Invalid membership type or failed to calculate fee", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
+		return errorx.NewInternalErr()
+	}
+
 	newUserActivity := &model.ActivityUser{
 		ActivityID: input.ActivityID,
 		UserID:     input.UserID,
-		FinalFee:   input.FinalFee,
+		FinalFee:   finalFee,
 	}
 	err = dao.CreateActivityUser(ctx, newUserActivity)
 	if err != nil {
@@ -340,4 +351,15 @@ func (s *ActivityService) SignUpByIDs(ctx context.Context, input *sdto.SignUpAct
 	}
 
 	return nil
+}
+
+func calculateFinalFee(baseFee int32, membershipType int64) int32 {
+	switch membershipType {
+	case 1:
+		return baseFee
+	case 2:
+		return int32(float32(baseFee) * 0.8)
+	default:
+		return -1
+	}
 }

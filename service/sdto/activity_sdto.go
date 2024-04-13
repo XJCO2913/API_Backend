@@ -60,7 +60,7 @@ type ActivityFeedOutput struct {
 }
 
 type SignUpActivityInput struct {
-	UserID     string
-	ActivityID string
-	FinalFee   int32
+	UserID         string
+	ActivityID     string
+	MembershipTime int64
 }
