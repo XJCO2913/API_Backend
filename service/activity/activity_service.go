@@ -316,7 +316,7 @@ func (s *ActivityService) Feed(ctx context.Context) (*sdto.ActivityFeedOutput, *
 	}, nil
 }
 
-func (s *ActivityService) SignUpByIDs(ctx context.Context, input *sdto.SignUpActivityInput) *errorx.ServiceErr {
+func (s *ActivityService) SignUpByActivityID(ctx context.Context, input *sdto.SignUpActivityInput) *errorx.ServiceErr {
 	activity, err := dao.GetActivityByID(ctx, input.ActivityID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {

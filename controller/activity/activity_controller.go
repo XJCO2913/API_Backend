@@ -306,3 +306,45 @@ func (a *ActivityController) DeleteByID(c *gin.Context) {
 		StatusMsg:  "Delete activity(ies) successfully",
 	})
 }
+
+func (a *ActivityController) SignUpByActivityID(c *gin.Context) {
+	activityID := c.Query("activityID")
+
+	userID, userIDExists := c.Get("userID")
+	if !userIDExists {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "User ID does not exist",
+		})
+		return
+	}
+
+	membershipType, membershipTypeExists := c.Get("membershipType")
+	if !membershipTypeExists {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Membership type does not exist",
+		})
+		return
+	}
+
+	input := &sdto.SignUpActivityInput{
+		UserID:         userID.(string),
+		ActivityID:     activityID,
+		MembershipTime: membershipType.(int64),
+	}
+
+	serviceErr := activity.Service().SignUpByActivityID(c.Request.Context(), input)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Sign up for the activity successfully",
+	})
+}
