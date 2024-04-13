@@ -62,3 +62,7 @@ type UploadAvatarInput struct {
 	UserId     string
 	AvatarData []byte
 }
+
+type RefreshTokenOutput struct {
+	NewToken string
+}
