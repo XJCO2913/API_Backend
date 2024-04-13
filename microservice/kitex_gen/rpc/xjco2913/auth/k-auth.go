@@ -12,7 +12,7 @@ import (
 
 	"github.com/cloudwego/kitex/pkg/protocol/bthrift"
 
-	"rpc.xjco2913/kitex_gen/rpc/xjco2913/base"
+	"api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/base"
 )
 
 // unused protection

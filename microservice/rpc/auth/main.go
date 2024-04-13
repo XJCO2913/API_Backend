@@ -1,7 +1,7 @@
 package main
 
 import (
-	auth "rpc.xjco2913/kitex_gen/rpc/xjco2913/auth/loginservice"
+	auth "api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth/loginservice"
 	"log"
 )
 

@@ -3,10 +3,10 @@
 package auth
 
 import (
+	"api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/base"
 	"context"
 	"fmt"
 	"github.com/apache/thrift/lib/go/thrift"
-	"rpc.xjco2913/kitex_gen/rpc/xjco2913/base"
 	"strings"
 )
 

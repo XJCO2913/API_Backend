@@ -2,8 +2,8 @@
 package loginservice
 
 import (
+	auth "api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth"
 	server "github.com/cloudwego/kitex/server"
-	auth "rpc.xjco2913/kitex_gen/rpc/xjco2913/auth"
 )
 
 // NewServer creates a server.Server with the given handler and options.

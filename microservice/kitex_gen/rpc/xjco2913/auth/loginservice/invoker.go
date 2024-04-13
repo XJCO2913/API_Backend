@@ -3,8 +3,8 @@
 package loginservice
 
 import (
+	auth "api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth"
 	server "github.com/cloudwego/kitex/server"
-	auth "rpc.xjco2913/kitex_gen/rpc/xjco2913/auth"
 )
 
 // NewInvoker creates a server.Invoker with the given handler and options.

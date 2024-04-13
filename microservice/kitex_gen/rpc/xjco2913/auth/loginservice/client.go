@@ -3,10 +3,10 @@
 package loginservice
 
 import (
+	auth "api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth"
 	"context"
 	client "github.com/cloudwego/kitex/client"
 	callopt "github.com/cloudwego/kitex/client/callopt"
-	auth "rpc.xjco2913/kitex_gen/rpc/xjco2913/auth"
 )
 
 // Client is designed to provide IDL-compatible methods with call-option parameter for kitex framework.

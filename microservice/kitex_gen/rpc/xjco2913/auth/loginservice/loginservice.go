@@ -3,11 +3,11 @@
 package loginservice
 
 import (
+	auth "api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth"
 	"context"
 	"errors"
 	client "github.com/cloudwego/kitex/client"
 	kitex "github.com/cloudwego/kitex/pkg/serviceinfo"
-	auth "rpc.xjco2913/kitex_gen/rpc/xjco2913/auth"
 )
 
 var errInvalidMessageType = errors.New("invalid message type for service method handler")
