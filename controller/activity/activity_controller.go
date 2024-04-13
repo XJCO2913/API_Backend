@@ -319,7 +319,7 @@ func (a *ActivityController) SignUpByActivityID(c *gin.Context) {
 		return
 	}
 
-	membershipType, membershipTypeExists := c.Get("membershipType")
+	membershipTypeValue, membershipTypeExists := c.Get("membershipType")
 	if !membershipTypeExists {
 		c.JSON(403, dto.CommonRes{
 			StatusCode: -1,
@@ -328,10 +328,20 @@ func (a *ActivityController) SignUpByActivityID(c *gin.Context) {
 		return
 	}
 
+	membershipFloat, convertSuccess := membershipTypeValue.(float64)
+	if !convertSuccess {
+		c.JSON(500, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Failed to convert MembershipType",
+		})
+		return
+	}
+	membershipType := int64(membershipFloat)
+
 	input := &sdto.SignUpActivityInput{
 		UserID:         userID.(string),
 		ActivityID:     activityID,
-		MembershipTime: membershipType.(int64),
+		MembershipType: membershipType,
 	}
 
 	serviceErr := activity.Service().SignUpByActivityID(c.Request.Context(), input)

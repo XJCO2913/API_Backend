@@ -3,6 +3,7 @@ package activity
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 
@@ -328,12 +329,14 @@ func (s *ActivityService) SignUpByActivityID(ctx context.Context, input *sdto.Si
 		}
 	}
 
-	if activity.Fee > 0 {
+	fmt.Printf("MembershipType: %d\n", input.MembershipType)
+
+	if activity.Fee > 0 && input.MembershipType == 0 {
 		zlog.Error("Ordinary user attempts to sign up for a paid activity", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
 		return errorx.NewServicerErr(errorx.ErrExternal, "Ordinary user cannot sign up for paid activities", nil)
 	}
 
-	finalFee := calculateFinalFee(activity.Fee, input.MembershipTime)
+	finalFee := calculateFinalFee(activity.Fee, input.MembershipType)
 	if finalFee == -1 {
 		zlog.Error("Invalid membership type or failed to calculate fee", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
 		return errorx.NewInternalErr()

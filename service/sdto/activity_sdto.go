@@ -62,5 +62,5 @@ type ActivityFeedOutput struct {
 type SignUpActivityInput struct {
 	UserID         string
 	ActivityID     string
-	MembershipTime int64
+	MembershipType int64
 }
