@@ -13,6 +13,7 @@ type CreateActivityInput struct {
 	EndDate     time.Time
 	Tags        string
 	Level       string
+	CreatorID   string
 }
 
 type GetAllActivityOutput struct {
@@ -28,6 +29,7 @@ type GetAllActivityOutput struct {
 	OriginalFee int32
 	FinalFee    int32
 	CreatedAt   string
+	CreatorID   string
 }
 
 type GetActivityByIDOutput struct {
@@ -43,6 +45,7 @@ type GetActivityByIDOutput struct {
 	OriginalFee int32
 	FinalFee    int32
 	CreatedAt   string
+	CreatorID   string
 }
 
 type ActivityFeed struct {

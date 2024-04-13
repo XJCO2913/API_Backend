@@ -114,6 +114,7 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		Tags:        &joinedTags,
 		NumberLimit: numberLimit,
 		Fee:         finalFee,
+		CreatorID:   in.CreatorID,
 	})
 	if err != nil {
 		zlog.Error("Error while create activity: "+err.Error(), zap.String("name", in.Name))
@@ -197,6 +198,7 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 			OriginalFee: originalFee,
 			FinalFee:    finalFee,
 			CreatedAt:   createdAtStr,
+			CreatorID:   activity.CreatorID,
 		}
 	}
 
@@ -247,6 +249,7 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 		OriginalFee: originalFee,
 		FinalFee:    finalFee,
 		CreatedAt:   createdAtStr,
+		CreatorID:   activity.CreatorID,
 	}
 
 	return output, nil

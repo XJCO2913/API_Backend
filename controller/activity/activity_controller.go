@@ -17,8 +17,10 @@ func NewActivityController() *ActivityController {
 }
 
 func (a *ActivityController) Create(c *gin.Context) {
-	isOrganiser, exists := c.Get("isOrganiser")
-	if !exists || !isOrganiser.(bool) {
+	isOrganiser, isOrganiserExists := c.Get("isOrganiser")
+	userID, userIDExists := c.Get("userID")
+
+	if !isOrganiserExists || !userIDExists || !isOrganiser.(bool) {
 		c.JSON(403, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Forbidden: Only organisers can access this resource",
@@ -99,6 +101,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 		EndDate:     endDate,
 		Tags:        req.Tags,
 		Level:       req.Level,
+		CreatorID:   userID.(string),
 	}
 
 	err := activity.Service().Create(c.Request.Context(), input)
@@ -171,6 +174,7 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 			"originalFee": activity.OriginalFee,
 			"finalFee":    finalFee,
 			"createdAt":   activity.CreatedAt,
+			"creatorID":   activity.CreatorID,
 		}
 	}
 
@@ -211,7 +215,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		if !convertSuccess {
 			c.JSON(500, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  "Fail to convert MembershipType",
+				StatusMsg:  "Failed to convert MembershipType",
 			})
 			return
 		}
@@ -236,6 +240,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		"originalFee": activity.OriginalFee,
 		"finalFee":    finalFee,
 		"createdAt":   activity.CreatedAt,
+		"creatorID":   activity.CreatorID,
 	}
 
 	c.JSON(200, dto.CommonRes{
@@ -257,7 +262,7 @@ func (a *ActivityController) Feed(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg:  "activity feed successfully",
+		StatusMsg:  "Feed activity successfully",
 		Data:       activities,
 	})
 }
