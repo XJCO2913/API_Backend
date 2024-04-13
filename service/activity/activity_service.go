@@ -288,7 +288,7 @@ func (s *ActivityService) DeleteByID(ctx context.Context, activityIDs string) *e
 func (s *ActivityService) Feed(ctx context.Context) (*sdto.ActivityFeedOutput, *errorx.ServiceErr) {
 	activitiesModels, err := dao.GetActivityLimit(ctx, ACTIVITY_FEED_LIMIT)
 	if err != nil {
-		zlog.Error("error while feed activities", zap.Error(err))
+		zlog.Error("Error while feed activities", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -305,7 +305,7 @@ func (s *ActivityService) Feed(ctx context.Context) (*sdto.ActivityFeedOutput, *
 
 		coverUrl, err := minio.GetActivityCoverUrl(ctx, activity.CoverURL)
 		if err != nil {
-			zlog.Error("error while get activity cover url", zap.Error(err), zap.String("activityID", activity.ActivityID))
+			zlog.Error("Error while get activity cover url", zap.Error(err), zap.String("activityID", activity.ActivityID))
 			return nil, errorx.NewInternalErr()
 		}
 		activities[i].CoverUrl = coverUrl
@@ -314,4 +314,30 @@ func (s *ActivityService) Feed(ctx context.Context) (*sdto.ActivityFeedOutput, *
 	return &sdto.ActivityFeedOutput{
 		Activities: activities,
 	}, nil
+}
+
+func (s *ActivityService) SignUpByIDs(ctx context.Context, input *sdto.SignUpActivityInput) *errorx.ServiceErr {
+	_, err := dao.GetActivityByID(ctx, input.ActivityID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("Activity not found", zap.String("activityID", input.ActivityID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "Activity not found", nil)
+		} else {
+			zlog.Error("Failed to retrieve activity by ID", zap.String("activityID", input.ActivityID), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	newUserActivity := &model.ActivityUser{
+		ActivityID: input.ActivityID,
+		UserID:     input.UserID,
+		FinalFee:   input.FinalFee,
+	}
+	err = dao.CreateActivityUser(ctx, newUserActivity)
+	if err != nil {
+		zlog.Error("Failed to create activity-user association", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
 }
