@@ -689,7 +689,7 @@ func (s *UserService) RefreshToken(ctx context.Context, userID string) (*sdto.Re
 	user, err := dao.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errorx.NewServicerErr(400, "user not found", nil)
+			return nil, errorx.NewServicerErr(400, "User not found", nil)
 		}
 
 		zlog.Error("error while find user by userID", zap.Error(err), zap.String("userID", userID))
@@ -712,9 +712,9 @@ func (s *UserService) RefreshToken(ctx context.Context, userID string) (*sdto.Re
 	}
 
 	claims := jwt.MapClaims{
-		"userID":  user.UserID,
-		"isAdmin": false,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+		"userID":         user.UserID,
+		"isAdmin":        false,
+		"exp":            time.Now().Add(24 * time.Hour).Unix(),
 		"isOrganiser":    isOrganiser,
 		"membershipType": user.MembershipType,
 	}

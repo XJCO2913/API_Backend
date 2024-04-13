@@ -32,7 +32,7 @@ func VerifyToken() gin.HandlerFunc {
 		if util.IsEmpty(authHeader) {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  "authorization header is missing",
+				StatusMsg:  "Authorization header is missing",
 			})
 			return
 		}
@@ -41,7 +41,7 @@ func VerifyToken() gin.HandlerFunc {
 		if len(bearerToken) != 2 || bearerToken[0] != "Bearer" {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  "authorization header format must br Bearer {token}",
+				StatusMsg:  "Authorization header format must br Bearer {token}",
 			})
 			return
 		}
@@ -79,7 +79,7 @@ func VerifyToken() gin.HandlerFunc {
 		if !ok {
 			ctx.AbortWithStatusJSON(http.StatusUnauthorized, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  "error while get jwt claims",
+				StatusMsg:  "Error while get jwt claims",
 			})
 			return
 		}

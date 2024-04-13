@@ -2,6 +2,7 @@ package activity
 
 import (
 	"context"
+	"errors"
 	"strconv"
 	"strings"
 
@@ -114,6 +115,7 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		Tags:        &joinedTags,
 		NumberLimit: numberLimit,
 		Fee:         finalFee,
+		CreatorID:   in.CreatorID,
 	})
 	if err != nil {
 		zlog.Error("Error while create activity: "+err.Error(), zap.String("name", in.Name))
@@ -197,6 +199,7 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 			OriginalFee: originalFee,
 			FinalFee:    finalFee,
 			CreatedAt:   createdAtStr,
+			CreatorID:   activity.CreatorID,
 		}
 	}
 
@@ -206,8 +209,13 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto.GetActivityByIDOutput, *errorx.ServiceErr) {
 	activity, err := dao.GetActivityByID(ctx, activityID)
 	if err != nil {
-		zlog.Error("Failed to retrieve activity by ID", zap.String("activityID", activityID), zap.Error(err))
-		return nil, errorx.NewInternalErr()
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("Activity not found", zap.String("activityID", activityID))
+			return nil, errorx.NewServicerErr(errorx.ErrExternal, "Activity not found", nil)
+		} else {
+			zlog.Error("Failed to retrieve activity by ID", zap.String("activityID", activityID), zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
 	}
 
 	var description, tags string
@@ -247,9 +255,34 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 		OriginalFee: originalFee,
 		FinalFee:    finalFee,
 		CreatedAt:   createdAtStr,
+		CreatorID:   activity.CreatorID,
 	}
 
 	return output, nil
+}
+
+func (s *ActivityService) DeleteByID(ctx context.Context, activityIDs string) *errorx.ServiceErr {
+	ids := strings.Split(activityIDs, "|")
+	deletedIDs, notFoundIDs, err := dao.DeleteActivitiesByID(ctx, activityIDs)
+
+	if err != nil {
+		zlog.Error("Failed to delete activities", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	// All specified activities were not found
+	if len(notFoundIDs) == len(ids) {
+		zlog.Warn("All specified activities not found", zap.Strings("not_found_ids", notFoundIDs))
+		return errorx.NewServicerErr(errorx.ErrExternal, "All specified activities not found", map[string]any{"not_found_ids": notFoundIDs})
+	}
+
+	zlog.Info("Specified activities deleted", zap.Strings("deleted_activity_ids", deletedIDs))
+	// Part of specified activities were not found
+	if len(notFoundIDs) > 0 {
+		zlog.Warn("Some specified activities not found", zap.Strings("not_found_ids", notFoundIDs))
+	}
+
+	return nil
 }
 
 func (s *ActivityService) Feed(ctx context.Context) (*sdto.ActivityFeedOutput, *errorx.ServiceErr) {
