@@ -120,6 +120,7 @@ func NewRouter() *gin.Engine {
 			activity.GET("/all", activityController.GetAll)
 			activity.GET("/feed", activityController.Feed)
 			activity.DELETE("", activityController.DeleteByID)
+			activity.POST("/signup", activityController.SignUpByActivityID)
 		}
 	}
 
