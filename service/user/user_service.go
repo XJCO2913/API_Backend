@@ -583,24 +583,15 @@ func (s *UserService) Subscribe(ctx context.Context, userID string, membershipTy
 		}
 	}
 
-	if user.IsSubscribed == 1 {
+	if user.MembershipType != 0 {
 		zlog.Warn("User has already subscribed", zap.String("userID", userID))
 		return errorx.NewServicerErr(errorx.ErrExternal, "User has already subscribed", nil)
 	}
 
-	var newExpiration int64
-	// If a user has refused to renew, but wants to resubscribe, and membership has not expired
-	if user.MembershipType != 0 {
-		// Extend from expiry date
-		newExpiration = user.MembershipTime + 30*24*60*60
-	} else {
-		// New users subscribe to membership
-		newExpiration = time.Now().Unix() + 30*24*60*60
-	}
+	newExpiration := time.Now().Unix() + 30*24*60*60
 
 	updates := map[string]interface{}{
 		"membershipTime": newExpiration,
-		"isSubscribed":   1,
 		"membershipType": membershipType,
 	}
 
@@ -625,14 +616,23 @@ func (s *UserService) CancelByID(ctx context.Context, userID string) *errorx.Ser
 		}
 	}
 
-	if user.IsSubscribed == 0 {
+	if user.MembershipType == 0 {
 		zlog.Warn("User has not subscribed", zap.String("userID", userID))
 		return errorx.NewServicerErr(errorx.ErrExternal, "User has not subscribed", nil)
 	}
 
+	// No-reason refund (7 days after subscription start date)
+	cancellationDeadline := user.MembershipTime - 23*24*60*60
+
+	// Check if the current time is before the cancellation deadline
+	if time.Now().Unix() > cancellationDeadline {
+		zlog.Warn("Cancellation period has expired", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "Cancellation period has expired", nil)
+	}
+
 	updates := map[string]interface{}{
-		// No renewal next month
-		"isSubscribed": 0,
+		"membershipType": 0,
+		"membershipTime": 0,
 	}
 
 	err = dao.UpdateUserByID(ctx, userID, updates)
