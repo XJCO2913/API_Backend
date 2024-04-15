@@ -330,12 +330,18 @@ func (s *ActivityService) SignUpByActivityID(ctx context.Context, input *sdto.Si
 		}
 	}
 
+	_, err = dao.FindActivityUserByIDs(ctx, input.ActivityID, input.UserID)
+	if err == nil {
+		zlog.Error("User already signed up for this activity", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "User already signed up for this activity", nil)
+	}
+
 	if activity.Fee > 0 && input.MembershipType == 0 {
 		zlog.Error("Ordinary user attempts to sign up for a paid activity", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
 		return errorx.NewServicerErr(errorx.ErrExternal, "Ordinary user cannot sign up for paid activities", nil)
 	}
 
-	finalFee := calculateFinalFee(activity.Fee, input.MembershipType)
+	finalFee := CalculateFinalFee(activity.Fee, input.MembershipType)
 	if finalFee == -1 {
 		zlog.Error("Invalid membership type or failed to calculate fee", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
 		return errorx.NewInternalErr()
@@ -355,7 +361,7 @@ func (s *ActivityService) SignUpByActivityID(ctx context.Context, input *sdto.Si
 	return nil
 }
 
-func calculateFinalFee(baseFee int32, membershipType int64) int32 {
+func CalculateFinalFee(baseFee int32, membershipType int64) int32 {
 	switch membershipType {
 	case 1:
 		return baseFee
