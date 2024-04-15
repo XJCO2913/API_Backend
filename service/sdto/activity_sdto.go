@@ -64,3 +64,7 @@ type SignUpActivityInput struct {
 	ActivityID     string
 	MembershipType int64
 }
+
+type GetActivitiesByUserIDOutput struct {
+	Activities []*GetActivityByIDOutput
+}
