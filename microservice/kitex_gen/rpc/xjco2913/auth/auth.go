@@ -246,6 +246,10 @@ func (p *LoginReq) Field2DeepEqual(src string) bool {
 
 type LoginResp struct {
 	Token    string         `thrift:"token,1" frugal:"1,default,string" json:"token"`
+	Username string         `thrift:"username,2" frugal:"2,default,string" json:"username"`
+	Gender   string         `thrift:"gender,3" frugal:"3,default,string" json:"gender"`
+	Birthday string         `thrift:"birthday,4" frugal:"4,default,string" json:"birthday"`
+	Region   string         `thrift:"region,5" frugal:"5,default,string" json:"region"`
 	BaseResp *base.BaseResp `thrift:"baseResp,255" frugal:"255,default,base.BaseResp" json:"baseResp"`
 }
 
@@ -261,6 +265,22 @@ func (p *LoginResp) GetToken() (v string) {
 	return p.Token
 }
 
+func (p *LoginResp) GetUsername() (v string) {
+	return p.Username
+}
+
+func (p *LoginResp) GetGender() (v string) {
+	return p.Gender
+}
+
+func (p *LoginResp) GetBirthday() (v string) {
+	return p.Birthday
+}
+
+func (p *LoginResp) GetRegion() (v string) {
+	return p.Region
+}
+
 var LoginResp_BaseResp_DEFAULT *base.BaseResp
 
 func (p *LoginResp) GetBaseResp() (v *base.BaseResp) {
@@ -272,12 +292,28 @@ func (p *LoginResp) GetBaseResp() (v *base.BaseResp) {
 func (p *LoginResp) SetToken(val string) {
 	p.Token = val
 }
+func (p *LoginResp) SetUsername(val string) {
+	p.Username = val
+}
+func (p *LoginResp) SetGender(val string) {
+	p.Gender = val
+}
+func (p *LoginResp) SetBirthday(val string) {
+	p.Birthday = val
+}
+func (p *LoginResp) SetRegion(val string) {
+	p.Region = val
+}
 func (p *LoginResp) SetBaseResp(val *base.BaseResp) {
 	p.BaseResp = val
 }
 
 var fieldIDToName_LoginResp = map[int16]string{
 	1:   "token",
+	2:   "username",
+	3:   "gender",
+	4:   "birthday",
+	5:   "region",
 	255: "baseResp",
 }
 
@@ -307,6 +343,38 @@ func (p *LoginResp) Read(iprot thrift.TProtocol) (err error) {
 		case 1:
 			if fieldTypeId == thrift.STRING {
 				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		case 2:
+			if fieldTypeId == thrift.STRING {
+				if err = p.ReadField2(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		case 3:
+			if fieldTypeId == thrift.STRING {
+				if err = p.ReadField3(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		case 4:
+			if fieldTypeId == thrift.STRING {
+				if err = p.ReadField4(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		case 5:
+			if fieldTypeId == thrift.STRING {
+				if err = p.ReadField5(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else if err = iprot.Skip(fieldTypeId); err != nil {
@@ -358,6 +426,42 @@ func (p *LoginResp) ReadField1(iprot thrift.TProtocol) error {
 	}
 	return nil
 }
+func (p *LoginResp) ReadField2(iprot thrift.TProtocol) error {
+
+	if v, err := iprot.ReadString(); err != nil {
+		return err
+	} else {
+		p.Username = v
+	}
+	return nil
+}
+func (p *LoginResp) ReadField3(iprot thrift.TProtocol) error {
+
+	if v, err := iprot.ReadString(); err != nil {
+		return err
+	} else {
+		p.Gender = v
+	}
+	return nil
+}
+func (p *LoginResp) ReadField4(iprot thrift.TProtocol) error {
+
+	if v, err := iprot.ReadString(); err != nil {
+		return err
+	} else {
+		p.Birthday = v
+	}
+	return nil
+}
+func (p *LoginResp) ReadField5(iprot thrift.TProtocol) error {
+
+	if v, err := iprot.ReadString(); err != nil {
+		return err
+	} else {
+		p.Region = v
+	}
+	return nil
+}
 func (p *LoginResp) ReadField255(iprot thrift.TProtocol) error {
 	p.BaseResp = base.NewBaseResp()
 	if err := p.BaseResp.Read(iprot); err != nil {
@@ -374,6 +478,22 @@ func (p *LoginResp) Write(oprot thrift.TProtocol) (err error) {
 	if p != nil {
 		if err = p.writeField1(oprot); err != nil {
 			fieldId = 1
+			goto WriteFieldError
+		}
+		if err = p.writeField2(oprot); err != nil {
+			fieldId = 2
+			goto WriteFieldError
+		}
+		if err = p.writeField3(oprot); err != nil {
+			fieldId = 3
+			goto WriteFieldError
+		}
+		if err = p.writeField4(oprot); err != nil {
+			fieldId = 4
+			goto WriteFieldError
+		}
+		if err = p.writeField5(oprot); err != nil {
+			fieldId = 5
 			goto WriteFieldError
 		}
 		if err = p.writeField255(oprot); err != nil {
@@ -415,6 +535,74 @@ WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
 }
 
+func (p *LoginResp) writeField2(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("username", thrift.STRING, 2); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteString(p.Username); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 2 end error: ", p), err)
+}
+
+func (p *LoginResp) writeField3(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("gender", thrift.STRING, 3); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteString(p.Gender); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 3 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 3 end error: ", p), err)
+}
+
+func (p *LoginResp) writeField4(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("birthday", thrift.STRING, 4); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteString(p.Birthday); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 4 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 4 end error: ", p), err)
+}
+
+func (p *LoginResp) writeField5(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("region", thrift.STRING, 5); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteString(p.Region); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 5 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 5 end error: ", p), err)
+}
+
 func (p *LoginResp) writeField255(oprot thrift.TProtocol) (err error) {
 	if err = oprot.WriteFieldBegin("baseResp", thrift.STRUCT, 255); err != nil {
 		goto WriteFieldBeginError
@@ -449,6 +637,18 @@ func (p *LoginResp) DeepEqual(ano *LoginResp) bool {
 	if !p.Field1DeepEqual(ano.Token) {
 		return false
 	}
+	if !p.Field2DeepEqual(ano.Username) {
+		return false
+	}
+	if !p.Field3DeepEqual(ano.Gender) {
+		return false
+	}
+	if !p.Field4DeepEqual(ano.Birthday) {
+		return false
+	}
+	if !p.Field5DeepEqual(ano.Region) {
+		return false
+	}
 	if !p.Field255DeepEqual(ano.BaseResp) {
 		return false
 	}
@@ -458,6 +658,34 @@ func (p *LoginResp) DeepEqual(ano *LoginResp) bool {
 func (p *LoginResp) Field1DeepEqual(src string) bool {
 
 	if strings.Compare(p.Token, src) != 0 {
+		return false
+	}
+	return true
+}
+func (p *LoginResp) Field2DeepEqual(src string) bool {
+
+	if strings.Compare(p.Username, src) != 0 {
+		return false
+	}
+	return true
+}
+func (p *LoginResp) Field3DeepEqual(src string) bool {
+
+	if strings.Compare(p.Gender, src) != 0 {
+		return false
+	}
+	return true
+}
+func (p *LoginResp) Field4DeepEqual(src string) bool {
+
+	if strings.Compare(p.Birthday, src) != 0 {
+		return false
+	}
+	return true
+}
+func (p *LoginResp) Field5DeepEqual(src string) bool {
+
+	if strings.Compare(p.Region, src) != 0 {
 		return false
 	}
 	return true

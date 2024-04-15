@@ -2,21 +2,28 @@ package user
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"strconv"
-	"time"
 
 	"api.backend.xjco2913/controller/dto"
+	"api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth"
+	"api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth/loginservice"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/user"
+	"github.com/cloudwego/kitex/client"
 	"github.com/gin-gonic/gin"
 )
 
-type UserController struct{}
+type UserController struct{
+	authCli loginservice.Client
+}
 
 func NewUserController() *UserController {
-	return &UserController{}
+	return &UserController{
+		authCli: loginservice.MustNewClient("rpc.xjco2913.auth", client.WithHostPorts("0.0.0.0:8888")),
+	}
 }
 
 func (u *UserController) SignUp(c *gin.Context) {
@@ -77,19 +84,19 @@ func (u *UserController) Login(c *gin.Context) {
 		return
 	}
 
-	out, err := user.Service().Authenticate(c.Request.Context(), &sdto.AuthenticateInput{
+	out, err := u.authCli.Login(context.Background(), &auth.LoginReq{
 		Username: req.Username,
 		Password: req.Password,
 	})
 	if err != nil {
 		data := gin.H{
-			"remaining_attempts": err.Get("remaining_attempts"),
+			"remaining_attempts": out.BaseResp.Data["remaining_attempts"],
 		}
-		if t, ok := err.Get("lock_expires").(time.Time); ok {
-			data["lock_expires"] = t.Unix()
+		if lockTimestamp, ok := out.BaseResp.Data["lock_expires"]; ok {
+			data["lock_expires"] = lockTimestamp
 		}
 
-		c.JSON(err.Code(), dto.CommonRes{
+		c.JSON(int(out.BaseResp.Code), dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  err.Error(),
 			Data:       data,
@@ -103,7 +110,7 @@ func (u *UserController) Login(c *gin.Context) {
 		Data: gin.H{
 			"token": out.Token,
 			"userInfo": gin.H{
-				"username": req.Username,
+				"username": out.Username,
 				"gender":   out.Gender,
 				"birthday": out.Birthday,
 				"region":   out.Region,
