@@ -33,19 +33,19 @@ type GetAllActivityOutput struct {
 }
 
 type GetActivityByIDOutput struct {
-	ActivityID  string
-	Name        string
-	Description string
-	RouteID     int32
-	CoverURL    string
-	StartDate   string
-	EndDate     string
-	Tags        string
-	NumberLimit int32
-	OriginalFee int32
-	FinalFee    int32
-	CreatedAt   string
-	CreatorID   string
+	ActivityID        string
+	Name              string
+	Description       string
+	RouteID           int32
+	CoverURL          string
+	StartDate         string
+	EndDate           string
+	Tags              string
+	NumberLimit       int32
+	OriginalFee       int32
+	CreatedAt         string
+	CreatorID         string
+	ParticipantsCount int32
 }
 
 type ActivityFeed struct {

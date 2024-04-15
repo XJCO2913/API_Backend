@@ -229,18 +229,19 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 	finalFee = finalFee * discount / 10
 
 	responseData := gin.H{
-		"activityId":  activity.ActivityID,
-		"name":        activity.Name,
-		"description": activity.Description,
-		"coverUrl":    activity.CoverURL,
-		"startDate":   activity.StartDate,
-		"endDate":     activity.EndDate,
-		"tags":        activity.Tags,
-		"numberLimit": activity.NumberLimit,
-		"originalFee": activity.OriginalFee,
-		"finalFee":    finalFee,
-		"createdAt":   activity.CreatedAt,
-		"creatorID":   activity.CreatorID,
+		"activityId":        activity.ActivityID,
+		"name":              activity.Name,
+		"description":       activity.Description,
+		"coverUrl":          activity.CoverURL,
+		"startDate":         activity.StartDate,
+		"endDate":           activity.EndDate,
+		"tags":              activity.Tags,
+		"numberLimit":       activity.NumberLimit,
+		"originalFee":       activity.OriginalFee,
+		"finalFee":          finalFee,
+		"createdAt":         activity.CreatedAt,
+		"creatorID":         activity.CreatorID,
+		"participantsCount": activity.ParticipantsCount,
 	}
 
 	c.JSON(200, dto.CommonRes{
@@ -394,7 +395,6 @@ func (a *ActivityController) GetByUserID(c *gin.Context) {
 			"tags":        activity.Tags,
 			"numberLimit": activity.NumberLimit,
 			"originalFee": activity.OriginalFee,
-			"finalFee":    activity.FinalFee,
 			"createdAt":   activity.CreatedAt,
 			"creatorID":   activity.CreatorID,
 		})

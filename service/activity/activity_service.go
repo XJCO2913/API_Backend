@@ -242,22 +242,25 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 		createdAtStr = activity.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
 	}
 
-	originalFee := activity.Fee
-	finalFee := originalFee
+	participantsCount, err := dao.CountParticipantsByActivityID(ctx, activity.ActivityID)
+	if err != nil {
+		zlog.Error("Failed to count participants for the activity", zap.String("activityID", activity.ActivityID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
 
 	output := &sdto.GetActivityByIDOutput{
-		ActivityID:  activity.ActivityID,
-		Name:        activity.Name,
-		Description: description,
-		CoverURL:    coverURL,
-		StartDate:   activity.StartDate.Format("2006-01-02"),
-		EndDate:     activity.EndDate.Format("2006-01-02"),
-		Tags:        tags,
-		NumberLimit: activity.NumberLimit,
-		OriginalFee: originalFee,
-		FinalFee:    finalFee,
-		CreatedAt:   createdAtStr,
-		CreatorID:   activity.CreatorID,
+		ActivityID:        activity.ActivityID,
+		Name:              activity.Name,
+		Description:       description,
+		CoverURL:          coverURL,
+		StartDate:         activity.StartDate.Format("2006-01-02"),
+		EndDate:           activity.EndDate.Format("2006-01-02"),
+		Tags:              tags,
+		NumberLimit:       activity.NumberLimit,
+		OriginalFee:       activity.Fee,
+		CreatedAt:         createdAtStr,
+		CreatorID:         activity.CreatorID,
+		ParticipantsCount: int32(participantsCount),
 	}
 
 	return output, nil
@@ -422,7 +425,6 @@ func (s *ActivityService) GetByUserID(ctx context.Context, userID string) (*sdto
 			Tags:        tags,
 			NumberLimit: activity.NumberLimit,
 			OriginalFee: activity.Fee,
-			FinalFee:    activity.Fee,
 			CreatedAt:   createdAtStr,
 			CreatorID:   activity.CreatorID,
 		})
