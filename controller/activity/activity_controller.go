@@ -17,8 +17,10 @@ func NewActivityController() *ActivityController {
 }
 
 func (a *ActivityController) Create(c *gin.Context) {
-	isOrganiser, exists := c.Get("isOrganiser")
-	if !exists || !isOrganiser.(bool) {
+	isOrganiser, isOrganiserExists := c.Get("isOrganiser")
+	userID, userIDExists := c.Get("userID")
+
+	if !isOrganiserExists || !userIDExists || !isOrganiser.(bool) {
 		c.JSON(403, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Forbidden: Only organisers can access this resource",
@@ -99,6 +101,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 		EndDate:     endDate,
 		Tags:        req.Tags,
 		Level:       req.Level,
+		CreatorID:   userID.(string),
 	}
 
 	err := activity.Service().Create(c.Request.Context(), input)
@@ -171,6 +174,7 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 			"originalFee": activity.OriginalFee,
 			"finalFee":    finalFee,
 			"createdAt":   activity.CreatedAt,
+			"creatorID":   activity.CreatorID,
 		}
 	}
 
@@ -211,7 +215,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		if !convertSuccess {
 			c.JSON(500, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  "Fail to convert MembershipType",
+				StatusMsg:  "Failed to convert MembershipType",
 			})
 			return
 		}
@@ -236,6 +240,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		"originalFee": activity.OriginalFee,
 		"finalFee":    finalFee,
 		"createdAt":   activity.CreatedAt,
+		"creatorID":   activity.CreatorID,
 	}
 
 	c.JSON(200, dto.CommonRes{
@@ -257,7 +262,99 @@ func (a *ActivityController) Feed(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg:  "activity feed successfully",
+		StatusMsg:  "Feed activity successfully",
 		Data:       activities,
+	})
+}
+
+func (a *ActivityController) DeleteByID(c *gin.Context) {
+	activityID := c.Query("activityID")
+
+	isAdmin, isAdminExists := c.Get("isAdmin")
+	if !isAdminExists || !isAdmin.(bool) {
+		// Non-admins must be the creator to delete the activity
+		activityDetail, serviceErr := activity.Service().GetByID(c.Request.Context(), activityID)
+		if serviceErr != nil {
+			c.JSON(serviceErr.Code(), dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  serviceErr.Error(),
+			})
+			return
+		}
+
+		userID, userIDExists := c.Get("userID")
+		if !userIDExists || activityDetail.CreatorID != userID.(string) {
+			c.JSON(403, dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  "Forbidden: You are not the creator of this activity",
+			})
+			return
+		}
+	}
+
+	serviceErr := activity.Service().DeleteByID(c.Request.Context(), activityID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Delete activity(ies) successfully",
+	})
+}
+
+func (a *ActivityController) SignUpByActivityID(c *gin.Context) {
+	activityID := c.Query("activityID")
+
+	userID, userIDExists := c.Get("userID")
+	if !userIDExists {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "User ID does not exist",
+		})
+		return
+	}
+
+	membershipTypeValue, membershipTypeExists := c.Get("membershipType")
+	if !membershipTypeExists {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Membership type does not exist",
+		})
+		return
+	}
+
+	membershipFloat, convertSuccess := membershipTypeValue.(float64)
+	if !convertSuccess {
+		c.JSON(500, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Failed to convert MembershipType",
+		})
+		return
+	}
+	membershipType := int64(membershipFloat)
+
+	input := &sdto.SignUpActivityInput{
+		UserID:         userID.(string),
+		ActivityID:     activityID,
+		MembershipType: membershipType,
+	}
+
+	serviceErr := activity.Service().SignUpByActivityID(c.Request.Context(), input)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Sign up for the activity successfully",
 	})
 }

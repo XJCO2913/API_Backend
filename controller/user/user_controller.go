@@ -13,6 +13,7 @@ import (
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/user"
 	"github.com/cloudwego/kitex/client"
+	"api.backend.xjco2913/util"
 	"github.com/gin-gonic/gin"
 )
 
@@ -519,5 +520,32 @@ func (u *UserController) UploadAvatar(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Upload avatar successfully",
+	})
+}
+
+func (u *UserController) RefreshToken(c *gin.Context) {
+	userID := c.GetString("userID")
+	if util.IsEmpty(userID) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg: "missing userID in token",
+		})
+		return
+	}
+
+	res, sErr := user.Service().RefreshToken(c.Request.Context(), userID)
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg: sErr.Error(),
+		})
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg: "refresh token successfully",
+		Data: gin.H{
+			"newToken": res.NewToken,
+		},
 	})
 }

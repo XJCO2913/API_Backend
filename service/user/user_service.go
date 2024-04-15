@@ -684,3 +684,53 @@ func (s *UserService) UploadAvatar(ctx context.Context, in sdto.UploadAvatarInpu
 
 	return nil
 }
+
+func (s *UserService) RefreshToken(ctx context.Context, userID string) (*sdto.RefreshTokenOutput, *errorx.ServiceErr) {
+	user, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errorx.NewServicerErr(400, "User not found", nil)
+		}
+
+		zlog.Error("Error while find user by userID", zap.Error(err), zap.String("userID", userID))
+		return nil, errorx.NewInternalErr()
+	}
+
+	// delete cache
+	cacheKey := fmt.Sprintf("jwt:%v", user.Username)
+	err = redis.RDB().Del(ctx, cacheKey).Err()
+	if err != nil {
+		zlog.Error("Error while delete jwt cache", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	// generate new token
+	organiser, err := dao.GetOrganiserByID(ctx, user.UserID)
+	isOrganiser := false
+	if err == nil && organiser != nil {
+		isOrganiser = true
+	}
+
+	claims := jwt.MapClaims{
+		"userID":         user.UserID,
+		"isAdmin":        false,
+		"exp":            time.Now().Add(24 * time.Hour).Unix(),
+		"isOrganiser":    isOrganiser,
+		"membershipType": user.MembershipType,
+	}
+	newToken, err := util.GenerateJWTToken(claims)
+	if err != nil {
+		zlog.Error("Error while generate new jwt token", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	err = redis.RDB().Set(ctx, cacheKey, newToken, 24*time.Hour).Err()
+	if err != nil {
+		zlog.Error("Error while set jwt cache", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	return &sdto.RefreshTokenOutput{
+		NewToken: newToken,
+	}, nil
+}
