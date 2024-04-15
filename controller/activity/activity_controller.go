@@ -120,6 +120,29 @@ func (a *ActivityController) Create(c *gin.Context) {
 }
 
 func (a *ActivityController) GetAll(c *gin.Context) {
+	userID, userIDExists := c.Get("userID")
+	if !userIDExists {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "User ID is required",
+		})
+		return
+	}
+
+	userActivities, err := activity.Service().GetByUserID(c.Request.Context(), userID.(string))
+	if err != nil {
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
+	registeredActivities := make(map[string]bool)
+	for _, activity := range userActivities.Activities {
+		registeredActivities[activity.ActivityID] = true
+	}
+
 	activities, err := activity.Service().GetAll(c.Request.Context())
 	if err != nil {
 		c.JSON(err.Code(), dto.CommonRes{
@@ -162,6 +185,9 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 		finalFee := activity.OriginalFee
 		finalFee = finalFee * discount / 10
 
+		// Check if the current user has registered for the activities
+		isRegistered := registeredActivities[activity.ActivityID]
+
 		activityInfos[i] = gin.H{
 			"activityId":        activity.ActivityID,
 			"name":              activity.Name,
@@ -176,6 +202,7 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 			"createdAt":         activity.CreatedAt,
 			"creatorID":         activity.CreatorID,
 			"participantsCount": activity.ParticipantsCount,
+			"isRegistered":      isRegistered,
 		}
 	}
 
@@ -207,6 +234,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		return
 	}
 
+	// Check if the current user has registered for this activity
 	isRegistered := false
 	for _, userActivity := range userActivities.Activities {
 		if userActivity.ActivityID == activityID {
