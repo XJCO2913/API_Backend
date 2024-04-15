@@ -163,18 +163,19 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 		finalFee = finalFee * discount / 10
 
 		activityInfos[i] = gin.H{
-			"activityId":  activity.ActivityID,
-			"name":        activity.Name,
-			"description": activity.Description,
-			"coverUrl":    activity.CoverURL,
-			"startDate":   activity.StartDate,
-			"endDate":     activity.EndDate,
-			"tags":        activity.Tags,
-			"numberLimit": activity.NumberLimit,
-			"originalFee": activity.OriginalFee,
-			"finalFee":    finalFee,
-			"createdAt":   activity.CreatedAt,
-			"creatorID":   activity.CreatorID,
+			"activityId":        activity.ActivityID,
+			"name":              activity.Name,
+			"description":       activity.Description,
+			"coverUrl":          activity.CoverURL,
+			"startDate":         activity.StartDate,
+			"endDate":           activity.EndDate,
+			"tags":              activity.Tags,
+			"numberLimit":       activity.NumberLimit,
+			"originalFee":       activity.OriginalFee,
+			"finalFee":          finalFee,
+			"createdAt":         activity.CreatedAt,
+			"creatorID":         activity.CreatorID,
+			"participantsCount": activity.ParticipantsCount,
 		}
 	}
 
