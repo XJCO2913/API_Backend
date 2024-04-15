@@ -358,3 +358,51 @@ func (a *ActivityController) SignUpByActivityID(c *gin.Context) {
 		StatusMsg:  "Sign up for the activity successfully",
 	})
 }
+
+func (a *ActivityController) GetByUserID(c *gin.Context) {
+	userID := c.Query("userID")
+
+	currentUserID, currentUserExists := c.Get("userID")
+
+	// Check if the requested userID is the same as the current userID.
+	if !currentUserExists || userID != currentUserID.(string) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: You are not allowed to access other users' activities",
+		})
+		return
+	}
+
+	activities, serviceErr := activity.Service().GetByUserID(c.Request.Context(), userID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	var activitiesList []gin.H
+	for _, activity := range activities.Activities {
+		activitiesList = append(activitiesList, gin.H{
+			"activityId":  activity.ActivityID,
+			"name":        activity.Name,
+			"description": activity.Description,
+			"coverUrl":    activity.CoverURL,
+			"startDate":   activity.StartDate,
+			"endDate":     activity.EndDate,
+			"tags":        activity.Tags,
+			"numberLimit": activity.NumberLimit,
+			"originalFee": activity.OriginalFee,
+			"finalFee":    activity.FinalFee,
+			"createdAt":   activity.CreatedAt,
+			"creatorID":   activity.CreatorID,
+		})
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get activity(ies) successfully",
+		Data:       activitiesList,
+	})
+}
