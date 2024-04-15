@@ -94,11 +94,38 @@ func VerifyToken() gin.HandlerFunc {
 			return
 		}
 
-		// set userId into context
-		userID := claims["userID"]
-		isAdmin := claims["isAdmin"]
-		isOrganiser := claims["isOrganiser"]
-		membershipType := claims["membershipType"]
+		// register token payload into context
+		var (
+			userID         string
+			isAdmin        bool
+			isOrganiser    bool
+			membershipType float64
+		)
+
+		if val, ok := claims["userID"]; ok {
+			userID = val.(string)
+		} else {
+			userID = ""
+		}
+		
+		if val, ok := claims["isAdmin"]; ok {
+			isAdmin = val.(bool)
+		} else {
+			isAdmin = false
+		}
+
+		if val, ok := claims["isOrganiser"]; ok {
+			isOrganiser = val.(bool)
+		} else {
+			isOrganiser = false
+		}
+
+		if val, ok := claims["membershipType"]; ok {
+			membershipType = val.(float64)
+		} else {
+			membershipType = 0.0
+		}
+
 		ctx.Set("userID", userID)
 		ctx.Set("isAdmin", isAdmin)
 		ctx.Set("isOrganiser", isOrganiser)
