@@ -395,6 +395,7 @@ func (a *ActivityController) GetByUserID(c *gin.Context) {
 			"tags":        activity.Tags,
 			"numberLimit": activity.NumberLimit,
 			"originalFee": activity.OriginalFee,
+			"finalFee":    activity.FinalFee,
 			"createdAt":   activity.CreatedAt,
 			"creatorID":   activity.CreatorID,
 		})

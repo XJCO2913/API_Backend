@@ -388,10 +388,10 @@ func (s *ActivityService) GetByUserID(ctx context.Context, userID string) (*sdto
 	}
 
 	if len(activities) == 0 {
-		return &sdto.GetActivitiesByUserIDOutput{Activities: []*sdto.GetActivityByIDOutput{}}, nil
+		return &sdto.GetActivitiesByUserIDOutput{Activities: []*sdto.GetActivitiesByUserID{}}, nil
 	}
 
-	var activitiesOutput []*sdto.GetActivityByIDOutput
+	var activitiesOutput []*sdto.GetActivitiesByUserID
 	for _, activity := range activities {
 		var description, tags, coverURL, createdAtStr string
 		if activity.Description != nil {
@@ -415,7 +415,13 @@ func (s *ActivityService) GetByUserID(ctx context.Context, userID string) (*sdto
 			createdAtStr = activity.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
 		}
 
-		activitiesOutput = append(activitiesOutput, &sdto.GetActivityByIDOutput{
+		activityUser, err := dao.FindActivityUserByIDs(ctx, activity.ActivityID, userID)
+		if err != nil {
+			zlog.Error("Failed to find activity user association", zap.String("userID", userID), zap.String("activityID", activity.ActivityID), zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		activitiesOutput = append(activitiesOutput, &sdto.GetActivitiesByUserID{
 			ActivityID:  activity.ActivityID,
 			Name:        activity.Name,
 			Description: description,
@@ -425,6 +431,7 @@ func (s *ActivityService) GetByUserID(ctx context.Context, userID string) (*sdto
 			Tags:        tags,
 			NumberLimit: activity.NumberLimit,
 			OriginalFee: activity.Fee,
+			FinalFee:    activityUser.FinalFee,
 			CreatedAt:   createdAtStr,
 			CreatorID:   activity.CreatorID,
 		})

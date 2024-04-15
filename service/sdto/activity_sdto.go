@@ -65,6 +65,21 @@ type SignUpActivityInput struct {
 	MembershipType int64
 }
 
+type GetActivitiesByUserID struct {
+	ActivityID  string
+	Name        string
+	Description string
+	CoverURL    string
+	StartDate   string
+	EndDate     string
+	Tags        string
+	NumberLimit int32
+	OriginalFee int32
+	FinalFee    int32
+	CreatedAt   string
+	CreatorID   string
+}
+
 type GetActivitiesByUserIDOutput struct {
-	Activities []*GetActivityByIDOutput
+	Activities []*GetActivitiesByUserID
 }
