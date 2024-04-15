@@ -616,14 +616,23 @@ func (s *UserService) CancelByID(ctx context.Context, userID string) *errorx.Ser
 		}
 	}
 
-	if user.IsSubscribed == 0 {
+	if user.MembershipType == 0 {
 		zlog.Warn("User has not subscribed", zap.String("userID", userID))
 		return errorx.NewServicerErr(errorx.ErrExternal, "User has not subscribed", nil)
 	}
 
+	// No-reason refund (7 days after subscription start date)
+	cancellationDeadline := user.MembershipTime - 23*24*60*60
+
+	// Check if the current time is before the cancellation deadline
+	if time.Now().Unix() > cancellationDeadline {
+		zlog.Warn("Cancellation period has expired", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "Cancellation period has expired", nil)
+	}
+
 	updates := map[string]interface{}{
-		// No renewal next month
-		"isSubscribed": 0,
+		"membershipType": 0,
+		"membershipTime": 0,
 	}
 
 	err = dao.UpdateUserByID(ctx, userID, updates)
