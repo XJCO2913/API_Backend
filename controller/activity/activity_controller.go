@@ -189,6 +189,32 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 func (a *ActivityController) GetByID(c *gin.Context) {
 	activityID := c.Query("activityID")
 
+	userID, userIDExists := c.Get("userID")
+	if !userIDExists {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "User ID is required",
+		})
+		return
+	}
+
+	userActivities, serviceErr := activity.Service().GetByUserID(c.Request.Context(), userID.(string))
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	isRegistered := false
+	for _, userActivity := range userActivities.Activities {
+		if userActivity.ActivityID == activityID {
+			isRegistered = true
+			break
+		}
+	}
+
 	activity, serviceErr := activity.Service().GetByID(c.Request.Context(), activityID)
 	if serviceErr != nil {
 		c.JSON(serviceErr.Code(), dto.CommonRes{
@@ -243,6 +269,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		"createdAt":         activity.CreatedAt,
 		"creatorID":         activity.CreatorID,
 		"participantsCount": activity.ParticipantsCount,
+		"isRegistered":      isRegistered,
 	}
 
 	c.JSON(200, dto.CommonRes{
