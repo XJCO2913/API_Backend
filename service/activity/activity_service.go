@@ -288,7 +288,7 @@ func (s *ActivityService) DeleteByID(ctx context.Context, activityIDs string) *e
 func (s *ActivityService) Feed(ctx context.Context) (*sdto.ActivityFeedOutput, *errorx.ServiceErr) {
 	activitiesModels, err := dao.GetActivityLimit(ctx, ACTIVITY_FEED_LIMIT)
 	if err != nil {
-		zlog.Error("error while feed activities", zap.Error(err))
+		zlog.Error("Error while feed activities", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -305,7 +305,7 @@ func (s *ActivityService) Feed(ctx context.Context) (*sdto.ActivityFeedOutput, *
 
 		coverUrl, err := minio.GetActivityCoverUrl(ctx, activity.CoverURL)
 		if err != nil {
-			zlog.Error("error while get activity cover url", zap.Error(err), zap.String("activityID", activity.ActivityID))
+			zlog.Error("Error while get activity cover url", zap.Error(err), zap.String("activityID", activity.ActivityID))
 			return nil, errorx.NewInternalErr()
 		}
 		activities[i].CoverUrl = coverUrl
@@ -314,4 +314,52 @@ func (s *ActivityService) Feed(ctx context.Context) (*sdto.ActivityFeedOutput, *
 	return &sdto.ActivityFeedOutput{
 		Activities: activities,
 	}, nil
+}
+
+func (s *ActivityService) SignUpByActivityID(ctx context.Context, input *sdto.SignUpActivityInput) *errorx.ServiceErr {
+	activity, err := dao.GetActivityByID(ctx, input.ActivityID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("Activity not found", zap.String("activityID", input.ActivityID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "Activity not found", nil)
+		} else {
+			zlog.Error("Failed to retrieve activity by ID", zap.String("activityID", input.ActivityID), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	if activity.Fee > 0 && input.MembershipType == 0 {
+		zlog.Error("Ordinary user attempts to sign up for a paid activity", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "Ordinary user cannot sign up for paid activities", nil)
+	}
+
+	finalFee := calculateFinalFee(activity.Fee, input.MembershipType)
+	if finalFee == -1 {
+		zlog.Error("Invalid membership type or failed to calculate fee", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
+		return errorx.NewInternalErr()
+	}
+
+	newUserActivity := &model.ActivityUser{
+		ActivityID: input.ActivityID,
+		UserID:     input.UserID,
+		FinalFee:   finalFee,
+	}
+	err = dao.CreateActivityUser(ctx, newUserActivity)
+	if err != nil {
+		zlog.Error("Failed to create activity-user association", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
+}
+
+func calculateFinalFee(baseFee int32, membershipType int64) int32 {
+	switch membershipType {
+	case 1:
+		return baseFee
+	case 2:
+		return int32(float32(baseFee) * 0.8)
+	default:
+		return -1
+	}
 }

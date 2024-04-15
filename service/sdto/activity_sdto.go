@@ -58,3 +58,9 @@ type ActivityFeed struct {
 type ActivityFeedOutput struct {
 	Activities []*ActivityFeed
 }
+
+type SignUpActivityInput struct {
+	UserID         string
+	ActivityID     string
+	MembershipType int64
+}

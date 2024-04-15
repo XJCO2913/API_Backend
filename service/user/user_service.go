@@ -692,7 +692,7 @@ func (s *UserService) RefreshToken(ctx context.Context, userID string) (*sdto.Re
 			return nil, errorx.NewServicerErr(400, "User not found", nil)
 		}
 
-		zlog.Error("error while find user by userID", zap.Error(err), zap.String("userID", userID))
+		zlog.Error("Error while find user by userID", zap.Error(err), zap.String("userID", userID))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -700,7 +700,7 @@ func (s *UserService) RefreshToken(ctx context.Context, userID string) (*sdto.Re
 	cacheKey := fmt.Sprintf("jwt:%v", user.Username)
 	err = redis.RDB().Del(ctx, cacheKey).Err()
 	if err != nil {
-		zlog.Error("error while delete jwt cache", zap.Error(err))
+		zlog.Error("Error while delete jwt cache", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -720,13 +720,13 @@ func (s *UserService) RefreshToken(ctx context.Context, userID string) (*sdto.Re
 	}
 	newToken, err := util.GenerateJWTToken(claims)
 	if err != nil {
-		zlog.Error("error while generate new jwt token", zap.Error(err))
+		zlog.Error("Error while generate new jwt token", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
 	err = redis.RDB().Set(ctx, cacheKey, newToken, 24*time.Hour).Err()
 	if err != nil {
-		zlog.Error("error while set jwt cache", zap.Error(err))
+		zlog.Error("Error while set jwt cache", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
