@@ -16,6 +16,16 @@ func CreateActivityUser(ctx context.Context, newUserActivity *model.ActivityUser
 	return nil
 }
 
+func FindActivityUserByIDs(ctx context.Context, activityID, userID string) (*model.ActivityUser, error) {
+	a := query.Use(DB).ActivityUser
+	activityUser, err := a.WithContext(ctx).Where(a.ActivityID.Eq(activityID), a.UserID.Eq(userID)).First()
+	if err != nil {
+		return nil, err
+	}
+
+	return activityUser, nil
+}
+
 func GetActivitiesByUserID(ctx context.Context, userID string) ([]*model.Activity, error) {
 	var activityUsers []*model.ActivityUser
 	var activities []*model.Activity
