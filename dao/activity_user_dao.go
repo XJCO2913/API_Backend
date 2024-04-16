@@ -37,3 +37,14 @@ func CountParticipantsByActivityID(ctx context.Context, activityID string) (int6
 
 	return count, nil
 }
+
+func FindUsersByActivityID(ctx context.Context, activityID string) ([]*model.ActivityUser, error) {
+	a := query.Use(DB).ActivityUser
+
+	activityUsers, err := a.WithContext(ctx).Where(a.ActivityID.Eq(activityID)).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	return activityUsers, nil
+}
