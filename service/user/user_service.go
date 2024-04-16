@@ -615,7 +615,7 @@ func (s *UserService) CancelByID(ctx context.Context, userID string) *errorx.Ser
 	}
 
 	if user.MembershipType == 0 {
-		zlog.Warn("User has not subscribed", zap.String("userID", userID))
+		zlog.Error("User has not subscribed", zap.String("userID", userID))
 		return errorx.NewServicerErr(errorx.ErrExternal, "User has not subscribed", nil)
 	}
 
@@ -624,7 +624,7 @@ func (s *UserService) CancelByID(ctx context.Context, userID string) *errorx.Ser
 
 	// Check if the current time is before the cancellation deadline
 	if time.Now().Unix() > cancellationDeadline {
-		zlog.Warn("Cancellation period has expired", zap.String("userID", userID))
+		zlog.Error("Cancellation period has expired", zap.String("userID", userID))
 		return errorx.NewServicerErr(errorx.ErrExternal, "Cancellation period has expired", nil)
 	}
 

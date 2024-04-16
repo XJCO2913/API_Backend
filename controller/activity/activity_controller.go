@@ -283,7 +283,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 	finalFee := activity.OriginalFee
 	finalFee = finalFee * discount / 10
 
-	participantsInfo := make([]gin.H, len(activity.Participants))
+	participantsInfo := make([]gin.H, 0, len(activity.Participants))
 	for _, participant := range activity.Participants {
 		participantsInfo = append(participantsInfo, gin.H{
 			"userID":         participant.UserID,
