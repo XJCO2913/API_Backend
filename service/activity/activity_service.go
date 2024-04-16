@@ -442,3 +442,67 @@ func (s *ActivityService) GetByUserID(ctx context.Context, userID string) (*sdto
 
 	return &sdto.GetActivitiesByUserIDOutput{Activities: activitiesOutput}, nil
 }
+
+func (s *ActivityService) GetByCreatorID(ctx context.Context, creatorID string) (*sdto.GetActivitiesByCreatorOutput, *errorx.ServiceErr) {
+	activities, err := dao.GetActivitiesByCreatorID(ctx, creatorID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("Activity not found by creator ID", zap.String("creatorID", creatorID))
+			return nil, errorx.NewServicerErr(errorx.ErrExternal, "Activity not found by creator ID", nil)
+		} else {
+			zlog.Error("Failed to retrieve activities by creator ID", zap.String("creatorID", creatorID), zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+	}
+
+	if len(activities) == 0 {
+		return &sdto.GetActivitiesByCreatorOutput{Activities: []*sdto.GetActivitiesByCreator{}}, nil
+	}
+
+	var activitiesOutput []*sdto.GetActivitiesByCreator
+	for _, activity := range activities {
+		var description, tags, coverURL, createdAtStr string
+		if activity.Description != nil {
+			description = *activity.Description
+		}
+
+		if activity.Tags != nil {
+			tags = *activity.Tags
+		}
+
+		if activity.CoverURL != "" {
+			coverURL, err = minio.GetActivityCoverUrl(ctx, activity.CoverURL)
+			if err != nil {
+				zlog.Error("Error while get activity cover URL", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+		}
+
+		if activity.CreatedAt != nil {
+			createdAtStr = activity.CreatedAt.Format("2006-01-02")
+		}
+
+		participantsCount, err := dao.CountParticipantsByActivityID(ctx, activity.ActivityID)
+		if err != nil {
+			zlog.Error("Failed to count participants for the activity", zap.String("activityID", activity.ActivityID), zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		activitiesOutput = append(activitiesOutput, &sdto.GetActivitiesByCreator{
+			ActivityID:        activity.ActivityID,
+			Name:              activity.Name,
+			Description:       description,
+			CoverURL:          coverURL,
+			StartDate:         activity.StartDate.Format("2006-01-02"),
+			EndDate:           activity.EndDate.Format("2006-01-02"),
+			Tags:              tags,
+			NumberLimit:       activity.NumberLimit,
+			OriginalFee:       activity.Fee,
+			CreatedAt:         createdAtStr,
+			CreatorID:         activity.CreatorID,
+			ParticipantsCount: int32(participantsCount),
+		})
+	}
+
+	return &sdto.GetActivitiesByCreatorOutput{Activities: activitiesOutput}, nil
+}
