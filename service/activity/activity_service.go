@@ -11,6 +11,7 @@ import (
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
+	"api.backend.xjco2913/util"
 	"api.backend.xjco2913/util/zlog"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -247,8 +248,43 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 
 	participantsCount, err := dao.CountParticipantsByActivityID(ctx, activity.ActivityID)
 	if err != nil {
-		zlog.Error("Failed to count participants for the activity", zap.String("activityID", activity.ActivityID), zap.Error(err))
+		zlog.Error("Failed to count participants for activity", zap.String("activityID", activity.ActivityID), zap.Error(err))
 		return nil, errorx.NewInternalErr()
+	}
+
+	participants, err := dao.GetUsersByActivityID(ctx, activityID)
+	if err != nil {
+		zlog.Error("Failed to retrieve participants for activity", zap.String("activityID", activityID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	creator, err := dao.GetUserByID(ctx, activity.CreatorID)
+	if err != nil {
+		zlog.Error("Failed to retrieve creator by ID", zap.String("userID", activity.CreatorID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	var participantInfos []sdto.ParticipantInfo
+	for _, user := range participants {
+		// get avatar url from minio
+		avatarURL := ""
+		if user.AvatarURL != nil || !util.IsEmpty(user.AvatarURL) {
+			avatarURL, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+			if err != nil {
+				return nil, errorx.NewInternalErr()
+			}
+		}
+
+		participantInfos = append(participantInfos, sdto.ParticipantInfo{
+			UserID:         user.UserID,
+			Username:       user.Username,
+			Gender:         user.Gender,
+			Birthday:       user.Birthday.Format("2006-01-02"),
+			Region:         user.Region,
+			MembershipTime: user.MembershipTime,
+			AvatarURL:      avatarURL,
+			MembershipType: user.MembershipType,
+		})
 	}
 
 	output := &sdto.GetActivityByIDOutput{
@@ -263,7 +299,9 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 		OriginalFee:       activity.Fee,
 		CreatedAt:         createdAtStr,
 		CreatorID:         activity.CreatorID,
+		CreatorName:       creator.Username,
 		ParticipantsCount: int32(participantsCount),
+		Participants:      participantInfos,
 	}
 
 	return output, nil
