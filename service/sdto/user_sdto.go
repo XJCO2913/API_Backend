@@ -30,7 +30,6 @@ type GetAllOutput struct {
 	AvatarURL      string
 	OrganiserID    string
 	MembershipType int32
-	IsSubscribed   int32
 }
 
 type GetByIDOutput struct {
@@ -43,7 +42,6 @@ type GetByIDOutput struct {
 	AvatarURL      string
 	OrganiserID    string
 	MembershipType int32
-	IsSubscribed   int32
 }
 
 type GetAllStatusOutput struct {

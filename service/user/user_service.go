@@ -290,7 +290,6 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 			AvatarURL:      avatarURL,
 			OrganiserID:    organiserID,
 			MembershipType: user.MembershipType,
-			IsSubscribed:   user.IsSubscribed,
 		}
 	}
 
@@ -339,7 +338,6 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		AvatarURL:      avatarURL,
 		OrganiserID:    organiserID,
 		MembershipType: user.MembershipType,
-		IsSubscribed:   user.IsSubscribed,
 	}
 
 	return userDto, nil
