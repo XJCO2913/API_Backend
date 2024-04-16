@@ -83,3 +83,22 @@ type GetActivitiesByUserID struct {
 type GetActivitiesByUserIDOutput struct {
 	Activities []*GetActivitiesByUserID
 }
+
+type GetActivitiesByCreator struct {
+	ActivityID        string
+	Name              string
+	Description       string
+	CoverURL          string
+	StartDate         string
+	EndDate           string
+	Tags              string
+	NumberLimit       int32
+	OriginalFee       int32
+	CreatedAt         string
+	CreatorID         string
+	ParticipantsCount int32
+}
+
+type GetActivitiesByCreatorOutput struct {
+	Activities []*GetActivitiesByCreator
+}
