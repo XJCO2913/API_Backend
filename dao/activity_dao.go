@@ -106,6 +106,7 @@ func GetActivitiesByUserID(ctx context.Context, userID string) ([]*model.Activit
 
 	if len(activityIDs) > 0 {
 		a := query.Use(DB).Activity
+
 		activities, err = a.WithContext(ctx).Where(a.ActivityID.In(activityIDs...)).Find()
 		if err != nil {
 			return nil, err

@@ -32,6 +32,17 @@ type GetAllActivityOutput struct {
 	ParticipantsCount int32
 }
 
+type ParticipantInfo struct {
+	UserID         string
+	Username       string
+	Gender         int32
+	Birthday       string
+	Region         string
+	MembershipTime int64
+	AvatarURL      string
+	MembershipType int32
+}
+
 type GetActivityByIDOutput struct {
 	ActivityID        string
 	Name              string
@@ -45,7 +56,9 @@ type GetActivityByIDOutput struct {
 	OriginalFee       int32
 	CreatedAt         string
 	CreatorID         string
+	CreatorName       string
 	ParticipantsCount int32
+	Participants      []ParticipantInfo
 }
 
 type ActivityFeed struct {

@@ -148,7 +148,6 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 			"region":         user.Region,
 			"membershipTime": user.MembershipTime,
 			"membershipType": user.MembershipType,
-			"isSubscribed":   user.IsSubscribed,
 		}
 	}
 
@@ -195,7 +194,6 @@ func (u *UserController) GetByID(c *gin.Context) {
 		"region":         userDetail.Region,
 		"membershipTime": userDetail.MembershipTime,
 		"membershipType": userDetail.MembershipType,
-		"isSubscribed":   userDetail.IsSubscribed,
 	}
 
 	c.JSON(200, dto.CommonRes{
