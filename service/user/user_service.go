@@ -541,12 +541,12 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 		if *input.Birthday == "" {
 			addUpdate("birthday", nil)
 		} else {
-			_, err := time.Parse(time.RFC822Z, *input.Birthday)
+			birthday, err := time.Parse(time.RFC822Z, *input.Birthday)
 			if err != nil {
 				zlog.Error("Error while parsing birthday", zap.String("birthday", *input.Birthday), zap.Error(err))
 				return errorx.NewServicerErr(errorx.ErrExternal, "Invalid birthday format", nil)
 			}
-			addUpdate("birthday", *input.Birthday)
+			addUpdate("birthday", birthday)
 		}
 	}
 
