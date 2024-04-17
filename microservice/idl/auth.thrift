@@ -10,7 +10,7 @@ struct LoginReq {
 struct LoginResp {
     1: string token
     2: string username
-    3: string gender
+    3: i32 gender
     4: string birthday
     5: string region
 

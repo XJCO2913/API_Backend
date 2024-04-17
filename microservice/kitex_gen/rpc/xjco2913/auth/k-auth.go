@@ -270,7 +270,7 @@ func (p *LoginResp) FastRead(buf []byte) (int, error) {
 				}
 			}
 		case 3:
-			if fieldTypeId == thrift.STRING {
+			if fieldTypeId == thrift.I32 {
 				l, err = p.FastReadField3(buf[offset:])
 				offset += l
 				if err != nil {
@@ -391,7 +391,7 @@ func (p *LoginResp) FastReadField2(buf []byte) (int, error) {
 func (p *LoginResp) FastReadField3(buf []byte) (int, error) {
 	offset := 0
 
-	if v, l, err := bthrift.Binary.ReadString(buf[offset:]); err != nil {
+	if v, l, err := bthrift.Binary.ReadI32(buf[offset:]); err != nil {
 		return offset, err
 	} else {
 		offset += l
@@ -452,9 +452,9 @@ func (p *LoginResp) FastWriteNocopy(buf []byte, binaryWriter bthrift.BinaryWrite
 	offset := 0
 	offset += bthrift.Binary.WriteStructBegin(buf[offset:], "LoginResp")
 	if p != nil {
+		offset += p.fastWriteField3(buf[offset:], binaryWriter)
 		offset += p.fastWriteField1(buf[offset:], binaryWriter)
 		offset += p.fastWriteField2(buf[offset:], binaryWriter)
-		offset += p.fastWriteField3(buf[offset:], binaryWriter)
 		offset += p.fastWriteField4(buf[offset:], binaryWriter)
 		offset += p.fastWriteField5(buf[offset:], binaryWriter)
 		offset += p.fastWriteField255(buf[offset:], binaryWriter)
@@ -500,8 +500,8 @@ func (p *LoginResp) fastWriteField2(buf []byte, binaryWriter bthrift.BinaryWrite
 
 func (p *LoginResp) fastWriteField3(buf []byte, binaryWriter bthrift.BinaryWriter) int {
 	offset := 0
-	offset += bthrift.Binary.WriteFieldBegin(buf[offset:], "gender", thrift.STRING, 3)
-	offset += bthrift.Binary.WriteStringNocopy(buf[offset:], binaryWriter, p.Gender)
+	offset += bthrift.Binary.WriteFieldBegin(buf[offset:], "gender", thrift.I32, 3)
+	offset += bthrift.Binary.WriteI32(buf[offset:], p.Gender)
 
 	offset += bthrift.Binary.WriteFieldEnd(buf[offset:])
 	return offset
@@ -553,8 +553,8 @@ func (p *LoginResp) field2Length() int {
 
 func (p *LoginResp) field3Length() int {
 	l := 0
-	l += bthrift.Binary.FieldBeginLength("gender", thrift.STRING, 3)
-	l += bthrift.Binary.StringLengthNocopy(p.Gender)
+	l += bthrift.Binary.FieldBeginLength("gender", thrift.I32, 3)
+	l += bthrift.Binary.I32Length(p.Gender)
 
 	l += bthrift.Binary.FieldEndLength()
 	return l

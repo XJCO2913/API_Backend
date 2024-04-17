@@ -247,7 +247,7 @@ func (p *LoginReq) Field2DeepEqual(src string) bool {
 type LoginResp struct {
 	Token    string         `thrift:"token,1" frugal:"1,default,string" json:"token"`
 	Username string         `thrift:"username,2" frugal:"2,default,string" json:"username"`
-	Gender   string         `thrift:"gender,3" frugal:"3,default,string" json:"gender"`
+	Gender   int32          `thrift:"gender,3" frugal:"3,default,i32" json:"gender"`
 	Birthday string         `thrift:"birthday,4" frugal:"4,default,string" json:"birthday"`
 	Region   string         `thrift:"region,5" frugal:"5,default,string" json:"region"`
 	BaseResp *base.BaseResp `thrift:"baseResp,255" frugal:"255,default,base.BaseResp" json:"baseResp"`
@@ -269,7 +269,7 @@ func (p *LoginResp) GetUsername() (v string) {
 	return p.Username
 }
 
-func (p *LoginResp) GetGender() (v string) {
+func (p *LoginResp) GetGender() (v int32) {
 	return p.Gender
 }
 
@@ -295,7 +295,7 @@ func (p *LoginResp) SetToken(val string) {
 func (p *LoginResp) SetUsername(val string) {
 	p.Username = val
 }
-func (p *LoginResp) SetGender(val string) {
+func (p *LoginResp) SetGender(val int32) {
 	p.Gender = val
 }
 func (p *LoginResp) SetBirthday(val string) {
@@ -357,7 +357,7 @@ func (p *LoginResp) Read(iprot thrift.TProtocol) (err error) {
 				goto SkipFieldError
 			}
 		case 3:
-			if fieldTypeId == thrift.STRING {
+			if fieldTypeId == thrift.I32 {
 				if err = p.ReadField3(iprot); err != nil {
 					goto ReadFieldError
 				}
@@ -437,7 +437,7 @@ func (p *LoginResp) ReadField2(iprot thrift.TProtocol) error {
 }
 func (p *LoginResp) ReadField3(iprot thrift.TProtocol) error {
 
-	if v, err := iprot.ReadString(); err != nil {
+	if v, err := iprot.ReadI32(); err != nil {
 		return err
 	} else {
 		p.Gender = v
@@ -553,10 +553,10 @@ WriteFieldEndError:
 }
 
 func (p *LoginResp) writeField3(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("gender", thrift.STRING, 3); err != nil {
+	if err = oprot.WriteFieldBegin("gender", thrift.I32, 3); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteString(p.Gender); err != nil {
+	if err := oprot.WriteI32(p.Gender); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -669,9 +669,9 @@ func (p *LoginResp) Field2DeepEqual(src string) bool {
 	}
 	return true
 }
-func (p *LoginResp) Field3DeepEqual(src string) bool {
+func (p *LoginResp) Field3DeepEqual(src int32) bool {
 
-	if strings.Compare(p.Gender, src) != 0 {
+	if p.Gender != src {
 		return false
 	}
 	return true

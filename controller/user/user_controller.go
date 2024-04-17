@@ -90,6 +90,13 @@ func (u *UserController) Login(c *gin.Context) {
 		Password: req.Password,
 	})
 	if err != nil {
+		// internal error
+		c.JSON(500, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg: err.Error(),
+		})
+		return
+	} else if out.BaseResp.Code != 0 {
 		data := gin.H{
 			"remaining_attempts": out.BaseResp.Data["remaining_attempts"],
 		}
@@ -99,7 +106,7 @@ func (u *UserController) Login(c *gin.Context) {
 
 		c.JSON(int(out.BaseResp.Code), dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  err.Error(),
+			StatusMsg:  out.BaseResp.Msg,
 			Data:       data,
 		})
 		return
