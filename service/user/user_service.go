@@ -59,7 +59,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *err
 	// Parse birthday
 	var birthdayEntity *time.Time = nil
 	if !util.IsEmpty(in.Birthday) {
-		birthday, err := time.Parse("2006-01-02", in.Birthday)
+		birthday, err := time.Parse(time.RFC822, in.Birthday)
 		if err != nil {
 			zlog.Error("Error while parse birthday " + in.Birthday)
 			return errorx.NewServicerErr(
@@ -228,7 +228,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 
 	var birthdayStr string
 	if user.Birthday != nil {
-		birthdayStr = user.Birthday.Format("2006-01-02")
+		birthdayStr = user.Birthday.Format(time.RFC822)
 	}
 
 	return &sdto.AuthenticateOutput{
@@ -262,7 +262,7 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 	for i, user := range users {
 		var birthday string
 		if user.Birthday != nil {
-			birthday = user.Birthday.Format("2006-01-02")
+			birthday = user.Birthday.Format(time.RFC822)
 		}
 
 		// get avatar url from minio
@@ -310,7 +310,7 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 
 	var birthday string
 	if user.Birthday != nil {
-		birthday = user.Birthday.Format("2006-01-02")
+		birthday = user.Birthday.Format(time.RFC822)
 	}
 
 	// get avatar url from minio
@@ -541,7 +541,7 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 		if *input.Birthday == "" {
 			addUpdate("birthday", nil)
 		} else {
-			_, err := time.Parse("2006-01-02", *input.Birthday)
+			_, err := time.Parse(time.RFC822, *input.Birthday)
 			if err != nil {
 				zlog.Error("Error while parsing birthday", zap.String("birthday", *input.Birthday), zap.Error(err))
 				return errorx.NewServicerErr(errorx.ErrExternal, "Invalid birthday format", nil)
