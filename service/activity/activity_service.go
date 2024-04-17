@@ -5,6 +5,7 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"time"
 
 	"api.backend.xjco2913/dao"
 	"api.backend.xjco2913/dao/minio"
@@ -183,7 +184,7 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 
 		var createdAtStr string
 		if activity.CreatedAt != nil {
-			createdAtStr = activity.CreatedAt.Format("2006-01-02")
+			createdAtStr = activity.CreatedAt.Format(time.RFC822)
 		}
 
 		participantsCount, err := dao.CountParticipantsByActivityID(ctx, activity.ActivityID)
@@ -197,8 +198,8 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 			Name:              activity.Name,
 			Description:       description,
 			CoverURL:          coverURL,
-			StartDate:         activity.StartDate.Format("2006-01-02"),
-			EndDate:           activity.EndDate.Format("2006-01-02"),
+			StartDate:         activity.StartDate.Format(time.RFC822),
+			EndDate:           activity.EndDate.Format(time.RFC822),
 			Tags:              tags,
 			NumberLimit:       activity.NumberLimit,
 			OriginalFee:       activity.Fee,
@@ -243,7 +244,7 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 
 	var createdAtStr string
 	if activity.CreatedAt != nil {
-		createdAtStr = activity.CreatedAt.Format("2006-01-02")
+		createdAtStr = activity.CreatedAt.Format(time.RFC822)
 	}
 
 	participantsCount, err := dao.CountParticipantsByActivityID(ctx, activity.ActivityID)
@@ -279,7 +280,7 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 			UserID:         user.UserID,
 			Username:       user.Username,
 			Gender:         user.Gender,
-			Birthday:       user.Birthday.Format("2006-01-02"),
+			Birthday:       user.Birthday.Format(time.RFC822),
 			Region:         user.Region,
 			MembershipTime: user.MembershipTime,
 			AvatarURL:      avatarURL,
@@ -292,8 +293,8 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 		Name:              activity.Name,
 		Description:       description,
 		CoverURL:          coverURL,
-		StartDate:         activity.StartDate.Format("2006-01-02"),
-		EndDate:           activity.EndDate.Format("2006-01-02"),
+		StartDate:         activity.StartDate.Format(time.RFC822),
+		EndDate:           activity.EndDate.Format(time.RFC822),
 		Tags:              tags,
 		NumberLimit:       activity.NumberLimit,
 		OriginalFee:       activity.Fee,
@@ -453,7 +454,7 @@ func (s *ActivityService) GetByUserID(ctx context.Context, userID string) (*sdto
 		}
 
 		if activity.CreatedAt != nil {
-			createdAtStr = activity.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
+			createdAtStr = activity.CreatedAt.Format(time.RFC822)
 		}
 
 		activityUser, err := dao.FindActivityUserByIDs(ctx, activity.ActivityID, userID)
@@ -467,8 +468,8 @@ func (s *ActivityService) GetByUserID(ctx context.Context, userID string) (*sdto
 			Name:        activity.Name,
 			Description: description,
 			CoverURL:    coverURL,
-			StartDate:   activity.StartDate.Format("2006-01-02"),
-			EndDate:     activity.EndDate.Format("2006-01-02"),
+			StartDate:   activity.StartDate.Format(time.RFC822),
+			EndDate:     activity.EndDate.Format(time.RFC822),
 			Tags:        tags,
 			NumberLimit: activity.NumberLimit,
 			OriginalFee: activity.Fee,
@@ -517,7 +518,7 @@ func (s *ActivityService) GetByCreatorID(ctx context.Context, creatorID string) 
 		}
 
 		if activity.CreatedAt != nil {
-			createdAtStr = activity.CreatedAt.Format("2006-01-02")
+			createdAtStr = activity.CreatedAt.Format(time.RFC822)
 		}
 
 		participantsCount, err := dao.CountParticipantsByActivityID(ctx, activity.ActivityID)
@@ -531,8 +532,8 @@ func (s *ActivityService) GetByCreatorID(ctx context.Context, creatorID string) 
 			Name:              activity.Name,
 			Description:       description,
 			CoverURL:          coverURL,
-			StartDate:         activity.StartDate.Format("2006-01-02"),
-			EndDate:           activity.EndDate.Format("2006-01-02"),
+			StartDate:         activity.StartDate.Format(time.RFC822),
+			EndDate:           activity.EndDate.Format(time.RFC822),
 			Tags:              tags,
 			NumberLimit:       activity.NumberLimit,
 			OriginalFee:       activity.Fee,
