@@ -698,70 +698,414 @@ func (p *LoginResp) Field255DeepEqual(src *base.BaseResp) bool {
 	return true
 }
 
-type LoginService interface {
-	Login(ctx context.Context, req *LoginReq) (r *LoginResp, err error)
+type RefreshTokenReq struct {
+	OldToken string `thrift:"oldToken,1,required" frugal:"1,required,string" json:"oldToken"`
 }
 
-type LoginServiceClient struct {
+func NewRefreshTokenReq() *RefreshTokenReq {
+	return &RefreshTokenReq{}
+}
+
+func (p *RefreshTokenReq) InitDefault() {
+	*p = RefreshTokenReq{}
+}
+
+func (p *RefreshTokenReq) GetOldToken() (v string) {
+	return p.OldToken
+}
+func (p *RefreshTokenReq) SetOldToken(val string) {
+	p.OldToken = val
+}
+
+var fieldIDToName_RefreshTokenReq = map[int16]string{
+	1: "oldToken",
+}
+
+func (p *RefreshTokenReq) Read(iprot thrift.TProtocol) (err error) {
+
+	var fieldTypeId thrift.TType
+	var fieldId int16
+	var issetOldToken bool = false
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRING {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+				issetOldToken = true
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	if !issetOldToken {
+		fieldId = 1
+		goto RequiredFieldNotSetError
+	}
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_RefreshTokenReq[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+RequiredFieldNotSetError:
+	return thrift.NewTProtocolExceptionWithType(thrift.INVALID_DATA, fmt.Errorf("required field %s is not set", fieldIDToName_RefreshTokenReq[fieldId]))
+}
+
+func (p *RefreshTokenReq) ReadField1(iprot thrift.TProtocol) error {
+
+	if v, err := iprot.ReadString(); err != nil {
+		return err
+	} else {
+		p.OldToken = v
+	}
+	return nil
+}
+
+func (p *RefreshTokenReq) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("RefreshTokenReq"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *RefreshTokenReq) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("oldToken", thrift.STRING, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteString(p.OldToken); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *RefreshTokenReq) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("RefreshTokenReq(%+v)", *p)
+
+}
+
+func (p *RefreshTokenReq) DeepEqual(ano *RefreshTokenReq) bool {
+	if p == ano {
+		return true
+	} else if p == nil || ano == nil {
+		return false
+	}
+	if !p.Field1DeepEqual(ano.OldToken) {
+		return false
+	}
+	return true
+}
+
+func (p *RefreshTokenReq) Field1DeepEqual(src string) bool {
+
+	if strings.Compare(p.OldToken, src) != 0 {
+		return false
+	}
+	return true
+}
+
+type RefreshTokenResp struct {
+	NewToken_ string `thrift:"newToken,1" frugal:"1,default,string" json:"newToken"`
+}
+
+func NewRefreshTokenResp() *RefreshTokenResp {
+	return &RefreshTokenResp{}
+}
+
+func (p *RefreshTokenResp) InitDefault() {
+	*p = RefreshTokenResp{}
+}
+
+func (p *RefreshTokenResp) GetNewToken_() (v string) {
+	return p.NewToken_
+}
+func (p *RefreshTokenResp) SetNewToken_(val string) {
+	p.NewToken_ = val
+}
+
+var fieldIDToName_RefreshTokenResp = map[int16]string{
+	1: "newToken",
+}
+
+func (p *RefreshTokenResp) Read(iprot thrift.TProtocol) (err error) {
+
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRING {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_RefreshTokenResp[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *RefreshTokenResp) ReadField1(iprot thrift.TProtocol) error {
+
+	if v, err := iprot.ReadString(); err != nil {
+		return err
+	} else {
+		p.NewToken_ = v
+	}
+	return nil
+}
+
+func (p *RefreshTokenResp) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("RefreshTokenResp"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *RefreshTokenResp) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("newToken", thrift.STRING, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := oprot.WriteString(p.NewToken_); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *RefreshTokenResp) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("RefreshTokenResp(%+v)", *p)
+
+}
+
+func (p *RefreshTokenResp) DeepEqual(ano *RefreshTokenResp) bool {
+	if p == ano {
+		return true
+	} else if p == nil || ano == nil {
+		return false
+	}
+	if !p.Field1DeepEqual(ano.NewToken_) {
+		return false
+	}
+	return true
+}
+
+func (p *RefreshTokenResp) Field1DeepEqual(src string) bool {
+
+	if strings.Compare(p.NewToken_, src) != 0 {
+		return false
+	}
+	return true
+}
+
+type AuthService interface {
+	Login(ctx context.Context, req *LoginReq) (r *LoginResp, err error)
+
+	RefreshToken(ctx context.Context, req *RefreshTokenReq) (r *RefreshTokenResp, err error)
+}
+
+type AuthServiceClient struct {
 	c thrift.TClient
 }
 
-func NewLoginServiceClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *LoginServiceClient {
-	return &LoginServiceClient{
+func NewAuthServiceClientFactory(t thrift.TTransport, f thrift.TProtocolFactory) *AuthServiceClient {
+	return &AuthServiceClient{
 		c: thrift.NewTStandardClient(f.GetProtocol(t), f.GetProtocol(t)),
 	}
 }
 
-func NewLoginServiceClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot thrift.TProtocol) *LoginServiceClient {
-	return &LoginServiceClient{
+func NewAuthServiceClientProtocol(t thrift.TTransport, iprot thrift.TProtocol, oprot thrift.TProtocol) *AuthServiceClient {
+	return &AuthServiceClient{
 		c: thrift.NewTStandardClient(iprot, oprot),
 	}
 }
 
-func NewLoginServiceClient(c thrift.TClient) *LoginServiceClient {
-	return &LoginServiceClient{
+func NewAuthServiceClient(c thrift.TClient) *AuthServiceClient {
+	return &AuthServiceClient{
 		c: c,
 	}
 }
 
-func (p *LoginServiceClient) Client_() thrift.TClient {
+func (p *AuthServiceClient) Client_() thrift.TClient {
 	return p.c
 }
 
-func (p *LoginServiceClient) Login(ctx context.Context, req *LoginReq) (r *LoginResp, err error) {
-	var _args LoginServiceLoginArgs
+func (p *AuthServiceClient) Login(ctx context.Context, req *LoginReq) (r *LoginResp, err error) {
+	var _args AuthServiceLoginArgs
 	_args.Req = req
-	var _result LoginServiceLoginResult
+	var _result AuthServiceLoginResult
 	if err = p.Client_().Call(ctx, "Login", &_args, &_result); err != nil {
 		return
 	}
 	return _result.GetSuccess(), nil
 }
-
-type LoginServiceProcessor struct {
-	processorMap map[string]thrift.TProcessorFunction
-	handler      LoginService
+func (p *AuthServiceClient) RefreshToken(ctx context.Context, req *RefreshTokenReq) (r *RefreshTokenResp, err error) {
+	var _args AuthServiceRefreshTokenArgs
+	_args.Req = req
+	var _result AuthServiceRefreshTokenResult
+	if err = p.Client_().Call(ctx, "RefreshToken", &_args, &_result); err != nil {
+		return
+	}
+	return _result.GetSuccess(), nil
 }
 
-func (p *LoginServiceProcessor) AddToProcessorMap(key string, processor thrift.TProcessorFunction) {
+type AuthServiceProcessor struct {
+	processorMap map[string]thrift.TProcessorFunction
+	handler      AuthService
+}
+
+func (p *AuthServiceProcessor) AddToProcessorMap(key string, processor thrift.TProcessorFunction) {
 	p.processorMap[key] = processor
 }
 
-func (p *LoginServiceProcessor) GetProcessorFunction(key string) (processor thrift.TProcessorFunction, ok bool) {
+func (p *AuthServiceProcessor) GetProcessorFunction(key string) (processor thrift.TProcessorFunction, ok bool) {
 	processor, ok = p.processorMap[key]
 	return processor, ok
 }
 
-func (p *LoginServiceProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
+func (p *AuthServiceProcessor) ProcessorMap() map[string]thrift.TProcessorFunction {
 	return p.processorMap
 }
 
-func NewLoginServiceProcessor(handler LoginService) *LoginServiceProcessor {
-	self := &LoginServiceProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
-	self.AddToProcessorMap("Login", &loginServiceProcessorLogin{handler: handler})
+func NewAuthServiceProcessor(handler AuthService) *AuthServiceProcessor {
+	self := &AuthServiceProcessor{handler: handler, processorMap: make(map[string]thrift.TProcessorFunction)}
+	self.AddToProcessorMap("Login", &authServiceProcessorLogin{handler: handler})
+	self.AddToProcessorMap("RefreshToken", &authServiceProcessorRefreshToken{handler: handler})
 	return self
 }
-func (p *LoginServiceProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+func (p *AuthServiceProcessor) Process(ctx context.Context, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
 	name, _, seqId, err := iprot.ReadMessageBegin()
 	if err != nil {
 		return false, err
@@ -779,12 +1123,12 @@ func (p *LoginServiceProcessor) Process(ctx context.Context, iprot, oprot thrift
 	return false, x
 }
 
-type loginServiceProcessorLogin struct {
-	handler LoginService
+type authServiceProcessorLogin struct {
+	handler AuthService
 }
 
-func (p *loginServiceProcessorLogin) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
-	args := LoginServiceLoginArgs{}
+func (p *authServiceProcessorLogin) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := AuthServiceLoginArgs{}
 	if err = args.Read(iprot); err != nil {
 		iprot.ReadMessageEnd()
 		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
@@ -797,7 +1141,7 @@ func (p *loginServiceProcessorLogin) Process(ctx context.Context, seqId int32, i
 
 	iprot.ReadMessageEnd()
 	var err2 error
-	result := LoginServiceLoginResult{}
+	result := AuthServiceLoginResult{}
 	var retval *LoginResp
 	if retval, err2 = p.handler.Login(ctx, args.Req); err2 != nil {
 		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing Login: "+err2.Error())
@@ -827,39 +1171,87 @@ func (p *loginServiceProcessorLogin) Process(ctx context.Context, seqId int32, i
 	return true, err
 }
 
-type LoginServiceLoginArgs struct {
+type authServiceProcessorRefreshToken struct {
+	handler AuthService
+}
+
+func (p *authServiceProcessorRefreshToken) Process(ctx context.Context, seqId int32, iprot, oprot thrift.TProtocol) (success bool, err thrift.TException) {
+	args := AuthServiceRefreshTokenArgs{}
+	if err = args.Read(iprot); err != nil {
+		iprot.ReadMessageEnd()
+		x := thrift.NewTApplicationException(thrift.PROTOCOL_ERROR, err.Error())
+		oprot.WriteMessageBegin("RefreshToken", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return false, err
+	}
+
+	iprot.ReadMessageEnd()
+	var err2 error
+	result := AuthServiceRefreshTokenResult{}
+	var retval *RefreshTokenResp
+	if retval, err2 = p.handler.RefreshToken(ctx, args.Req); err2 != nil {
+		x := thrift.NewTApplicationException(thrift.INTERNAL_ERROR, "Internal error processing RefreshToken: "+err2.Error())
+		oprot.WriteMessageBegin("RefreshToken", thrift.EXCEPTION, seqId)
+		x.Write(oprot)
+		oprot.WriteMessageEnd()
+		oprot.Flush(ctx)
+		return true, err2
+	} else {
+		result.Success = retval
+	}
+	if err2 = oprot.WriteMessageBegin("RefreshToken", thrift.REPLY, seqId); err2 != nil {
+		err = err2
+	}
+	if err2 = result.Write(oprot); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.WriteMessageEnd(); err == nil && err2 != nil {
+		err = err2
+	}
+	if err2 = oprot.Flush(ctx); err == nil && err2 != nil {
+		err = err2
+	}
+	if err != nil {
+		return
+	}
+	return true, err
+}
+
+type AuthServiceLoginArgs struct {
 	Req *LoginReq `thrift:"req,1" frugal:"1,default,LoginReq" json:"req"`
 }
 
-func NewLoginServiceLoginArgs() *LoginServiceLoginArgs {
-	return &LoginServiceLoginArgs{}
+func NewAuthServiceLoginArgs() *AuthServiceLoginArgs {
+	return &AuthServiceLoginArgs{}
 }
 
-func (p *LoginServiceLoginArgs) InitDefault() {
-	*p = LoginServiceLoginArgs{}
+func (p *AuthServiceLoginArgs) InitDefault() {
+	*p = AuthServiceLoginArgs{}
 }
 
-var LoginServiceLoginArgs_Req_DEFAULT *LoginReq
+var AuthServiceLoginArgs_Req_DEFAULT *LoginReq
 
-func (p *LoginServiceLoginArgs) GetReq() (v *LoginReq) {
+func (p *AuthServiceLoginArgs) GetReq() (v *LoginReq) {
 	if !p.IsSetReq() {
-		return LoginServiceLoginArgs_Req_DEFAULT
+		return AuthServiceLoginArgs_Req_DEFAULT
 	}
 	return p.Req
 }
-func (p *LoginServiceLoginArgs) SetReq(val *LoginReq) {
+func (p *AuthServiceLoginArgs) SetReq(val *LoginReq) {
 	p.Req = val
 }
 
-var fieldIDToName_LoginServiceLoginArgs = map[int16]string{
+var fieldIDToName_AuthServiceLoginArgs = map[int16]string{
 	1: "req",
 }
 
-func (p *LoginServiceLoginArgs) IsSetReq() bool {
+func (p *AuthServiceLoginArgs) IsSetReq() bool {
 	return p.Req != nil
 }
 
-func (p *LoginServiceLoginArgs) Read(iprot thrift.TProtocol) (err error) {
+func (p *AuthServiceLoginArgs) Read(iprot thrift.TProtocol) (err error) {
 
 	var fieldTypeId thrift.TType
 	var fieldId int16
@@ -905,7 +1297,7 @@ ReadStructBeginError:
 ReadFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
 ReadFieldError:
-	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_LoginServiceLoginArgs[fieldId]), err)
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_AuthServiceLoginArgs[fieldId]), err)
 SkipFieldError:
 	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
 
@@ -915,7 +1307,7 @@ ReadStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 }
 
-func (p *LoginServiceLoginArgs) ReadField1(iprot thrift.TProtocol) error {
+func (p *AuthServiceLoginArgs) ReadField1(iprot thrift.TProtocol) error {
 	p.Req = NewLoginReq()
 	if err := p.Req.Read(iprot); err != nil {
 		return err
@@ -923,7 +1315,7 @@ func (p *LoginServiceLoginArgs) ReadField1(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *LoginServiceLoginArgs) Write(oprot thrift.TProtocol) (err error) {
+func (p *AuthServiceLoginArgs) Write(oprot thrift.TProtocol) (err error) {
 	var fieldId int16
 	if err = oprot.WriteStructBegin("Login_args"); err != nil {
 		goto WriteStructBeginError
@@ -951,7 +1343,7 @@ WriteStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
 }
 
-func (p *LoginServiceLoginArgs) writeField1(oprot thrift.TProtocol) (err error) {
+func (p *AuthServiceLoginArgs) writeField1(oprot thrift.TProtocol) (err error) {
 	if err = oprot.WriteFieldBegin("req", thrift.STRUCT, 1); err != nil {
 		goto WriteFieldBeginError
 	}
@@ -968,15 +1360,15 @@ WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
 }
 
-func (p *LoginServiceLoginArgs) String() string {
+func (p *AuthServiceLoginArgs) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("LoginServiceLoginArgs(%+v)", *p)
+	return fmt.Sprintf("AuthServiceLoginArgs(%+v)", *p)
 
 }
 
-func (p *LoginServiceLoginArgs) DeepEqual(ano *LoginServiceLoginArgs) bool {
+func (p *AuthServiceLoginArgs) DeepEqual(ano *AuthServiceLoginArgs) bool {
 	if p == ano {
 		return true
 	} else if p == nil || ano == nil {
@@ -988,7 +1380,7 @@ func (p *LoginServiceLoginArgs) DeepEqual(ano *LoginServiceLoginArgs) bool {
 	return true
 }
 
-func (p *LoginServiceLoginArgs) Field1DeepEqual(src *LoginReq) bool {
+func (p *AuthServiceLoginArgs) Field1DeepEqual(src *LoginReq) bool {
 
 	if !p.Req.DeepEqual(src) {
 		return false
@@ -996,39 +1388,39 @@ func (p *LoginServiceLoginArgs) Field1DeepEqual(src *LoginReq) bool {
 	return true
 }
 
-type LoginServiceLoginResult struct {
+type AuthServiceLoginResult struct {
 	Success *LoginResp `thrift:"success,0,optional" frugal:"0,optional,LoginResp" json:"success,omitempty"`
 }
 
-func NewLoginServiceLoginResult() *LoginServiceLoginResult {
-	return &LoginServiceLoginResult{}
+func NewAuthServiceLoginResult() *AuthServiceLoginResult {
+	return &AuthServiceLoginResult{}
 }
 
-func (p *LoginServiceLoginResult) InitDefault() {
-	*p = LoginServiceLoginResult{}
+func (p *AuthServiceLoginResult) InitDefault() {
+	*p = AuthServiceLoginResult{}
 }
 
-var LoginServiceLoginResult_Success_DEFAULT *LoginResp
+var AuthServiceLoginResult_Success_DEFAULT *LoginResp
 
-func (p *LoginServiceLoginResult) GetSuccess() (v *LoginResp) {
+func (p *AuthServiceLoginResult) GetSuccess() (v *LoginResp) {
 	if !p.IsSetSuccess() {
-		return LoginServiceLoginResult_Success_DEFAULT
+		return AuthServiceLoginResult_Success_DEFAULT
 	}
 	return p.Success
 }
-func (p *LoginServiceLoginResult) SetSuccess(x interface{}) {
+func (p *AuthServiceLoginResult) SetSuccess(x interface{}) {
 	p.Success = x.(*LoginResp)
 }
 
-var fieldIDToName_LoginServiceLoginResult = map[int16]string{
+var fieldIDToName_AuthServiceLoginResult = map[int16]string{
 	0: "success",
 }
 
-func (p *LoginServiceLoginResult) IsSetSuccess() bool {
+func (p *AuthServiceLoginResult) IsSetSuccess() bool {
 	return p.Success != nil
 }
 
-func (p *LoginServiceLoginResult) Read(iprot thrift.TProtocol) (err error) {
+func (p *AuthServiceLoginResult) Read(iprot thrift.TProtocol) (err error) {
 
 	var fieldTypeId thrift.TType
 	var fieldId int16
@@ -1074,7 +1466,7 @@ ReadStructBeginError:
 ReadFieldBeginError:
 	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
 ReadFieldError:
-	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_LoginServiceLoginResult[fieldId]), err)
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_AuthServiceLoginResult[fieldId]), err)
 SkipFieldError:
 	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
 
@@ -1084,7 +1476,7 @@ ReadStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
 }
 
-func (p *LoginServiceLoginResult) ReadField0(iprot thrift.TProtocol) error {
+func (p *AuthServiceLoginResult) ReadField0(iprot thrift.TProtocol) error {
 	p.Success = NewLoginResp()
 	if err := p.Success.Read(iprot); err != nil {
 		return err
@@ -1092,7 +1484,7 @@ func (p *LoginServiceLoginResult) ReadField0(iprot thrift.TProtocol) error {
 	return nil
 }
 
-func (p *LoginServiceLoginResult) Write(oprot thrift.TProtocol) (err error) {
+func (p *AuthServiceLoginResult) Write(oprot thrift.TProtocol) (err error) {
 	var fieldId int16
 	if err = oprot.WriteStructBegin("Login_result"); err != nil {
 		goto WriteStructBeginError
@@ -1120,7 +1512,7 @@ WriteStructEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
 }
 
-func (p *LoginServiceLoginResult) writeField0(oprot thrift.TProtocol) (err error) {
+func (p *AuthServiceLoginResult) writeField0(oprot thrift.TProtocol) (err error) {
 	if p.IsSetSuccess() {
 		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
 			goto WriteFieldBeginError
@@ -1139,15 +1531,15 @@ WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
 }
 
-func (p *LoginServiceLoginResult) String() string {
+func (p *AuthServiceLoginResult) String() string {
 	if p == nil {
 		return "<nil>"
 	}
-	return fmt.Sprintf("LoginServiceLoginResult(%+v)", *p)
+	return fmt.Sprintf("AuthServiceLoginResult(%+v)", *p)
 
 }
 
-func (p *LoginServiceLoginResult) DeepEqual(ano *LoginServiceLoginResult) bool {
+func (p *AuthServiceLoginResult) DeepEqual(ano *AuthServiceLoginResult) bool {
 	if p == ano {
 		return true
 	} else if p == nil || ano == nil {
@@ -1159,7 +1551,347 @@ func (p *LoginServiceLoginResult) DeepEqual(ano *LoginServiceLoginResult) bool {
 	return true
 }
 
-func (p *LoginServiceLoginResult) Field0DeepEqual(src *LoginResp) bool {
+func (p *AuthServiceLoginResult) Field0DeepEqual(src *LoginResp) bool {
+
+	if !p.Success.DeepEqual(src) {
+		return false
+	}
+	return true
+}
+
+type AuthServiceRefreshTokenArgs struct {
+	Req *RefreshTokenReq `thrift:"req,1" frugal:"1,default,RefreshTokenReq" json:"req"`
+}
+
+func NewAuthServiceRefreshTokenArgs() *AuthServiceRefreshTokenArgs {
+	return &AuthServiceRefreshTokenArgs{}
+}
+
+func (p *AuthServiceRefreshTokenArgs) InitDefault() {
+	*p = AuthServiceRefreshTokenArgs{}
+}
+
+var AuthServiceRefreshTokenArgs_Req_DEFAULT *RefreshTokenReq
+
+func (p *AuthServiceRefreshTokenArgs) GetReq() (v *RefreshTokenReq) {
+	if !p.IsSetReq() {
+		return AuthServiceRefreshTokenArgs_Req_DEFAULT
+	}
+	return p.Req
+}
+func (p *AuthServiceRefreshTokenArgs) SetReq(val *RefreshTokenReq) {
+	p.Req = val
+}
+
+var fieldIDToName_AuthServiceRefreshTokenArgs = map[int16]string{
+	1: "req",
+}
+
+func (p *AuthServiceRefreshTokenArgs) IsSetReq() bool {
+	return p.Req != nil
+}
+
+func (p *AuthServiceRefreshTokenArgs) Read(iprot thrift.TProtocol) (err error) {
+
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 1:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_AuthServiceRefreshTokenArgs[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *AuthServiceRefreshTokenArgs) ReadField1(iprot thrift.TProtocol) error {
+	p.Req = NewRefreshTokenReq()
+	if err := p.Req.Read(iprot); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *AuthServiceRefreshTokenArgs) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("RefreshToken_args"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField1(oprot); err != nil {
+			fieldId = 1
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *AuthServiceRefreshTokenArgs) writeField1(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("req", thrift.STRUCT, 1); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := p.Req.Write(oprot); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
+}
+
+func (p *AuthServiceRefreshTokenArgs) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("AuthServiceRefreshTokenArgs(%+v)", *p)
+
+}
+
+func (p *AuthServiceRefreshTokenArgs) DeepEqual(ano *AuthServiceRefreshTokenArgs) bool {
+	if p == ano {
+		return true
+	} else if p == nil || ano == nil {
+		return false
+	}
+	if !p.Field1DeepEqual(ano.Req) {
+		return false
+	}
+	return true
+}
+
+func (p *AuthServiceRefreshTokenArgs) Field1DeepEqual(src *RefreshTokenReq) bool {
+
+	if !p.Req.DeepEqual(src) {
+		return false
+	}
+	return true
+}
+
+type AuthServiceRefreshTokenResult struct {
+	Success *RefreshTokenResp `thrift:"success,0,optional" frugal:"0,optional,RefreshTokenResp" json:"success,omitempty"`
+}
+
+func NewAuthServiceRefreshTokenResult() *AuthServiceRefreshTokenResult {
+	return &AuthServiceRefreshTokenResult{}
+}
+
+func (p *AuthServiceRefreshTokenResult) InitDefault() {
+	*p = AuthServiceRefreshTokenResult{}
+}
+
+var AuthServiceRefreshTokenResult_Success_DEFAULT *RefreshTokenResp
+
+func (p *AuthServiceRefreshTokenResult) GetSuccess() (v *RefreshTokenResp) {
+	if !p.IsSetSuccess() {
+		return AuthServiceRefreshTokenResult_Success_DEFAULT
+	}
+	return p.Success
+}
+func (p *AuthServiceRefreshTokenResult) SetSuccess(x interface{}) {
+	p.Success = x.(*RefreshTokenResp)
+}
+
+var fieldIDToName_AuthServiceRefreshTokenResult = map[int16]string{
+	0: "success",
+}
+
+func (p *AuthServiceRefreshTokenResult) IsSetSuccess() bool {
+	return p.Success != nil
+}
+
+func (p *AuthServiceRefreshTokenResult) Read(iprot thrift.TProtocol) (err error) {
+
+	var fieldTypeId thrift.TType
+	var fieldId int16
+
+	if _, err = iprot.ReadStructBegin(); err != nil {
+		goto ReadStructBeginError
+	}
+
+	for {
+		_, fieldTypeId, fieldId, err = iprot.ReadFieldBegin()
+		if err != nil {
+			goto ReadFieldBeginError
+		}
+		if fieldTypeId == thrift.STOP {
+			break
+		}
+
+		switch fieldId {
+		case 0:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField0(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		default:
+			if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		}
+		if err = iprot.ReadFieldEnd(); err != nil {
+			goto ReadFieldEndError
+		}
+	}
+	if err = iprot.ReadStructEnd(); err != nil {
+		goto ReadStructEndError
+	}
+
+	return nil
+ReadStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct begin error: ", p), err)
+ReadFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d begin error: ", p, fieldId), err)
+ReadFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T read field %d '%s' error: ", p, fieldId, fieldIDToName_AuthServiceRefreshTokenResult[fieldId]), err)
+SkipFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T field %d skip type %d error: ", p, fieldId, fieldTypeId), err)
+
+ReadFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read field end error", p), err)
+ReadStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T read struct end error: ", p), err)
+}
+
+func (p *AuthServiceRefreshTokenResult) ReadField0(iprot thrift.TProtocol) error {
+	p.Success = NewRefreshTokenResp()
+	if err := p.Success.Read(iprot); err != nil {
+		return err
+	}
+	return nil
+}
+
+func (p *AuthServiceRefreshTokenResult) Write(oprot thrift.TProtocol) (err error) {
+	var fieldId int16
+	if err = oprot.WriteStructBegin("RefreshToken_result"); err != nil {
+		goto WriteStructBeginError
+	}
+	if p != nil {
+		if err = p.writeField0(oprot); err != nil {
+			fieldId = 0
+			goto WriteFieldError
+		}
+	}
+	if err = oprot.WriteFieldStop(); err != nil {
+		goto WriteFieldStopError
+	}
+	if err = oprot.WriteStructEnd(); err != nil {
+		goto WriteStructEndError
+	}
+	return nil
+WriteStructBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct begin error: ", p), err)
+WriteFieldError:
+	return thrift.PrependError(fmt.Sprintf("%T write field %d error: ", p, fieldId), err)
+WriteFieldStopError:
+	return thrift.PrependError(fmt.Sprintf("%T write field stop error: ", p), err)
+WriteStructEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write struct end error: ", p), err)
+}
+
+func (p *AuthServiceRefreshTokenResult) writeField0(oprot thrift.TProtocol) (err error) {
+	if p.IsSetSuccess() {
+		if err = oprot.WriteFieldBegin("success", thrift.STRUCT, 0); err != nil {
+			goto WriteFieldBeginError
+		}
+		if err := p.Success.Write(oprot); err != nil {
+			return err
+		}
+		if err = oprot.WriteFieldEnd(); err != nil {
+			goto WriteFieldEndError
+		}
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 0 end error: ", p), err)
+}
+
+func (p *AuthServiceRefreshTokenResult) String() string {
+	if p == nil {
+		return "<nil>"
+	}
+	return fmt.Sprintf("AuthServiceRefreshTokenResult(%+v)", *p)
+
+}
+
+func (p *AuthServiceRefreshTokenResult) DeepEqual(ano *AuthServiceRefreshTokenResult) bool {
+	if p == ano {
+		return true
+	} else if p == nil || ano == nil {
+		return false
+	}
+	if !p.Field0DeepEqual(ano.Success) {
+		return false
+	}
+	return true
+}
+
+func (p *AuthServiceRefreshTokenResult) Field0DeepEqual(src *RefreshTokenResp) bool {
 
 	if !p.Success.DeepEqual(src) {
 		return false

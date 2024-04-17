@@ -18,15 +18,14 @@ struct LoginResp {
 }
 
 struct RefreshTokenReq {
-
+    1: required string oldToken
 }
 
 struct RefreshTokenResp {
-    
+    1: string newToken
 }
 
-struct Refresh
-
-service LoginService {
+service AuthService {
     LoginResp Login(1: LoginReq req)
+    RefreshTokenResp RefreshToken(1: RefreshTokenReq req)
 }

@@ -25,14 +25,14 @@ const (
 )
 
 // LoginServiceImpl implements the last service interface defined in the IDL.
-type LoginServiceImpl struct{}
+type AuthServiceImpl struct{}
 
 // Login implements the LoginServiceImpl interface.
-func (s *LoginServiceImpl) Login(ctx context.Context, req *auth.LoginReq) (*auth.LoginResp, error) {
+func (s *AuthServiceImpl) Login(ctx context.Context, req *auth.LoginReq) (*auth.LoginResp, error) {
 	resp := auth.NewLoginResp()
 	resp.BaseResp = base.NewBaseResp()
 	resp.BaseResp.Data = make(map[string]string)
-	
+
 	// check existence of user
 	user, err := dao.FindUserByUsername(ctx, req.GetUsername())
 	if err != nil {
@@ -58,7 +58,7 @@ func (s *LoginServiceImpl) Login(ctx context.Context, req *auth.LoginReq) (*auth
 		return resp, nil
 	}
 
-	/* 
+	/*
 		wrong password attempts logic
 	*/
 	attemptKey := fmt.Sprintf("WrongPwd:%s", req.Username)
@@ -75,13 +75,13 @@ func (s *LoginServiceImpl) Login(ctx context.Context, req *auth.LoginReq) (*auth
 			resp.BaseResp.Msg = errMsg
 			resp.BaseResp.Data = map[string]string{
 				"remaining_attempts": "0",
-				"lock_expires": lockedUntil.String(),
+				"lock_expires":       lockedUntil.String(),
 			}
 			return resp, nil
 		}
 	}
 
-	/* 
+	/*
 		verify password
 	*/
 	if util.VerifyPassword(user.Password, req.GetPassword()) {
@@ -111,7 +111,7 @@ func (s *LoginServiceImpl) Login(ctx context.Context, req *auth.LoginReq) (*auth
 			resp.BaseResp.Msg = errMsg
 			resp.BaseResp.Data = map[string]string{
 				"remaining_attempts": "0",
-				"lock_expires": lockExpiration.String(),
+				"lock_expires":       lockExpiration.String(),
 			}
 			return resp, nil
 		} else {
@@ -125,7 +125,7 @@ func (s *LoginServiceImpl) Login(ctx context.Context, req *auth.LoginReq) (*auth
 		}
 	}
 
-	/* 
+	/*
 		sign token
 	*/
 	// First try to get jwt cache from redis
@@ -177,11 +177,17 @@ func (s *LoginServiceImpl) Login(ctx context.Context, req *auth.LoginReq) (*auth
 	if user.Birthday != nil {
 		birthdayStr = user.Birthday.Format(time.RFC822Z)
 	}
-	
+
 	resp.BaseResp.Code = 0
 	resp.Token = tokenStr
 	resp.Gender = user.Gender
 	resp.Birthday = birthdayStr
 	resp.Region = user.Region
 	return resp, nil
+}
+
+// RefreshToken implements the AuthServiceImpl interface.
+func (s *AuthServiceImpl) RefreshToken(ctx context.Context, req *auth.RefreshTokenReq) (resp *auth.RefreshTokenResp, err error) {
+	// TODO: Your code here...
+	return
 }

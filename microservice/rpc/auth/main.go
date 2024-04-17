@@ -1,12 +1,12 @@
 package main
 
 import (
-	auth "api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth/loginservice"
+	auth "api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth/authservice"
 	"log"
 )
 
 func main() {
-	svr := auth.NewServer(new(LoginServiceImpl))
+	svr := auth.NewServer(new(AuthServiceImpl))
 
 	err := svr.Run()
 

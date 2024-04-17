@@ -9,7 +9,7 @@ import (
 
 	"api.backend.xjco2913/controller/dto"
 	"api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth"
-	"api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth/loginservice"
+	"api.backend.xjco2913/microservice/kitex_gen/rpc/xjco2913/auth/authservice"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/user"
 	"github.com/cloudwego/kitex/client"
@@ -18,12 +18,12 @@ import (
 )
 
 type UserController struct{
-	authCli loginservice.Client
+	authCli authservice.Client
 }
 
 func NewUserController() *UserController {
 	return &UserController{
-		authCli: loginservice.MustNewClient("rpc.xjco2913.auth", client.WithHostPorts("43.136.232.116:8888")),
+		authCli: authservice.MustNewClient("rpc.xjco2913.auth", client.WithHostPorts("43.136.232.116:8888")),
 	}
 }
 
