@@ -18,11 +18,13 @@ struct LoginResp {
 }
 
 struct RefreshTokenReq {
-    1: required string oldToken
+    1: required string userID
 }
 
 struct RefreshTokenResp {
     1: string newToken
+
+    255: base.BaseResp baseResp
 }
 
 service AuthService {

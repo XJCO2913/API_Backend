@@ -187,7 +187,58 @@ func (s *AuthServiceImpl) Login(ctx context.Context, req *auth.LoginReq) (*auth.
 }
 
 // RefreshToken implements the AuthServiceImpl interface.
-func (s *AuthServiceImpl) RefreshToken(ctx context.Context, req *auth.RefreshTokenReq) (resp *auth.RefreshTokenResp, err error) {
-	// TODO: Your code here...
-	return
+func (s *AuthServiceImpl) RefreshToken(ctx context.Context, req *auth.RefreshTokenReq) (*auth.RefreshTokenResp, error) {
+	resp := auth.NewRefreshTokenResp()
+	resp.BaseResp = base.NewBaseResp()
+	resp.BaseResp.Data = make(map[string]string)
+
+	user, err := dao.GetUserByID(ctx, req.GetUserID())
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			resp.BaseResp.Code = -1
+			resp.BaseResp.Msg = "user not found"
+			return resp, nil
+		}
+
+		zlog.Error("error while find user by userID", zap.Error(err), zap.String("userID", req.GetUserID()))
+		return nil, consts.ErrInternal
+	}
+
+	// delete token cache
+	cacheKey := fmt.Sprintf("jwt:%v", user.Username)
+	err = redis.RDB().Del(ctx, cacheKey).Err()
+	if err != nil {
+		zlog.Error("error while delete jwt cache", zap.Error(err))
+		return nil, consts.ErrInternal
+	}
+
+	// generate new token
+	organiser, err := dao.GetOrganiserByID(ctx, user.UserID)
+	isOrganiser := false
+	if err == nil && organiser != nil {
+		isOrganiser = true
+	}
+
+	claims := jwt.MapClaims{
+		"userID":         user.UserID,
+		"isAdmin":        false,
+		"exp":            time.Now().Add(24 * time.Hour).Unix(),
+		"isOrganiser":    isOrganiser,
+		"membershipType": user.MembershipType,
+	}
+
+	newToken, err := util.GenerateJWTToken(claims)
+	if err != nil {
+		zlog.Error("Error while generate new jwt token", zap.Error(err))
+		return nil, consts.ErrInternal
+	}
+
+	err = redis.RDB().Set(ctx, cacheKey, newToken, 24*time.Hour).Err()
+	if err != nil {
+		zlog.Error("Error while set jwt cache", zap.Error(err))
+		return nil, consts.ErrInternal
+	}
+
+	resp.NewToken_ = newToken
+	return resp, nil
 }

@@ -538,19 +538,28 @@ func (u *UserController) RefreshToken(c *gin.Context) {
 		return
 	}
 
-	res, sErr := user.Service().RefreshToken(c.Request.Context(), userID)
-	if sErr != nil {
-		c.JSON(sErr.Code(), dto.CommonRes{
+	res, err := u.authCli.RefreshToken(context.Background(), &auth.RefreshTokenReq{
+		UserID: userID,
+	})
+	if err != nil {
+		c.JSON(500, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg: sErr.Error(),
+			StatusMsg: err.Error(),
 		})
+		return
+	} else if res.BaseResp.Code != 0 {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg: res.BaseResp.Msg,
+		})
+		return
 	}
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg: "refresh token successfully",
 		Data: gin.H{
-			"newToken": res.NewToken,
+			"newToken": res.NewToken_,
 		},
 	})
 }

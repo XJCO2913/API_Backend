@@ -699,7 +699,7 @@ func (p *LoginResp) Field255DeepEqual(src *base.BaseResp) bool {
 }
 
 type RefreshTokenReq struct {
-	OldToken string `thrift:"oldToken,1,required" frugal:"1,required,string" json:"oldToken"`
+	UserID string `thrift:"userID,1,required" frugal:"1,required,string" json:"userID"`
 }
 
 func NewRefreshTokenReq() *RefreshTokenReq {
@@ -710,22 +710,22 @@ func (p *RefreshTokenReq) InitDefault() {
 	*p = RefreshTokenReq{}
 }
 
-func (p *RefreshTokenReq) GetOldToken() (v string) {
-	return p.OldToken
+func (p *RefreshTokenReq) GetUserID() (v string) {
+	return p.UserID
 }
-func (p *RefreshTokenReq) SetOldToken(val string) {
-	p.OldToken = val
+func (p *RefreshTokenReq) SetUserID(val string) {
+	p.UserID = val
 }
 
 var fieldIDToName_RefreshTokenReq = map[int16]string{
-	1: "oldToken",
+	1: "userID",
 }
 
 func (p *RefreshTokenReq) Read(iprot thrift.TProtocol) (err error) {
 
 	var fieldTypeId thrift.TType
 	var fieldId int16
-	var issetOldToken bool = false
+	var issetUserID bool = false
 
 	if _, err = iprot.ReadStructBegin(); err != nil {
 		goto ReadStructBeginError
@@ -746,7 +746,7 @@ func (p *RefreshTokenReq) Read(iprot thrift.TProtocol) (err error) {
 				if err = p.ReadField1(iprot); err != nil {
 					goto ReadFieldError
 				}
-				issetOldToken = true
+				issetUserID = true
 			} else if err = iprot.Skip(fieldTypeId); err != nil {
 				goto SkipFieldError
 			}
@@ -763,7 +763,7 @@ func (p *RefreshTokenReq) Read(iprot thrift.TProtocol) (err error) {
 		goto ReadStructEndError
 	}
 
-	if !issetOldToken {
+	if !issetUserID {
 		fieldId = 1
 		goto RequiredFieldNotSetError
 	}
@@ -790,7 +790,7 @@ func (p *RefreshTokenReq) ReadField1(iprot thrift.TProtocol) error {
 	if v, err := iprot.ReadString(); err != nil {
 		return err
 	} else {
-		p.OldToken = v
+		p.UserID = v
 	}
 	return nil
 }
@@ -824,10 +824,10 @@ WriteStructEndError:
 }
 
 func (p *RefreshTokenReq) writeField1(oprot thrift.TProtocol) (err error) {
-	if err = oprot.WriteFieldBegin("oldToken", thrift.STRING, 1); err != nil {
+	if err = oprot.WriteFieldBegin("userID", thrift.STRING, 1); err != nil {
 		goto WriteFieldBeginError
 	}
-	if err := oprot.WriteString(p.OldToken); err != nil {
+	if err := oprot.WriteString(p.UserID); err != nil {
 		return err
 	}
 	if err = oprot.WriteFieldEnd(); err != nil {
@@ -854,7 +854,7 @@ func (p *RefreshTokenReq) DeepEqual(ano *RefreshTokenReq) bool {
 	} else if p == nil || ano == nil {
 		return false
 	}
-	if !p.Field1DeepEqual(ano.OldToken) {
+	if !p.Field1DeepEqual(ano.UserID) {
 		return false
 	}
 	return true
@@ -862,14 +862,15 @@ func (p *RefreshTokenReq) DeepEqual(ano *RefreshTokenReq) bool {
 
 func (p *RefreshTokenReq) Field1DeepEqual(src string) bool {
 
-	if strings.Compare(p.OldToken, src) != 0 {
+	if strings.Compare(p.UserID, src) != 0 {
 		return false
 	}
 	return true
 }
 
 type RefreshTokenResp struct {
-	NewToken_ string `thrift:"newToken,1" frugal:"1,default,string" json:"newToken"`
+	NewToken_ string         `thrift:"newToken,1" frugal:"1,default,string" json:"newToken"`
+	BaseResp  *base.BaseResp `thrift:"baseResp,255" frugal:"255,default,base.BaseResp" json:"baseResp"`
 }
 
 func NewRefreshTokenResp() *RefreshTokenResp {
@@ -883,12 +884,29 @@ func (p *RefreshTokenResp) InitDefault() {
 func (p *RefreshTokenResp) GetNewToken_() (v string) {
 	return p.NewToken_
 }
+
+var RefreshTokenResp_BaseResp_DEFAULT *base.BaseResp
+
+func (p *RefreshTokenResp) GetBaseResp() (v *base.BaseResp) {
+	if !p.IsSetBaseResp() {
+		return RefreshTokenResp_BaseResp_DEFAULT
+	}
+	return p.BaseResp
+}
 func (p *RefreshTokenResp) SetNewToken_(val string) {
 	p.NewToken_ = val
 }
+func (p *RefreshTokenResp) SetBaseResp(val *base.BaseResp) {
+	p.BaseResp = val
+}
 
 var fieldIDToName_RefreshTokenResp = map[int16]string{
-	1: "newToken",
+	1:   "newToken",
+	255: "baseResp",
+}
+
+func (p *RefreshTokenResp) IsSetBaseResp() bool {
+	return p.BaseResp != nil
 }
 
 func (p *RefreshTokenResp) Read(iprot thrift.TProtocol) (err error) {
@@ -913,6 +931,14 @@ func (p *RefreshTokenResp) Read(iprot thrift.TProtocol) (err error) {
 		case 1:
 			if fieldTypeId == thrift.STRING {
 				if err = p.ReadField1(iprot); err != nil {
+					goto ReadFieldError
+				}
+			} else if err = iprot.Skip(fieldTypeId); err != nil {
+				goto SkipFieldError
+			}
+		case 255:
+			if fieldTypeId == thrift.STRUCT {
+				if err = p.ReadField255(iprot); err != nil {
 					goto ReadFieldError
 				}
 			} else if err = iprot.Skip(fieldTypeId); err != nil {
@@ -956,6 +982,13 @@ func (p *RefreshTokenResp) ReadField1(iprot thrift.TProtocol) error {
 	}
 	return nil
 }
+func (p *RefreshTokenResp) ReadField255(iprot thrift.TProtocol) error {
+	p.BaseResp = base.NewBaseResp()
+	if err := p.BaseResp.Read(iprot); err != nil {
+		return err
+	}
+	return nil
+}
 
 func (p *RefreshTokenResp) Write(oprot thrift.TProtocol) (err error) {
 	var fieldId int16
@@ -965,6 +998,10 @@ func (p *RefreshTokenResp) Write(oprot thrift.TProtocol) (err error) {
 	if p != nil {
 		if err = p.writeField1(oprot); err != nil {
 			fieldId = 1
+			goto WriteFieldError
+		}
+		if err = p.writeField255(oprot); err != nil {
+			fieldId = 255
 			goto WriteFieldError
 		}
 	}
@@ -1002,6 +1039,23 @@ WriteFieldEndError:
 	return thrift.PrependError(fmt.Sprintf("%T write field 1 end error: ", p), err)
 }
 
+func (p *RefreshTokenResp) writeField255(oprot thrift.TProtocol) (err error) {
+	if err = oprot.WriteFieldBegin("baseResp", thrift.STRUCT, 255); err != nil {
+		goto WriteFieldBeginError
+	}
+	if err := p.BaseResp.Write(oprot); err != nil {
+		return err
+	}
+	if err = oprot.WriteFieldEnd(); err != nil {
+		goto WriteFieldEndError
+	}
+	return nil
+WriteFieldBeginError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 255 begin error: ", p), err)
+WriteFieldEndError:
+	return thrift.PrependError(fmt.Sprintf("%T write field 255 end error: ", p), err)
+}
+
 func (p *RefreshTokenResp) String() string {
 	if p == nil {
 		return "<nil>"
@@ -1019,12 +1073,22 @@ func (p *RefreshTokenResp) DeepEqual(ano *RefreshTokenResp) bool {
 	if !p.Field1DeepEqual(ano.NewToken_) {
 		return false
 	}
+	if !p.Field255DeepEqual(ano.BaseResp) {
+		return false
+	}
 	return true
 }
 
 func (p *RefreshTokenResp) Field1DeepEqual(src string) bool {
 
 	if strings.Compare(p.NewToken_, src) != 0 {
+		return false
+	}
+	return true
+}
+func (p *RefreshTokenResp) Field255DeepEqual(src *base.BaseResp) bool {
+
+	if !p.BaseResp.DeepEqual(src) {
 		return false
 	}
 	return true
