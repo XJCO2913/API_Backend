@@ -93,3 +93,31 @@ func UpdateUserByID(ctx context.Context, userID string, updates map[string]inter
 
 	return nil
 }
+
+func GetUsersByActivityID(ctx context.Context, activityID string) ([]*model.User, error) {
+	var activityUsers []*model.ActivityUser
+	var users []*model.User
+
+	a := query.Use(DB).ActivityUser
+
+	activityUsers, err := a.WithContext(ctx).Where(a.ActivityID.Eq(activityID)).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	userIDs := make([]string, len(activityUsers))
+	for i, activityUser := range activityUsers {
+		userIDs[i] = activityUser.UserID
+	}
+
+	if len(userIDs) > 0 {
+		u := query.Use(DB).User
+
+		users, err = u.WithContext(ctx).Where(u.UserID.In(userIDs...)).Find()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return users, nil
+}

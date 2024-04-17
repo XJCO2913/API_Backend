@@ -16,28 +16,24 @@ func CreateActivityUser(ctx context.Context, newUserActivity *model.ActivityUser
 	return nil
 }
 
-func GetActivitiesByUserID(ctx context.Context, userID string) ([]*model.Activity, error) {
-	var activityUsers []*model.ActivityUser
-	var activities []*model.Activity
-
+func FindActivityUserByIDs(ctx context.Context, activityID, userID string) (*model.ActivityUser, error) {
 	a := query.Use(DB).ActivityUser
-	activityUsers, err := a.WithContext(ctx).Where(a.UserID.Eq(userID)).Find()
+
+	activityUser, err := a.WithContext(ctx).Where(a.ActivityID.Eq(activityID), a.UserID.Eq(userID)).First()
 	if err != nil {
 		return nil, err
 	}
 
-	activityIDs := make([]string, len(activityUsers))
-	for i, userActivity := range activityUsers {
-		activityIDs[i] = userActivity.ActivityID
+	return activityUser, nil
+}
+
+func CountParticipantsByActivityID(ctx context.Context, activityID string) (int64, error) {
+	a := query.Use(DB).ActivityUser
+
+	count, err := a.WithContext(ctx).Where(a.ActivityID.Eq(activityID)).Count()
+	if err != nil {
+		return 0, err
 	}
 
-	if len(activityIDs) > 0 {
-		a := query.Use(DB).Activity
-		activities, err = a.WithContext(ctx).Where(a.ActivityID.In(activityIDs...)).Find()
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	return activities, nil
+	return count, nil
 }

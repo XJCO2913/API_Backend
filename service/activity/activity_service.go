@@ -5,12 +5,14 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+	"time"
 
 	"api.backend.xjco2913/dao"
 	"api.backend.xjco2913/dao/minio"
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
+	"api.backend.xjco2913/util"
 	"api.backend.xjco2913/util/zlog"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
@@ -165,6 +167,7 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 		if activity.Description != nil {
 			description = *activity.Description
 		}
+
 		if activity.Tags != nil {
 			tags = *activity.Tags
 		}
@@ -181,25 +184,28 @@ func (s *ActivityService) GetAll(ctx context.Context) ([]*sdto.GetAllActivityOut
 
 		var createdAtStr string
 		if activity.CreatedAt != nil {
-			createdAtStr = activity.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
+			createdAtStr = activity.CreatedAt.Format(time.RFC822)
 		}
 
-		originalFee := activity.Fee
-		finalFee := originalFee
+		participantsCount, err := dao.CountParticipantsByActivityID(ctx, activity.ActivityID)
+		if err != nil {
+			zlog.Error("Failed to count participants for the activity", zap.String("activityID", activity.ActivityID), zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
 
 		activityDtos[i] = &sdto.GetAllActivityOutput{
-			ActivityID:  activity.ActivityID,
-			Name:        activity.Name,
-			Description: description,
-			CoverURL:    coverURL,
-			StartDate:   activity.StartDate.Format("2006-01-02"),
-			EndDate:     activity.EndDate.Format("2006-01-02"),
-			Tags:        tags,
-			NumberLimit: activity.NumberLimit,
-			OriginalFee: originalFee,
-			FinalFee:    finalFee,
-			CreatedAt:   createdAtStr,
-			CreatorID:   activity.CreatorID,
+			ActivityID:        activity.ActivityID,
+			Name:              activity.Name,
+			Description:       description,
+			CoverURL:          coverURL,
+			StartDate:         activity.StartDate.Format(time.RFC822),
+			EndDate:           activity.EndDate.Format(time.RFC822),
+			Tags:              tags,
+			NumberLimit:       activity.NumberLimit,
+			OriginalFee:       activity.Fee,
+			CreatedAt:         createdAtStr,
+			CreatorID:         activity.CreatorID,
+			ParticipantsCount: int32(participantsCount),
 		}
 	}
 
@@ -210,10 +216,10 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 	activity, err := dao.GetActivityByID(ctx, activityID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			zlog.Warn("Activity not found", zap.String("activityID", activityID))
-			return nil, errorx.NewServicerErr(errorx.ErrExternal, "Activity not found", nil)
+			zlog.Warn("Activity not found by activity ID", zap.String("activityID", activityID))
+			return nil, errorx.NewServicerErr(errorx.ErrExternal, "Activity not found by activity ID", nil)
 		} else {
-			zlog.Error("Failed to retrieve activity by ID", zap.String("activityID", activityID), zap.Error(err))
+			zlog.Error("Failed to retrieve activity by activity ID", zap.String("activityID", activityID), zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
 	}
@@ -222,6 +228,7 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 	if activity.Description != nil {
 		description = *activity.Description
 	}
+
 	if activity.Tags != nil {
 		tags = *activity.Tags
 	}
@@ -237,25 +244,65 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 
 	var createdAtStr string
 	if activity.CreatedAt != nil {
-		createdAtStr = activity.CreatedAt.Format("2006-01-02T15:04:05Z07:00")
+		createdAtStr = activity.CreatedAt.Format(time.RFC822)
 	}
 
-	originalFee := activity.Fee
-	finalFee := originalFee
+	participantsCount, err := dao.CountParticipantsByActivityID(ctx, activity.ActivityID)
+	if err != nil {
+		zlog.Error("Failed to count participants for activity", zap.String("activityID", activity.ActivityID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	participants, err := dao.GetUsersByActivityID(ctx, activityID)
+	if err != nil {
+		zlog.Error("Failed to retrieve participants for activity", zap.String("activityID", activityID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	creator, err := dao.GetUserByID(ctx, activity.CreatorID)
+	if err != nil {
+		zlog.Error("Failed to retrieve creator by ID", zap.String("userID", activity.CreatorID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	var participantInfos []sdto.ParticipantInfo
+	for _, user := range participants {
+		// get avatar url from minio
+		avatarURL := ""
+		if user.AvatarURL != nil || !util.IsEmpty(user.AvatarURL) {
+			avatarURL, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+			if err != nil {
+				return nil, errorx.NewInternalErr()
+			}
+		}
+
+		participantInfos = append(participantInfos, sdto.ParticipantInfo{
+			UserID:         user.UserID,
+			Username:       user.Username,
+			Gender:         user.Gender,
+			Birthday:       user.Birthday.Format(time.RFC822),
+			Region:         user.Region,
+			MembershipTime: user.MembershipTime,
+			AvatarURL:      avatarURL,
+			MembershipType: user.MembershipType,
+		})
+	}
 
 	output := &sdto.GetActivityByIDOutput{
-		ActivityID:  activity.ActivityID,
-		Name:        activity.Name,
-		Description: description,
-		CoverURL:    coverURL,
-		StartDate:   activity.StartDate.Format("2006-01-02"),
-		EndDate:     activity.EndDate.Format("2006-01-02"),
-		Tags:        tags,
-		NumberLimit: activity.NumberLimit,
-		OriginalFee: originalFee,
-		FinalFee:    finalFee,
-		CreatedAt:   createdAtStr,
-		CreatorID:   activity.CreatorID,
+		ActivityID:        activity.ActivityID,
+		Name:              activity.Name,
+		Description:       description,
+		CoverURL:          coverURL,
+		StartDate:         activity.StartDate.Format(time.RFC822),
+		EndDate:           activity.EndDate.Format(time.RFC822),
+		Tags:              tags,
+		NumberLimit:       activity.NumberLimit,
+		OriginalFee:       activity.Fee,
+		CreatedAt:         createdAtStr,
+		CreatorID:         activity.CreatorID,
+		CreatorName:       creator.Username,
+		ParticipantsCount: int32(participantsCount),
+		Participants:      participantInfos,
 	}
 
 	return output, nil
@@ -305,7 +352,7 @@ func (s *ActivityService) Feed(ctx context.Context) (*sdto.ActivityFeedOutput, *
 
 		coverUrl, err := minio.GetActivityCoverUrl(ctx, activity.CoverURL)
 		if err != nil {
-			zlog.Error("Error while get activity cover url", zap.Error(err), zap.String("activityID", activity.ActivityID))
+			zlog.Error("Error while get activity cover URL", zap.Error(err), zap.String("activityID", activity.ActivityID))
 			return nil, errorx.NewInternalErr()
 		}
 		activities[i].CoverUrl = coverUrl
@@ -320,12 +367,18 @@ func (s *ActivityService) SignUpByActivityID(ctx context.Context, input *sdto.Si
 	activity, err := dao.GetActivityByID(ctx, input.ActivityID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			zlog.Warn("Activity not found", zap.String("activityID", input.ActivityID))
-			return errorx.NewServicerErr(errorx.ErrExternal, "Activity not found", nil)
+			zlog.Warn("Activity not found by activity ID", zap.String("activityID", input.ActivityID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "Activity not found by activity ID", nil)
 		} else {
-			zlog.Error("Failed to retrieve activity by ID", zap.String("activityID", input.ActivityID), zap.Error(err))
+			zlog.Error("Failed to retrieve activity by activity ID", zap.String("activityID", input.ActivityID), zap.Error(err))
 			return errorx.NewInternalErr()
 		}
+	}
+
+	_, err = dao.FindActivityUserByIDs(ctx, input.ActivityID, input.UserID)
+	if err == nil {
+		zlog.Error("User already signed up for this activity", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "User already signed up for this activity", nil)
 	}
 
 	if activity.Fee > 0 && input.MembershipType == 0 {
@@ -333,7 +386,7 @@ func (s *ActivityService) SignUpByActivityID(ctx context.Context, input *sdto.Si
 		return errorx.NewServicerErr(errorx.ErrExternal, "Ordinary user cannot sign up for paid activities", nil)
 	}
 
-	finalFee := calculateFinalFee(activity.Fee, input.MembershipType)
+	finalFee := CalculateFinalFee(activity.Fee, input.MembershipType)
 	if finalFee == -1 {
 		zlog.Error("Invalid membership type or failed to calculate fee", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
 		return errorx.NewInternalErr()
@@ -353,7 +406,7 @@ func (s *ActivityService) SignUpByActivityID(ctx context.Context, input *sdto.Si
 	return nil
 }
 
-func calculateFinalFee(baseFee int32, membershipType int64) int32 {
+func CalculateFinalFee(baseFee int32, membershipType int64) int32 {
 	switch membershipType {
 	case 1:
 		return baseFee
@@ -362,4 +415,133 @@ func calculateFinalFee(baseFee int32, membershipType int64) int32 {
 	default:
 		return -1
 	}
+}
+
+func (s *ActivityService) GetByUserID(ctx context.Context, userID string) (*sdto.GetActivitiesByUserIDOutput, *errorx.ServiceErr) {
+	activities, err := dao.GetActivitiesByUserID(ctx, userID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("Activity not found by user ID", zap.String("userID", userID))
+			return nil, errorx.NewServicerErr(errorx.ErrExternal, "Activity not found by user ID", nil)
+		} else {
+			zlog.Error("Failed to retrieve activities by user ID", zap.String("userID", userID), zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+	}
+
+	if len(activities) == 0 {
+		return &sdto.GetActivitiesByUserIDOutput{Activities: []*sdto.GetActivitiesByUserID{}}, nil
+	}
+
+	var activitiesOutput []*sdto.GetActivitiesByUserID
+	for _, activity := range activities {
+		var description, tags, coverURL, createdAtStr string
+		if activity.Description != nil {
+			description = *activity.Description
+		}
+
+		if activity.Tags != nil {
+			tags = *activity.Tags
+		}
+
+		// get cover url from minio
+		if activity.CoverURL != "" {
+			coverURL, err = minio.GetActivityCoverUrl(ctx, activity.CoverURL)
+			if err != nil {
+				zlog.Error("Error while get activity cover URL", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+		}
+
+		if activity.CreatedAt != nil {
+			createdAtStr = activity.CreatedAt.Format(time.RFC822)
+		}
+
+		activityUser, err := dao.FindActivityUserByIDs(ctx, activity.ActivityID, userID)
+		if err != nil {
+			zlog.Error("Failed to find activity user association", zap.String("userID", userID), zap.String("activityID", activity.ActivityID), zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		activitiesOutput = append(activitiesOutput, &sdto.GetActivitiesByUserID{
+			ActivityID:  activity.ActivityID,
+			Name:        activity.Name,
+			Description: description,
+			CoverURL:    coverURL,
+			StartDate:   activity.StartDate.Format(time.RFC822),
+			EndDate:     activity.EndDate.Format(time.RFC822),
+			Tags:        tags,
+			NumberLimit: activity.NumberLimit,
+			OriginalFee: activity.Fee,
+			FinalFee:    activityUser.FinalFee,
+			CreatedAt:   createdAtStr,
+			CreatorID:   activity.CreatorID,
+		})
+	}
+
+	return &sdto.GetActivitiesByUserIDOutput{Activities: activitiesOutput}, nil
+}
+
+func (s *ActivityService) GetByCreatorID(ctx context.Context, creatorID string) (*sdto.GetActivitiesByCreatorOutput, *errorx.ServiceErr) {
+	activities, err := dao.GetActivitiesByCreatorID(ctx, creatorID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("Activity not found by creator ID", zap.String("creatorID", creatorID))
+			return nil, errorx.NewServicerErr(errorx.ErrExternal, "Activity not found by creator ID", nil)
+		} else {
+			zlog.Error("Failed to retrieve activities by creator ID", zap.String("creatorID", creatorID), zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+	}
+
+	if len(activities) == 0 {
+		return &sdto.GetActivitiesByCreatorOutput{Activities: []*sdto.GetActivitiesByCreator{}}, nil
+	}
+
+	var activitiesOutput []*sdto.GetActivitiesByCreator
+	for _, activity := range activities {
+		var description, tags, coverURL, createdAtStr string
+		if activity.Description != nil {
+			description = *activity.Description
+		}
+
+		if activity.Tags != nil {
+			tags = *activity.Tags
+		}
+
+		if activity.CoverURL != "" {
+			coverURL, err = minio.GetActivityCoverUrl(ctx, activity.CoverURL)
+			if err != nil {
+				zlog.Error("Error while get activity cover URL", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+		}
+
+		if activity.CreatedAt != nil {
+			createdAtStr = activity.CreatedAt.Format(time.RFC822)
+		}
+
+		participantsCount, err := dao.CountParticipantsByActivityID(ctx, activity.ActivityID)
+		if err != nil {
+			zlog.Error("Failed to count participants for the activity", zap.String("activityID", activity.ActivityID), zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		activitiesOutput = append(activitiesOutput, &sdto.GetActivitiesByCreator{
+			ActivityID:        activity.ActivityID,
+			Name:              activity.Name,
+			Description:       description,
+			CoverURL:          coverURL,
+			StartDate:         activity.StartDate.Format(time.RFC822),
+			EndDate:           activity.EndDate.Format(time.RFC822),
+			Tags:              tags,
+			NumberLimit:       activity.NumberLimit,
+			OriginalFee:       activity.Fee,
+			CreatedAt:         createdAtStr,
+			CreatorID:         activity.CreatorID,
+			ParticipantsCount: int32(participantsCount),
+		})
+	}
+
+	return &sdto.GetActivitiesByCreatorOutput{Activities: activitiesOutput}, nil
 }

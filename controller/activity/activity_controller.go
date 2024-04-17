@@ -120,6 +120,29 @@ func (a *ActivityController) Create(c *gin.Context) {
 }
 
 func (a *ActivityController) GetAll(c *gin.Context) {
+	userID, userIDExists := c.Get("userID")
+	if !userIDExists {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "User ID is required",
+		})
+		return
+	}
+
+	userActivities, err := activity.Service().GetByUserID(c.Request.Context(), userID.(string))
+	if err != nil {
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
+	registeredActivities := make(map[string]bool)
+	for _, activity := range userActivities.Activities {
+		registeredActivities[activity.ActivityID] = true
+	}
+
 	activities, err := activity.Service().GetAll(c.Request.Context())
 	if err != nil {
 		c.JSON(err.Code(), dto.CommonRes{
@@ -162,19 +185,24 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 		finalFee := activity.OriginalFee
 		finalFee = finalFee * discount / 10
 
+		// Check if the current user has registered for the activities
+		isRegistered := registeredActivities[activity.ActivityID]
+
 		activityInfos[i] = gin.H{
-			"activityId":  activity.ActivityID,
-			"name":        activity.Name,
-			"description": activity.Description,
-			"coverUrl":    activity.CoverURL,
-			"startDate":   activity.StartDate,
-			"endDate":     activity.EndDate,
-			"tags":        activity.Tags,
-			"numberLimit": activity.NumberLimit,
-			"originalFee": activity.OriginalFee,
-			"finalFee":    finalFee,
-			"createdAt":   activity.CreatedAt,
-			"creatorID":   activity.CreatorID,
+			"activityId":        activity.ActivityID,
+			"name":              activity.Name,
+			"description":       activity.Description,
+			"coverUrl":          activity.CoverURL,
+			"startDate":         activity.StartDate,
+			"endDate":           activity.EndDate,
+			"tags":              activity.Tags,
+			"numberLimit":       activity.NumberLimit,
+			"originalFee":       activity.OriginalFee,
+			"finalFee":          finalFee,
+			"createdAt":         activity.CreatedAt,
+			"creatorID":         activity.CreatorID,
+			"participantsCount": activity.ParticipantsCount,
+			"isRegistered":      isRegistered,
 		}
 	}
 
@@ -187,6 +215,33 @@ func (a *ActivityController) GetAll(c *gin.Context) {
 
 func (a *ActivityController) GetByID(c *gin.Context) {
 	activityID := c.Query("activityID")
+
+	userID, userIDExists := c.Get("userID")
+	if !userIDExists {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "User ID is required",
+		})
+		return
+	}
+
+	userActivities, serviceErr := activity.Service().GetByUserID(c.Request.Context(), userID.(string))
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	// Check if the current user has registered for this activity
+	isRegistered := false
+	for _, userActivity := range userActivities.Activities {
+		if userActivity.ActivityID == activityID {
+			isRegistered = true
+			break
+		}
+	}
 
 	activity, serviceErr := activity.Service().GetByID(c.Request.Context(), activityID)
 	if serviceErr != nil {
@@ -228,19 +283,37 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 	finalFee := activity.OriginalFee
 	finalFee = finalFee * discount / 10
 
+	participantsInfo := make([]gin.H, 0, len(activity.Participants))
+	for _, participant := range activity.Participants {
+		participantsInfo = append(participantsInfo, gin.H{
+			"userID":         participant.UserID,
+			"username":       participant.Username,
+			"gender":         participant.Gender,
+			"birthday":       participant.Birthday,
+			"region":         participant.Region,
+			"membershipTime": participant.MembershipTime,
+			"avatarURL":      participant.AvatarURL,
+			"membershipType": participant.MembershipType,
+		})
+	}
+
 	responseData := gin.H{
-		"activityId":  activity.ActivityID,
-		"name":        activity.Name,
-		"description": activity.Description,
-		"coverUrl":    activity.CoverURL,
-		"startDate":   activity.StartDate,
-		"endDate":     activity.EndDate,
-		"tags":        activity.Tags,
-		"numberLimit": activity.NumberLimit,
-		"originalFee": activity.OriginalFee,
-		"finalFee":    finalFee,
-		"createdAt":   activity.CreatedAt,
-		"creatorID":   activity.CreatorID,
+		"activityId":        activity.ActivityID,
+		"name":              activity.Name,
+		"description":       activity.Description,
+		"coverUrl":          activity.CoverURL,
+		"startDate":         activity.StartDate,
+		"endDate":           activity.EndDate,
+		"tags":              activity.Tags,
+		"numberLimit":       activity.NumberLimit,
+		"originalFee":       activity.OriginalFee,
+		"finalFee":          finalFee,
+		"createdAt":         activity.CreatedAt,
+		"creatorID":         activity.CreatorID,
+		"creatorName":       activity.CreatorName,
+		"participantsCount": activity.ParticipantsCount,
+		"participants":      participantsInfo,
+		"isRegistered":      isRegistered,
 	}
 
 	c.JSON(200, dto.CommonRes{
@@ -356,5 +429,101 @@ func (a *ActivityController) SignUpByActivityID(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Sign up for the activity successfully",
+	})
+}
+
+func (a *ActivityController) GetByUserID(c *gin.Context) {
+	userID := c.Query("userID")
+
+	currentUserID, currentUserExists := c.Get("userID")
+
+	// Check if the requested userID is the same as the current userID.
+	if !currentUserExists || userID != currentUserID.(string) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: You are not allowed to access other users' activities",
+		})
+		return
+	}
+
+	activities, serviceErr := activity.Service().GetByUserID(c.Request.Context(), userID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	var activitiesList []gin.H
+	for _, activity := range activities.Activities {
+		activitiesList = append(activitiesList, gin.H{
+			"activityId":  activity.ActivityID,
+			"name":        activity.Name,
+			"description": activity.Description,
+			"coverUrl":    activity.CoverURL,
+			"startDate":   activity.StartDate,
+			"endDate":     activity.EndDate,
+			"tags":        activity.Tags,
+			"numberLimit": activity.NumberLimit,
+			"originalFee": activity.OriginalFee,
+			"finalFee":    activity.FinalFee,
+			"createdAt":   activity.CreatedAt,
+			"creatorID":   activity.CreatorID,
+		})
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get activity(ies) successfully",
+		Data:       activitiesList,
+	})
+}
+
+func (a *ActivityController) GetByCreatorID(c *gin.Context) {
+	creatorID := c.Query("userID")
+
+	currentCreatorID, currentCreatorExists := c.Get("userID")
+
+	// Check if the requested CreatorID is the same as the current CreatorID.
+	if !currentCreatorExists || creatorID != currentCreatorID.(string) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: You are not allowed to access other creators' activities",
+		})
+		return
+	}
+
+	activities, serviceErr := activity.Service().GetByCreatorID(c.Request.Context(), creatorID)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	var activitiesList []gin.H
+	for _, activity := range activities.Activities {
+		activitiesList = append(activitiesList, gin.H{
+			"activityId":        activity.ActivityID,
+			"name":              activity.Name,
+			"description":       activity.Description,
+			"coverUrl":          activity.CoverURL,
+			"startDate":         activity.StartDate,
+			"endDate":           activity.EndDate,
+			"tags":              activity.Tags,
+			"numberLimit":       activity.NumberLimit,
+			"originalFee":       activity.OriginalFee,
+			"createdAt":         activity.CreatedAt,
+			"creatorID":         activity.CreatorID,
+			"participantsCount": activity.ParticipantsCount,
+		})
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get activity(ies) successfully",
+		Data:       activitiesList,
 	})
 }

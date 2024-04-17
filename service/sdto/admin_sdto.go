@@ -7,6 +7,6 @@ type AdminAuthenticateInput struct {
 
 type AdminAuthenticateOuput struct {
 	Token   string
-	AdminId int32
+	AdminId string
 	Name    string
 }

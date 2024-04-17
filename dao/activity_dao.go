@@ -87,3 +87,44 @@ func GetActivityLimit(ctx context.Context, limit int) ([]*model.Activity, error)
 
 	return res, nil
 }
+
+func GetActivitiesByUserID(ctx context.Context, userID string) ([]*model.Activity, error) {
+	var activityUsers []*model.ActivityUser
+	var activities []*model.Activity
+
+	a := query.Use(DB).ActivityUser
+
+	activityUsers, err := a.WithContext(ctx).Where(a.UserID.Eq(userID)).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	activityIDs := make([]string, len(activityUsers))
+	for i, userActivity := range activityUsers {
+		activityIDs[i] = userActivity.ActivityID
+	}
+
+	if len(activityIDs) > 0 {
+		a := query.Use(DB).Activity
+
+		activities, err = a.WithContext(ctx).Where(a.ActivityID.In(activityIDs...)).Find()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return activities, nil
+}
+
+func GetActivitiesByCreatorID(ctx context.Context, creatorID string) ([]*model.Activity, error) {
+	var activities []*model.Activity
+
+	a := query.Use(DB).Activity
+
+	activities, err := a.WithContext(ctx).Where(a.CreatorID.Eq(creatorID)).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	return activities, nil
+}

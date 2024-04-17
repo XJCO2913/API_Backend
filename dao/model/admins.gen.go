@@ -12,7 +12,7 @@ const TableNameAdmin = "admins"
 
 // Admin mapped from table <admins>
 type Admin struct {
-	ID        int32      `gorm:"column:id;primaryKey;autoIncrement:true" json:"id"`
+	ID        string     `gorm:"column:id;primaryKey" json:"id"`
 	AvatarURL *string    `gorm:"column:avatarUrl" json:"avatarUrl"`
 	Username  string     `gorm:"column:username;not null" json:"username"`
 	Password  string     `gorm:"column:password;not null" json:"password"`

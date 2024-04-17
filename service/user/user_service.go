@@ -59,7 +59,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *err
 	// Parse birthday
 	var birthdayEntity *time.Time = nil
 	if !util.IsEmpty(in.Birthday) {
-		birthday, err := time.Parse("2006-01-02", in.Birthday)
+		birthday, err := time.Parse(time.RFC822, in.Birthday)
 		if err != nil {
 			zlog.Error("Error while parse birthday " + in.Birthday)
 			return errorx.NewServicerErr(
@@ -228,7 +228,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 
 	var birthdayStr string
 	if user.Birthday != nil {
-		birthdayStr = user.Birthday.Format("2006-01-02")
+		birthdayStr = user.Birthday.Format(time.RFC822)
 	}
 
 	return &sdto.AuthenticateOutput{
@@ -262,7 +262,7 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 	for i, user := range users {
 		var birthday string
 		if user.Birthday != nil {
-			birthday = user.Birthday.Format("2006-01-02")
+			birthday = user.Birthday.Format(time.RFC822)
 		}
 
 		// get avatar url from minio
@@ -290,7 +290,6 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 			AvatarURL:      avatarURL,
 			OrganiserID:    organiserID,
 			MembershipType: user.MembershipType,
-			IsSubscribed:   user.IsSubscribed,
 		}
 	}
 
@@ -311,7 +310,7 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 
 	var birthday string
 	if user.Birthday != nil {
-		birthday = user.Birthday.Format("2006-01-02")
+		birthday = user.Birthday.Format(time.RFC822)
 	}
 
 	// get avatar url from minio
@@ -339,7 +338,6 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		AvatarURL:      avatarURL,
 		OrganiserID:    organiserID,
 		MembershipType: user.MembershipType,
-		IsSubscribed:   user.IsSubscribed,
 	}
 
 	return userDto, nil
@@ -543,7 +541,7 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 		if *input.Birthday == "" {
 			addUpdate("birthday", nil)
 		} else {
-			_, err := time.Parse("2006-01-02", *input.Birthday)
+			_, err := time.Parse(time.RFC822, *input.Birthday)
 			if err != nil {
 				zlog.Error("Error while parsing birthday", zap.String("birthday", *input.Birthday), zap.Error(err))
 				return errorx.NewServicerErr(errorx.ErrExternal, "Invalid birthday format", nil)
@@ -583,24 +581,15 @@ func (s *UserService) Subscribe(ctx context.Context, userID string, membershipTy
 		}
 	}
 
-	if user.IsSubscribed == 1 {
+	if user.MembershipType != 0 {
 		zlog.Warn("User has already subscribed", zap.String("userID", userID))
 		return errorx.NewServicerErr(errorx.ErrExternal, "User has already subscribed", nil)
 	}
 
-	var newExpiration int64
-	// If a user has refused to renew, but wants to resubscribe, and membership has not expired
-	if user.MembershipType != 0 {
-		// Extend from expiry date
-		newExpiration = user.MembershipTime + 30*24*60*60
-	} else {
-		// New users subscribe to membership
-		newExpiration = time.Now().Unix() + 30*24*60*60
-	}
+	newExpiration := time.Now().Unix() + 30*24*60*60
 
 	updates := map[string]interface{}{
 		"membershipTime": newExpiration,
-		"isSubscribed":   1,
 		"membershipType": membershipType,
 	}
 
@@ -625,14 +614,23 @@ func (s *UserService) CancelByID(ctx context.Context, userID string) *errorx.Ser
 		}
 	}
 
-	if user.IsSubscribed == 0 {
-		zlog.Warn("User has not subscribed", zap.String("userID", userID))
+	if user.MembershipType == 0 {
+		zlog.Error("User has not subscribed", zap.String("userID", userID))
 		return errorx.NewServicerErr(errorx.ErrExternal, "User has not subscribed", nil)
 	}
 
+	// No-reason refund (7 days after subscription start date)
+	cancellationDeadline := user.MembershipTime - 23*24*60*60
+
+	// Check if the current time is before the cancellation deadline
+	if time.Now().Unix() > cancellationDeadline {
+		zlog.Error("Cancellation period has expired", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "Cancellation period has expired", nil)
+	}
+
 	updates := map[string]interface{}{
-		// No renewal next month
-		"isSubscribed": 0,
+		"membershipType": 0,
+		"membershipTime": 0,
 	}
 
 	err = dao.UpdateUserByID(ctx, userID, updates)
