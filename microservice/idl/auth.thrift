@@ -17,6 +17,16 @@ struct LoginResp {
     255: base.BaseResp baseResp
 }
 
+struct RefreshTokenReq {
+
+}
+
+struct RefreshTokenResp {
+    
+}
+
+struct Refresh
+
 service LoginService {
     LoginResp Login(1: LoginReq req)
 }
