@@ -167,9 +167,30 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 	}
 
 	res := &sdto.FeedMomentOutput{
-		GPXRouteText: make(map[int]string),
+		GPXRouteText: make(map[int][][]string),
+		AuthorInfoMap: make(map[string]*model.User),
 	}
 	for i, moment := range moments {
+		// get author info
+		author, err := dao.GetUserByID(ctx, moment.AuthorID)
+		if err != nil {
+			zlog.Error("error while get moment author info", zap.Error(err), zap.String("momentID", moment.MomentID))
+			return nil, errorx.NewInternalErr()
+		}
+
+		// get author avatar url
+		if author.AvatarURL != nil {
+			url, err := minio.GetUserAvatarUrl(ctx, *author.AvatarURL)
+			if err != nil {
+				zlog.Error("error while get author avatar url", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+
+			author.AvatarURL = &url
+		}
+
+		res.AuthorInfoMap[moment.MomentID] = author
+
 		if moment.ImageURL != nil {
 			url, err := minio.GetMomentImageUrl(ctx, *moment.ImageURL)
 			if err != nil {
@@ -201,7 +222,7 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 				return nil, errorx.NewInternalErr()
 			}
 
-			res.GPXRouteText[i] = pathText
+			res.GPXRouteText[i] = util.GPXStrTo2DString(pathText)
 		}
 	}
 

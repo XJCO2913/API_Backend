@@ -118,7 +118,7 @@ func (m *MomentController) Create(c *gin.Context) {
 			})
 			return
 		}
-		
+
 	case "imageFile":
 		imageFile, err := fileHeader.Open()
 		if err != nil {
@@ -246,10 +246,16 @@ func (m *MomentController) Feed(c *gin.Context) {
 
 	moments := make([]gin.H, len(res.Moments))
 	for i := range res.Moments {
+		momentID := res.Moments[i].MomentID
 		moments[i] = gin.H{
-			"id":        res.Moments[i].MomentID,
+			"id":        momentID,
 			"createdAt": res.Moments[i].CreatedAt,
 			"message":   res.Moments[i].Content,
+			"authorInfo": gin.H{
+				"ID":        res.AuthorInfoMap[momentID].UserID,
+				"avatarUrl": res.AuthorInfoMap[momentID].AvatarURL,
+				"name":      res.AuthorInfoMap[momentID].Username,
+			},
 		}
 
 		// check and set media url
