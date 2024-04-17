@@ -23,7 +23,7 @@ type UserController struct{
 
 func NewUserController() *UserController {
 	return &UserController{
-		authCli: loginservice.MustNewClient("rpc.xjco2913.auth", client.WithHostPorts("0.0.0.0:8888")),
+		authCli: loginservice.MustNewClient("rpc.xjco2913.auth", client.WithHostPorts("43.136.232.116:8888")),
 	}
 }
 
