@@ -545,3 +545,58 @@ func (s *ActivityService) GetByCreatorID(ctx context.Context, creatorID string) 
 
 	return &sdto.GetActivitiesByCreatorOutput{Activities: activitiesOutput}, nil
 }
+
+func (s *ActivityService) ProfitWithinDateRange(ctx context.Context, startDate, endDate string) (int32, *errorx.ServiceErr) {
+	start, err := time.Parse(time.RFC822, startDate)
+	if err != nil {
+		zlog.Error("Invalid start date format", zap.String("startDate", startDate), zap.Error(err))
+		return 0, errorx.NewServicerErr(errorx.ErrExternal, "Invalid start date format", nil)
+	}
+
+	end, err := time.Parse(time.RFC822, endDate)
+	if err != nil {
+		zlog.Error("Invalid end date format", zap.String("endDate", endDate), zap.Error(err))
+		return 0, errorx.NewServicerErr(errorx.ErrExternal, "Invalid end date format", nil)
+	}
+
+	// The time period must be more than a week and less than a year
+	if end.Sub(start) < 7*24*time.Hour {
+		zlog.Error("Date range is at least one week", zap.String("startDate", startDate), zap.String("endDate", endDate))
+		return 0, errorx.NewServicerErr(errorx.ErrExternal, "Date range is at least one week", nil)
+	}
+
+	if end.Sub(start) > 365*24*time.Hour {
+		zlog.Error("Date range is no more than one year", zap.String("startDate", startDate), zap.String("endDate", endDate))
+		return 0, errorx.NewServicerErr(errorx.ErrExternal, "Date range is no more than one year", nil)
+	}
+
+	activities, err := dao.GetActivitiesWithinDateRange(ctx, start, end)
+	if err != nil {
+		zlog.Error("Failed to retrieve activities within date range", zap.Error(err))
+		return 0, errorx.NewInternalErr()
+	}
+
+	if len(activities) == 0 {
+		return 0, nil
+	}
+
+	var activityIDs []string
+	for _, activity := range activities {
+		activityIDs = append(activityIDs, activity.ActivityID)
+	}
+	activityIDsString := strings.Join(activityIDs, "|")
+
+	activityUsers, err := dao.GetActivityUserByActivityIDs(ctx, activityIDsString)
+	if err != nil {
+		zlog.Error("Failed to retrieve activity users", zap.String("activityIDs", activityIDsString), zap.Error(err))
+		return 0, errorx.NewInternalErr()
+	}
+
+	// Calculate total activity revenue
+	var totalProfit int32 = 0
+	for _, activityUser := range activityUsers {
+		totalProfit += activityUser.FinalFee
+	}
+
+	return totalProfit, nil
+}
