@@ -167,7 +167,7 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 	}
 
 	res := &sdto.FeedMomentOutput{
-		GPXRouteText: make(map[int]string),
+		GPXRouteText: make(map[int][][]string),
 	}
 	for i, moment := range moments {
 		if moment.ImageURL != nil {
@@ -201,7 +201,7 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 				return nil, errorx.NewInternalErr()
 			}
 
-			res.GPXRouteText[i] = pathText
+			res.GPXRouteText[i] = util.GPXStrTo2DString(pathText)
 		}
 	}
 
