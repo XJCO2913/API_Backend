@@ -1,6 +1,8 @@
 package activity
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 	"time"
 
@@ -64,6 +66,35 @@ func (a *ActivityController) Create(c *gin.Context) {
 		return
 	}
 
+	// get gpx file
+	gpxFileHeader, err := c.FormFile("gpxFile")
+	if err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "GPX file is required",
+		})
+		return
+	}
+
+	gpxFile, err := gpxFileHeader.Open()
+	if err != nil {
+		c.JSON(500, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Failed to open gpx file",
+		})
+		return
+	}
+	defer gpxFile.Close()
+
+	gpxBuf := bytes.NewBuffer(nil)
+	if _, err := io.Copy(gpxBuf, gpxFile); err != nil {
+		c.JSON(500, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  fmt.Sprintf("Fail copy image data: %s", err.Error()),
+		})
+		return
+	}
+
 	startDate, serviceErr := time.Parse(time.DateOnly, req.StartDate)
 	if serviceErr != nil {
 		c.JSON(400, dto.CommonRes{
@@ -97,6 +128,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 		Description: req.Description,
 		RouteID:     req.RouteID,
 		CoverData:   coverData,
+		GPXData:     gpxBuf.Bytes(),
 		StartDate:   startDate,
 		EndDate:     endDate,
 		Tags:        req.Tags,
@@ -104,11 +136,11 @@ func (a *ActivityController) Create(c *gin.Context) {
 		CreatorID:   userID.(string),
 	}
 
-	err := activity.Service().Create(c.Request.Context(), input)
-	if err != nil {
+	sErr := activity.Service().Create(c.Request.Context(), input)
+	if sErr != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  err.Error(),
+			StatusMsg:  sErr.Error(),
 		})
 		return
 	}
@@ -302,6 +334,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		"name":              activity.Name,
 		"description":       activity.Description,
 		"coverUrl":          activity.CoverURL,
+		"media_gpx":         activity.GPXRoute,
 		"startDate":         activity.StartDate,
 		"endDate":           activity.EndDate,
 		"tags":              activity.Tags,

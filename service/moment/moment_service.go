@@ -2,12 +2,12 @@ package moment
 
 import (
 	"context"
-	"fmt"
 	"time"
 
 	"api.backend.xjco2913/dao"
 	"api.backend.xjco2913/dao/minio"
 	"api.backend.xjco2913/dao/model"
+	"api.backend.xjco2913/service/gpx"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
 	"api.backend.xjco2913/util"
@@ -108,40 +108,19 @@ func (m *MomentService) CreateWithVideo(ctx context.Context, in *sdto.CreateMome
 }
 
 func (m *MomentService) CreateWithGPX(ctx context.Context, in *sdto.CreateMomentGPXInput) *errorx.ServiceErr {
-	gpxLonLatData, err := util.GPXToLonLat(in.GPXData)
-	if err != nil {
-		return errorx.NewServicerErr(errorx.ErrExternal, "invalid gpx format", nil)
+	gpxResp, sErr := gpx.Service().ParseGPXData(ctx, &sdto.ParseGPXDataInput{
+		GPXData: in.GPXData,
+	})
+	if sErr != nil {
+		return sErr
 	}
 
-	linestring := gpxLonLatData[0]
-	for i := 1; i < len(gpxLonLatData); i++ {
-		linestring += ", "
-		linestring += gpxLonLatData[i]
-	}
-	// ST_GeomFromText('LINESTRING(?)')
-	err = dao.DB.WithContext(ctx).Exec(
-		fmt.Sprintf(
-			"INSERT INTO GPSRoutes (path) VALUES (ST_GeomFromText('LINESTRING(%s)'));",
-			linestring,
-		),
-	).Error
-	if err != nil {
-		zlog.Error("error while store gpx route into mysql", zap.Error(err))
-		return errorx.NewInternalErr()
-	}
-
-	// get last inserted route
-	lastGPXRoute, err := dao.GetLastGPSRoute(ctx)
-	if err != nil {
-		zlog.Error("error while get last inserted gps route", zap.Error(err))
-		return errorx.NewInternalErr()
-	}
 	momentId := uuid.New()
 	momentIdStr := momentId.String()
-	_, err = dao.CreateNewMoment(ctx, &model.Moment{
+	_, err := dao.CreateNewMoment(ctx, &model.Moment{
 		AuthorID: in.UserID,
 		Content:  &in.Content,
-		RouteID:  &lastGPXRoute.ID,
+		RouteID:  &gpxResp.RouteID,
 		MomentID: momentIdStr,
 	})
 	if err != nil {
@@ -167,9 +146,30 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 	}
 
 	res := &sdto.FeedMomentOutput{
-		GPXRouteText: make(map[int]string),
+		GPXRouteText: make(map[int][][]string),
+		AuthorInfoMap: make(map[string]*model.User),
 	}
 	for i, moment := range moments {
+		// get author info
+		author, err := dao.GetUserByID(ctx, moment.AuthorID)
+		if err != nil {
+			zlog.Error("error while get moment author info", zap.Error(err), zap.String("momentID", moment.MomentID))
+			return nil, errorx.NewInternalErr()
+		}
+
+		// get author avatar url
+		if author.AvatarURL != nil {
+			url, err := minio.GetUserAvatarUrl(ctx, *author.AvatarURL)
+			if err != nil {
+				zlog.Error("error while get author avatar url", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+
+			author.AvatarURL = &url
+		}
+
+		res.AuthorInfoMap[moment.MomentID] = author
+
 		if moment.ImageURL != nil {
 			url, err := minio.GetMomentImageUrl(ctx, *moment.ImageURL)
 			if err != nil {
@@ -201,7 +201,7 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 				return nil, errorx.NewInternalErr()
 			}
 
-			res.GPXRouteText[i] = pathText
+			res.GPXRouteText[i] = util.GPXStrTo2DString(pathText)
 		}
 	}
 

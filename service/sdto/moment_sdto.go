@@ -31,7 +31,8 @@ type FeedMomentInput struct {
 }
 
 type FeedMomentOutput struct {
-	Moments      []*model.Moment
-	NextTime     int64
-	GPXRouteText map[int]string
+	Moments       []*model.Moment
+	AuthorInfoMap map[string]*model.User
+	NextTime      int64
+	GPXRouteText  map[int][][]string
 }

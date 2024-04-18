@@ -34,3 +34,13 @@ func GetPathAsText(ctx context.Context, routeId int32) (string, error) {
 
 	return path, nil
 }
+
+func DeleteRouteById(ctx context.Context, routeId int32) error {
+	g := query.Use(DB).GPSRoute
+
+	_, err := g.WithContext(ctx).Delete(&model.GPSRoute{
+		ID: routeId,
+	})
+	
+	return err
+}
