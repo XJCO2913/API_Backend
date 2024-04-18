@@ -138,7 +138,7 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 				zlog.Error("Failed to delete cover in Minio", zap.String("coverName", coverName), zap.Error(cleanupErr))
 			}
 		}()
-			
+
 		// delete gpx route record
 		dao.DeleteRouteById(ctx, gpxResp.RouteID)
 
@@ -300,11 +300,25 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 		})
 	}
 
+	// get gpx data
+	path, err := dao.GetPathAsText(ctx, activity.RouteID)
+	if err != nil {
+		zlog.Error("error while get GPX route from mysql", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	pathText, err := util.GPXRoute(path)
+	if err != nil {
+		zlog.Error("error while parse gpx route to text", zap.String("path", path))
+		return nil, errorx.NewInternalErr()
+	}
+
 	output := &sdto.GetActivityByIDOutput{
 		ActivityID:        activity.ActivityID,
 		Name:              activity.Name,
 		Description:       description,
 		CoverURL:          coverURL,
+		GPXRoute:          util.GPXStrTo2DString(pathText),
 		StartDate:         activity.StartDate.Format(time.RFC822),
 		EndDate:           activity.EndDate.Format(time.RFC822),
 		Tags:              tags,

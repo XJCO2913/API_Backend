@@ -50,6 +50,7 @@ type GetActivityByIDOutput struct {
 	Description       string
 	RouteID           int32
 	CoverURL          string
+	GPXRoute          [][]string
 	StartDate         string
 	EndDate           string
 	Tags              string

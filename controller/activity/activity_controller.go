@@ -334,6 +334,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 		"name":              activity.Name,
 		"description":       activity.Description,
 		"coverUrl":          activity.CoverURL,
+		"media_gpx":         activity.GPXRoute,
 		"startDate":         activity.StartDate,
 		"endDate":           activity.EndDate,
 		"tags":              activity.Tags,
