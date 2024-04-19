@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"strings"
+	"time"
 
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/dao/query"
@@ -117,11 +118,23 @@ func GetActivitiesByUserID(ctx context.Context, userID string) ([]*model.Activit
 }
 
 func GetActivitiesByCreatorID(ctx context.Context, creatorID string) ([]*model.Activity, error) {
-	var activities []*model.Activity
-
 	a := query.Use(DB).Activity
 
 	activities, err := a.WithContext(ctx).Where(a.CreatorID.Eq(creatorID)).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	return activities, nil
+}
+
+func GetActivitiesWithinDateRange(ctx context.Context, start, end time.Time) ([]*model.Activity, error) {
+	a := query.Use(DB).Activity
+
+	activities, err := a.WithContext(ctx).Where(
+		a.EndDate.Gte(start),
+		a.EndDate.Lte(end),
+	).Find()
 	if err != nil {
 		return nil, err
 	}

@@ -2,6 +2,7 @@ package dao
 
 import (
 	"context"
+	"strings"
 
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/dao/query"
@@ -36,4 +37,18 @@ func CountParticipantsByActivityID(ctx context.Context, activityID string) (int6
 	}
 
 	return count, nil
+}
+
+func GetActivityUserByActivityIDs(ctx context.Context, activityIDs string) ([]*model.ActivityUser, error) {
+	ids := strings.Split(activityIDs, "|")
+	var activityUsers []*model.ActivityUser
+
+	a := query.Use(DB).ActivityUser
+
+	activityUsers, err := a.WithContext(ctx).Where(a.ActivityID.In(ids...)).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	return activityUsers, nil
 }
