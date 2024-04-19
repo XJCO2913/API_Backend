@@ -10,3 +10,7 @@ type FollowInput struct {
 type GetAllFollowerOutput struct {
 	Followers []*model.User
 }
+
+type GetAllFollowingOutput struct {
+	Followings []*model.User
+}

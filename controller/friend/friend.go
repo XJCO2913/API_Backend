@@ -55,7 +55,7 @@ func (f *FriendController) GetAllFollower(c *gin.Context) {
 	if userId == "" {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg: "Missing userID in token",
+			StatusMsg:  "Missing userID in token",
 		})
 		return
 	}
@@ -64,22 +64,44 @@ func (f *FriendController) GetAllFollower(c *gin.Context) {
 	if sErr != nil {
 		c.JSON(sErr.Code(), dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg: sErr.Error(),
+			StatusMsg:  sErr.Error(),
 		})
 		return
 	}
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg: "Get followers successfully",
-		Data: resp.Followers,
+		StatusMsg:  "Get followers successfully",
+		Data:       resp.Followers,
 	})
 }
 
 func (f *FriendController) GetAllFollowing(c *gin.Context) {
+	userId := c.GetString("userID")
+	if userId == "" {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Missing userID in token",
+		})
+		return
+	}
 
+	resp, sErr := friend.Service().GetAllFollowing(c.Request.Context(), userId)
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get all followings successfully",
+		Data:       resp.Followings,
+	})
 }
 
 func (f *FriendController) GetAll(c *gin.Context) {
-	
+
 }
