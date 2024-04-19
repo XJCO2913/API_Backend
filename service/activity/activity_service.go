@@ -572,27 +572,18 @@ func (s *ActivityService) GetByCreatorID(ctx context.Context, creatorID string) 
 	return &sdto.GetActivitiesByCreatorOutput{Activities: activitiesOutput}, nil
 }
 
-func (s *ActivityService) ProfitWithinDateRange(ctx context.Context, startDate, endDate string) (int32, *errorx.ServiceErr) {
-	start, err := time.Parse(time.RFC822, startDate)
-	if err != nil {
-		zlog.Error("Invalid start date format", zap.String("startDate", startDate), zap.Error(err))
-		return 0, errorx.NewServicerErr(errorx.ErrExternal, "Invalid start date format", nil)
-	}
-
-	end, err := time.Parse(time.RFC822, endDate)
-	if err != nil {
-		zlog.Error("Invalid end date format", zap.String("endDate", endDate), zap.Error(err))
-		return 0, errorx.NewServicerErr(errorx.ErrExternal, "Invalid end date format", nil)
-	}
+func (s *ActivityService) ProfitWithinDateRange(ctx context.Context, startTimestamp, endTimestamp int64) (int32, *errorx.ServiceErr) {
+	start := time.Unix(startTimestamp, 0)
+	end := time.Unix(endTimestamp, 0)
 
 	// The time period must be more than a week and less than a year
 	if end.Sub(start) < 7*24*time.Hour {
-		zlog.Error("Date range is at least one week", zap.String("startDate", startDate), zap.String("endDate", endDate))
+		zlog.Error("Date range is at least one week", zap.Int64("startTimestamp", startTimestamp), zap.Int64("endTimestamp", endTimestamp))
 		return 0, errorx.NewServicerErr(errorx.ErrExternal, "Date range is at least one week", nil)
 	}
 
 	if end.Sub(start) > 365*24*time.Hour {
-		zlog.Error("Date range is no more than one year", zap.String("startDate", startDate), zap.String("endDate", endDate))
+		zlog.Error("Date range is no more than one year", zap.Int64("startTimestamp", startTimestamp), zap.Int64("endTimestamp", endTimestamp))
 		return 0, errorx.NewServicerErr(errorx.ErrExternal, "Date range is no more than one year", nil)
 	}
 

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"io"
+	"strconv"
 	"time"
 
 	"api.backend.xjco2913/controller/dto"
@@ -558,5 +559,47 @@ func (a *ActivityController) GetByCreatorID(c *gin.Context) {
 		StatusCode: 0,
 		StatusMsg:  "Get activity(ies) successfully",
 		Data:       activitiesList,
+	})
+}
+
+func (a *ActivityController) ProfitWithinDateRange(c *gin.Context) {
+	startTimestampStr := c.Query("startTimestamp")
+	endTimestampStr := c.Query("endTimestamp")
+
+	startTimestamp, err := strconv.ParseInt(startTimestampStr, 10, 64)
+	if err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Invalid startTimestamp format",
+		})
+		return
+	}
+
+	endTimestamp, err := strconv.ParseInt(endTimestampStr, 10, 64)
+	if err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Invalid endTimestamp format",
+		})
+		return
+	}
+
+	profit, serviceErr := activity.Service().ProfitWithinDateRange(c.Request.Context(), startTimestamp, endTimestamp)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	responseData := gin.H{
+		"profit": profit,
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get activity profit successfully",
+		Data:       responseData,
 	})
 }
