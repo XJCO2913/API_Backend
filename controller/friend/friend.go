@@ -103,5 +103,27 @@ func (f *FriendController) GetAllFollowing(c *gin.Context) {
 }
 
 func (f *FriendController) GetAll(c *gin.Context) {
+	userId := c.GetString("userID")
+	if userId == "" {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Missing userID in token",
+		})
+		return
+	}
 
+	resp, sErr := friend.Service().GetAll(c.Request.Context(), userId)
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: -1,
+		StatusMsg:  "Get friends successfully",
+		Data:       resp.Friends,
+	})
 }

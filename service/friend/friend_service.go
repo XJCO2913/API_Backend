@@ -92,3 +92,29 @@ func (f *FriendService) GetAllFollowing(ctx context.Context, userId string) (*sd
 		Followings: followings,
 	}, nil
 }
+
+func (f *FriendService) GetAll(ctx context.Context, userId string) (*sdto.GetAllFriendsOutput, *errorx.ServiceErr) {
+	friends, err := dao.GetFriendsByUserID(ctx, userId)
+	if err != nil {
+		zlog.Error("error while get user friends", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	// get avatar
+	for _, friend := range friends {
+		if friend.AvatarURL == nil || *friend.AvatarURL == "" {
+			continue
+		}
+		avatarUrl, err := minio.GetUserAvatarUrl(ctx, *friend.AvatarURL)
+		if err != nil {
+			zlog.Error("error while get user avatar", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		friend.AvatarURL = &avatarUrl
+	}
+
+	return &sdto.GetAllFriendsOutput{
+		Friends: friends,
+	}, nil
+}

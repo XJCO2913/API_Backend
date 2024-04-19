@@ -61,3 +61,38 @@ func GetFollowingsByUserID(ctx context.Context, userId string) ([]*model.User, e
 
 	return followings, nil
 }
+
+func GetFriendsByUserID(ctx context.Context, userId string) ([]*model.User, error) {
+	f := query.Use(DB).Follow
+
+	followers, err := f.WithContext(ctx).Where(f.FollowingID.Eq(userId)).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	followings, err := f.WithContext(ctx).Where(f.UserID.Eq(userId)).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	followersMap := make(map[string]bool)
+	for _, follower := range followers {
+		followersMap[follower.UserID] = true
+	}
+
+	friends := []*model.User{}
+	for _, following := range followings {
+		if !followersMap[following.FollowingID] {
+			continue
+		}
+
+		friend, err := GetUserByID(ctx, following.FollowingID)
+		if err != nil {
+			return nil, err
+		}
+
+		friends = append(friends, friend)
+	}
+
+	return friends, nil
+}

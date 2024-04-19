@@ -14,3 +14,7 @@ type GetAllFollowerOutput struct {
 type GetAllFollowingOutput struct {
 	Followings []*model.User
 }
+
+type GetAllFriendsOutput struct {
+	Friends []*model.User
+}
