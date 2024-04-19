@@ -566,6 +566,15 @@ func (a *ActivityController) ProfitWithinDateRange(c *gin.Context) {
 	startTimestampStr := c.Query("startTimestamp")
 	endTimestampStr := c.Query("endTimestamp")
 
+	isAdmin, exists := c.Get("isAdmin")
+	if !exists || !isAdmin.(bool) {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Forbidden: Only admins can access this resource",
+		})
+		return
+	}
+
 	startTimestamp, err := strconv.ParseInt(startTimestampStr, 10, 64)
 	if err != nil {
 		c.JSON(400, dto.CommonRes{
