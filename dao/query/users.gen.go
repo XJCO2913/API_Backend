@@ -40,7 +40,6 @@ func newUser(db *gorm.DB, opts ...gen.DOOption) user {
 	_user.Username = field.NewString(tableName, "username")
 	_user.Password = field.NewString(tableName, "password")
 	_user.MembershipType = field.NewInt32(tableName, "membershipType")
-	_user.IsSubscribed = field.NewInt32(tableName, "isSubscribed")
 
 	_user.fillFieldMap()
 
@@ -64,7 +63,6 @@ type user struct {
 	Username       field.String
 	Password       field.String
 	MembershipType field.Int32 // 0 is non-member, 1 is starter, 2 is premium
-	IsSubscribed   field.Int32 // is subscribed or not, 0 is false, 1 is true
 
 	fieldMap map[string]field.Expr
 }
@@ -94,7 +92,6 @@ func (u *user) updateTableName(table string) *user {
 	u.Username = field.NewString(table, "username")
 	u.Password = field.NewString(table, "password")
 	u.MembershipType = field.NewInt32(table, "membershipType")
-	u.IsSubscribed = field.NewInt32(table, "isSubscribed")
 
 	u.fillFieldMap()
 
@@ -119,7 +116,7 @@ func (u *user) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (u *user) fillFieldMap() {
-	u.fieldMap = make(map[string]field.Expr, 14)
+	u.fieldMap = make(map[string]field.Expr, 13)
 	u.fieldMap["id"] = u.ID
 	u.fieldMap["userId"] = u.UserID
 	u.fieldMap["avatarUrl"] = u.AvatarURL
@@ -133,7 +130,6 @@ func (u *user) fillFieldMap() {
 	u.fieldMap["username"] = u.Username
 	u.fieldMap["password"] = u.Password
 	u.fieldMap["membershipType"] = u.MembershipType
-	u.fieldMap["isSubscribed"] = u.IsSubscribed
 }
 
 func (u user) clone(db *gorm.DB) user {

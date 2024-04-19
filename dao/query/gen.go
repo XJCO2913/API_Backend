@@ -21,6 +21,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		Activity:     newActivity(db, opts...),
 		ActivityUser: newActivityUser(db, opts...),
 		Admin:        newAdmin(db, opts...),
+		Follow:       newFollow(db, opts...),
 		GPSRoute:     newGPSRoute(db, opts...),
 		Log:          newLog(db, opts...),
 		Moment:       newMoment(db, opts...),
@@ -36,6 +37,7 @@ type Query struct {
 	Activity     activity
 	ActivityUser activityUser
 	Admin        admin
+	Follow       follow
 	GPSRoute     gPSRoute
 	Log          log
 	Moment       moment
@@ -52,6 +54,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		Activity:     q.Activity.clone(db),
 		ActivityUser: q.ActivityUser.clone(db),
 		Admin:        q.Admin.clone(db),
+		Follow:       q.Follow.clone(db),
 		GPSRoute:     q.GPSRoute.clone(db),
 		Log:          q.Log.clone(db),
 		Moment:       q.Moment.clone(db),
@@ -75,6 +78,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		Activity:     q.Activity.replaceDB(db),
 		ActivityUser: q.ActivityUser.replaceDB(db),
 		Admin:        q.Admin.replaceDB(db),
+		Follow:       q.Follow.replaceDB(db),
 		GPSRoute:     q.GPSRoute.replaceDB(db),
 		Log:          q.Log.replaceDB(db),
 		Moment:       q.Moment.replaceDB(db),
@@ -88,6 +92,7 @@ type queryCtx struct {
 	Activity     *activityDo
 	ActivityUser *activityUserDo
 	Admin        *adminDo
+	Follow       *followDo
 	GPSRoute     *gPSRouteDo
 	Log          *logDo
 	Moment       *momentDo
@@ -101,6 +106,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		Activity:     q.Activity.WithContext(ctx),
 		ActivityUser: q.ActivityUser.WithContext(ctx),
 		Admin:        q.Admin.WithContext(ctx),
+		Follow:       q.Follow.WithContext(ctx),
 		GPSRoute:     q.GPSRoute.WithContext(ctx),
 		Log:          q.Log.WithContext(ctx),
 		Moment:       q.Moment.WithContext(ctx),

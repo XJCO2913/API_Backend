@@ -121,3 +121,14 @@ func GetUsersByActivityID(ctx context.Context, activityID string) ([]*model.User
 
 	return users, nil
 }
+
+func IsUserExisted(ctx context.Context, userId string) bool {
+	u := query.Use(DB).User
+
+	user, err := u.WithContext(ctx).Where(u.UserID.Eq(userId)).First()
+	if err != nil || user == nil {
+		return false
+	}
+
+	return true
+}
