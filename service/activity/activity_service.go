@@ -10,6 +10,7 @@ import (
 	"api.backend.xjco2913/dao"
 	"api.backend.xjco2913/dao/minio"
 	"api.backend.xjco2913/dao/model"
+	"api.backend.xjco2913/service/gpx"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
 	"api.backend.xjco2913/util"
@@ -98,6 +99,14 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		return errorx.NewInternalErr()
 	}
 
+	// parse gpx data
+	gpxResp, sErr := gpx.Service().ParseGPXData(ctx, &sdto.ParseGPXDataInput{
+		GPXData: in.GPXData,
+	})
+	if sErr != nil {
+		return sErr
+	}
+
 	// Generate a uuid for the new activity
 	uuid, err := uuid.NewUUID()
 	if err != nil {
@@ -110,7 +119,7 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 		ActivityID:  activityID,
 		Name:        in.Name,
 		Description: in.Description,
-		RouteID:     1,
+		RouteID:     gpxResp.RouteID,
 		CoverURL:    coverName,
 		StartDate:   in.StartDate,
 		EndDate:     in.EndDate,
@@ -129,6 +138,9 @@ func (a *ActivityService) Create(ctx context.Context, in *sdto.CreateActivityInp
 				zlog.Error("Failed to delete cover in Minio", zap.String("coverName", coverName), zap.Error(cleanupErr))
 			}
 		}()
+
+		// delete gpx route record
+		dao.DeleteRouteById(ctx, gpxResp.RouteID)
 
 		return errorx.NewInternalErr()
 	}
@@ -288,11 +300,25 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 		})
 	}
 
+	// get gpx data
+	path, err := dao.GetPathAsText(ctx, activity.RouteID)
+	if err != nil {
+		zlog.Error("error while get GPX route from mysql", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	pathText, err := util.GPXRoute(path)
+	if err != nil {
+		zlog.Error("error while parse gpx route to text", zap.String("path", path))
+		return nil, errorx.NewInternalErr()
+	}
+
 	output := &sdto.GetActivityByIDOutput{
 		ActivityID:        activity.ActivityID,
 		Name:              activity.Name,
 		Description:       description,
 		CoverURL:          coverURL,
+		GPXRoute:          util.GPXStrTo2DString(pathText),
 		StartDate:         activity.StartDate.Format(time.RFC822),
 		EndDate:           activity.EndDate.Format(time.RFC822),
 		Tags:              tags,
@@ -544,4 +570,50 @@ func (s *ActivityService) GetByCreatorID(ctx context.Context, creatorID string) 
 	}
 
 	return &sdto.GetActivitiesByCreatorOutput{Activities: activitiesOutput}, nil
+}
+
+func (s *ActivityService) ProfitWithinDateRange(ctx context.Context, startTimestamp, endTimestamp int64) (int32, *errorx.ServiceErr) {
+	start := time.Unix(startTimestamp, 0)
+	end := time.Unix(endTimestamp, 0)
+
+	// The time period must be more than a week and less than a year
+	if end.Sub(start) < 7*24*time.Hour {
+		zlog.Error("Date range is at least one week", zap.Int64("startTimestamp", startTimestamp), zap.Int64("endTimestamp", endTimestamp))
+		return 0, errorx.NewServicerErr(errorx.ErrExternal, "Date range is at least one week", nil)
+	}
+
+	if end.Sub(start) > 365*24*time.Hour {
+		zlog.Error("Date range is no more than one year", zap.Int64("startTimestamp", startTimestamp), zap.Int64("endTimestamp", endTimestamp))
+		return 0, errorx.NewServicerErr(errorx.ErrExternal, "Date range is no more than one year", nil)
+	}
+
+	activities, err := dao.GetActivitiesWithinDateRange(ctx, start, end)
+	if err != nil {
+		zlog.Error("Failed to retrieve activities within date range", zap.Error(err))
+		return 0, errorx.NewInternalErr()
+	}
+
+	if len(activities) == 0 {
+		return 0, nil
+	}
+
+	var activityIDs []string
+	for _, activity := range activities {
+		activityIDs = append(activityIDs, activity.ActivityID)
+	}
+	activityIDsString := strings.Join(activityIDs, "|")
+
+	activityUsers, err := dao.GetActivityUserByActivityIDs(ctx, activityIDsString)
+	if err != nil {
+		zlog.Error("Failed to retrieve activity users", zap.String("activityIDs", activityIDsString), zap.Error(err))
+		return 0, errorx.NewInternalErr()
+	}
+
+	// Calculate total activity revenue
+	var totalProfit int32 = 0
+	for _, activityUser := range activityUsers {
+		totalProfit += activityUser.FinalFee
+	}
+
+	return totalProfit, nil
 }

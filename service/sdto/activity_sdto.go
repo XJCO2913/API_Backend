@@ -9,6 +9,7 @@ type CreateActivityInput struct {
 	Description *string
 	RouteID     int32
 	CoverData   []byte
+	GPXData     []byte
 	StartDate   time.Time
 	EndDate     time.Time
 	Tags        string
@@ -49,6 +50,7 @@ type GetActivityByIDOutput struct {
 	Description       string
 	RouteID           int32
 	CoverURL          string
+	GPXRoute          [][]string
 	StartDate         string
 	EndDate           string
 	Tags              string
