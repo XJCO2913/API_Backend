@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"api.backend.xjco2913/dao"
+	"api.backend.xjco2913/dao/minio"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
 	"api.backend.xjco2913/util/zlog"
@@ -38,4 +39,30 @@ func (f *FriendService) Follow(ctx context.Context, in *sdto.FollowInput) (*erro
 	}
 
 	return nil
+}
+
+func (f *FriendService) GetAllFollower(ctx context.Context, userId string) (*sdto.GetAllFollowerOutput, *errorx.ServiceErr) {
+	followers, err := dao.GetFollowersByUserID(ctx, userId)
+	if err != nil {
+		zlog.Error("error while get all followers by user ID", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	// get avatar
+	for _, follower := range followers {
+		if follower.AvatarURL == nil || *follower.AvatarURL == "" {
+			continue
+		}
+		avatarUrl, err := minio.GetUserAvatarUrl(ctx, *follower.AvatarURL)
+		if err != nil {
+			zlog.Error("error while get user avatar", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		follower.AvatarURL = &avatarUrl
+	} 
+
+	return &sdto.GetAllFollowerOutput{
+		Followers: followers,
+	}, nil
 }

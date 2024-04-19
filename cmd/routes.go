@@ -131,6 +131,9 @@ func NewRouter() *gin.Engine {
 		friend := api.Group("/friend")
 		{
 			friend.POST("/follow", friendController.Follow)
+			friend.GET("/follower", friendController.GetAllFollower)
+			friend.GET("/following", friendController.GetAllFollowing)
+			friend.GET("/", friendController.GetAll)
 		}
 	}
 
