@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"api.backend.xjco2913/controller/websocket"
 	"api.backend.xjco2913/util/config"
 	"api.backend.xjco2913/util/zlog"
 )
@@ -18,6 +19,10 @@ func main() {
 
 	r := NewRouter()
 
+	wsController := websocket.NewWebsocketController()
+	hub := NewHub(wsController.ConnectCh, wsController.DisconnectCh)
+	go hub.Run()
+
 	port = "8080"
 	if env, ok := os.LookupEnv("DEPLOY_ENV"); ok {
 		if env == "test" {
@@ -27,7 +32,7 @@ func main() {
 		}
 	}
 
-	// async flush logs into mysql
+	// Async flush logs into mysql
 	go FlushLogs(ctx)
 
 	zlog.Info(fmt.Sprintf("Starting listening at :%v...", port))

@@ -481,7 +481,7 @@ func (u *UserController) UploadAvatar(c *gin.Context) {
 	if err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  fmt.Sprintf("Fail to get avatar file: %s", err.Error()),
+			StatusMsg:  fmt.Sprintf("Failed to get avatar file: %s", err.Error()),
 		})
 		return
 	}
@@ -491,7 +491,7 @@ func (u *UserController) UploadAvatar(c *gin.Context) {
 	if _, err := io.Copy(avatarBuf, avatarFile); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  fmt.Sprintf("Fail copy avatar data: %s", err.Error()),
+			StatusMsg:  fmt.Sprintf("Failed copy avatar data: %s", err.Error()),
 		})
 		return
 	}
@@ -519,7 +519,7 @@ func (u *UserController) RefreshToken(c *gin.Context) {
 	if util.IsEmpty(userID) {
 		c.JSON(403, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg: "missing userID in token",
+			StatusMsg:  "Missing userID in token",
 		})
 		return
 	}
@@ -528,13 +528,13 @@ func (u *UserController) RefreshToken(c *gin.Context) {
 	if sErr != nil {
 		c.JSON(sErr.Code(), dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg: sErr.Error(),
+			StatusMsg:  sErr.Error(),
 		})
 	}
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg: "refresh token successfully",
+		StatusMsg:  "Refresh token successfully",
 		Data: gin.H{
 			"newToken": res.NewToken,
 		},
