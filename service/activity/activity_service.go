@@ -617,3 +617,33 @@ func (s *ActivityService) ProfitWithinDateRange(ctx context.Context, startTimest
 
 	return totalProfit, nil
 }
+
+func (s *ActivityService) GetAllTagsInfo(ctx context.Context) (*sdto.GetAllTagsInfoOutput, *errorx.ServiceErr) {
+	activities, err := dao.GetAllActivities(ctx)
+	if err != nil {
+		zlog.Error("error while get all activities", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	var (
+		totalCount = 0
+		eachCount  = make(map[string]int)
+	)
+	for _, activity := range activities {
+		if activity.Tags == nil || *activity.Tags == "" {
+			continue
+		}
+
+		tagArr := strings.Split(*activity.Tags, "|")
+
+		totalCount += len(tagArr)
+		for _, tag := range tagArr {
+			eachCount[tag]++
+		}
+	}
+
+	return &sdto.GetAllTagsInfoOutput{
+		TotalCount: totalCount,
+		EachCount:  eachCount,
+	}, nil
+}

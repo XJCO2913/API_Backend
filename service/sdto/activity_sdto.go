@@ -117,3 +117,8 @@ type GetActivitiesByCreator struct {
 type GetActivitiesByCreatorOutput struct {
 	Activities []*GetActivitiesByCreator
 }
+
+type GetAllTagsInfoOutput struct {
+	TotalCount int
+	EachCount  map[string]int
+}

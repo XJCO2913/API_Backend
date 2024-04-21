@@ -612,3 +612,23 @@ func (a *ActivityController) ProfitWithinDateRange(c *gin.Context) {
 		Data:       responseData,
 	})
 }
+
+func (a *ActivityController) TagsInfo(c *gin.Context) {
+	resp, sErr := activity.Service().GetAllTagsInfo(c.Request.Context())
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get tags info successfully",
+		Data: gin.H{
+			"totalCount": resp.TotalCount,
+			"eachCount":  resp.EachCount,
+		},
+	})
+}
