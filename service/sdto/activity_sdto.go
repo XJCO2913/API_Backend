@@ -128,3 +128,8 @@ type GetAllCountsOutput struct {
 	ParticipantCount int
 	MembershipCount  int
 }
+
+type GetProfitOutput struct {
+	Profits []int
+	Dates   []string
+}

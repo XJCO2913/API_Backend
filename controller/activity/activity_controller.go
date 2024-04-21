@@ -653,3 +653,32 @@ func (a *ActivityController) Counts(c *gin.Context) {
 		},
 	})
 }
+
+func (a *ActivityController) GetProfitWithOption(c *gin.Context) {
+	op := c.Query("option")
+	if op != "week" && op != "month" && op != "year" {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Invalid option",
+		})
+		return
+	}
+
+	resp, sErr := activity.Service().GetProfitWithOption(c.Request.Context(), op)
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get profit successfully",
+		Data: gin.H{
+			"profits": resp.Profits,
+			"dates":   resp.Dates,
+		},
+	})
+}
