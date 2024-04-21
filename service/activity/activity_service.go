@@ -647,3 +647,42 @@ func (s *ActivityService) GetAllTagsInfo(ctx context.Context) (*sdto.GetAllTagsI
 		EachCount:  eachCount,
 	}, nil
 }
+
+func (s *ActivityService) GetAllCounts(ctx context.Context) (*sdto.GetAllCountsOutput, *errorx.ServiceErr) {
+	var (
+		activityCnt    = 0
+		participantCnt = 0
+		membershipCnt  = 0
+	)
+
+	activities, err := dao.GetAllActivities(ctx)
+	if err != nil {
+		zlog.Error("error while get all activities", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+	activityCnt = len(activities)
+
+	cnt, err := dao.ActivityUserCount(ctx)
+	if err != nil {
+		zlog.Error("error while get activity_user count", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+	participantCnt = int(cnt)
+
+	users, err := dao.GetAllUsers(ctx)
+	if err != nil {
+		zlog.Error("error while get all users", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+	for _, user := range users {
+		if user.MembershipType != 0 {
+			membershipCnt++
+		}
+	}
+
+	return &sdto.GetAllCountsOutput{
+		ActivityCount:    activityCnt,
+		ParticipantCount: participantCnt,
+		MembershipCount:  membershipCnt,
+	}, nil
+}

@@ -632,3 +632,24 @@ func (a *ActivityController) TagsInfo(c *gin.Context) {
 		},
 	})
 }
+
+func (a *ActivityController) Counts(c *gin.Context) {
+	resp, sErr := activity.Service().GetAllCounts(c.Request.Context())
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get all counts successfully",
+		Data: gin.H{
+			"activityCount":    resp.ActivityCount,
+			"participantCount": resp.ParticipantCount,
+			"membershipCount":  resp.MembershipCount,
+		},
+	})
+}

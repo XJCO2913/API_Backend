@@ -52,3 +52,9 @@ func GetActivityUserByActivityIDs(ctx context.Context, activityIDs string) ([]*m
 
 	return activityUsers, nil
 }
+
+func ActivityUserCount(ctx context.Context) (int64, error) {
+	au := query.Use(DB).ActivityUser
+
+	return au.WithContext(ctx).Count()
+}

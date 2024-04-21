@@ -122,3 +122,9 @@ type GetAllTagsInfoOutput struct {
 	TotalCount int
 	EachCount  map[string]int
 }
+
+type GetAllCountsOutput struct {
+	ActivityCount    int
+	ParticipantCount int
+	MembershipCount  int
+}
