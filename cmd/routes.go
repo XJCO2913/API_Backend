@@ -8,7 +8,7 @@ import (
 	"api.backend.xjco2913/controller/friend"
 	"api.backend.xjco2913/controller/moment"
 	"api.backend.xjco2913/controller/user"
-	"api.backend.xjco2913/controller/websocket"
+	"api.backend.xjco2913/controller/ws"
 	"api.backend.xjco2913/middleware"
 	"api.backend.xjco2913/util/config"
 	"github.com/gin-gonic/gin"
@@ -24,7 +24,7 @@ func NewRouter() *gin.Engine {
 	adminController := admin.NewAdminController()
 	momentController := moment.NewMomentController()
 	friendController := friend.NewFriendController()
-	websocketController := websocket.NewWebsocketController()
+	websocketController := ws.NewWebsocketController()
 
 	// Global middleware
 	// Prometheus

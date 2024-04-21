@@ -1,46 +1,58 @@
 package main
 
 import (
-	"log"
+	"time"
 
-	"github.com/gorilla/websocket"
+	"api.backend.xjco2913/controller/ws"
+	"api.backend.xjco2913/util/zlog"
+	"go.uber.org/zap"
 )
 
 type Hub struct {
-	// Manage connections using the Pool from the WebsocketController
-	clients map[string]*websocket.Conn
-
-	// Channel to handle new connections
-	connectCh chan *websocket.Conn
-
-	// Channel to handle disconnections
-	disconnectCh chan string
+	Pool map[string]*ws.Client
 }
 
-func NewHub(connectCh chan *websocket.Conn, disconnectCh chan string) *Hub {
-	return &Hub{
-		clients:      make(map[string]*websocket.Conn),
-		connectCh:    connectCh,
-		disconnectCh: disconnectCh,
-	}
+func NewHub() *Hub {
+	return &Hub{}
 }
 
-// Run starts the hub to process incoming connect and disconnect requests
 func (h *Hub) Run() {
 	for {
 		select {
-		case conn := <-h.connectCh:
-			// Assuming UserID can be fetched from WebSocket connection,
-			// This might require additional logic to correctly associate UserID with connection
-			userID := conn.RemoteAddr().String() // Placeholder for actual user ID fetch mechanism
-			h.clients[userID] = conn
-			log.Printf("Client connected: %s", userID)
+		case event := <-ws.ConnectCh:
+			if _, exists := h.Pool[event.UserID]; !exists {
+				h.Pool[event.UserID] = &ws.Client{
+					UserID:    event.UserID,
+					Conn:      event.Conn,
+					LastHeart: time.Now(),
+					IsAdmin:   false,
+				}
+				zlog.Info("Client connected", zap.String("userID", event.UserID))
+			}
 
-		case userID := <-h.disconnectCh:
-			if conn, ok := h.clients[userID]; ok {
-				delete(h.clients, userID)
-				conn.Close()
-				log.Printf("Client disconnected: %s", userID)
+		case event := <-ws.DisconnectCh:
+			if _, ok := h.Pool[event.UserID]; ok {
+				delete(h.Pool, event.UserID)
+				zlog.Info("Client disconnected", zap.String("userID", event.UserID))
+			}
+
+		case msg := <-ws.ServicesCh:
+			switch msg.Type {
+			case "user_status":
+				if client, ok := h.Pool[msg.SenderID]; ok {
+					onlineUsers := []string{}
+					for userID, client := range h.Pool {
+						// Check if each user is online
+						if client != nil && client.Conn != nil {
+							onlineUsers = append(onlineUsers, userID)
+						}
+					}
+					// An array of IDs of all online users
+					client.Conn.WriteJSON(map[string]interface{}{
+						"onlineUsers": onlineUsers,
+					})
+				}
+				// Other service cases TBD
 			}
 		}
 	}

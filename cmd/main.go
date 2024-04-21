@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 
-	"api.backend.xjco2913/controller/websocket"
 	"api.backend.xjco2913/util/config"
 	"api.backend.xjco2913/util/zlog"
 )
@@ -19,8 +18,7 @@ func main() {
 
 	r := NewRouter()
 
-	wsController := websocket.NewWebsocketController()
-	hub := NewHub(wsController.ConnectCh, wsController.DisconnectCh)
+	hub := NewHub()
 	go hub.Run()
 
 	port = "8080"
