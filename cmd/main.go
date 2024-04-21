@@ -18,6 +18,8 @@ func main() {
 
 	r := NewRouter()
 
+	go localHub.Run()
+
 	port = "8080"
 	if env, ok := os.LookupEnv("DEPLOY_ENV"); ok {
 		if env == "test" {
@@ -27,7 +29,7 @@ func main() {
 		}
 	}
 
-	// async flush logs into mysql
+	// Async flush logs into mysql
 	go FlushLogs(ctx)
 
 	zlog.Info(fmt.Sprintf("Starting listening at :%v...", port))

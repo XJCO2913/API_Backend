@@ -8,6 +8,7 @@ import (
 	"api.backend.xjco2913/controller/friend"
 	"api.backend.xjco2913/controller/moment"
 	"api.backend.xjco2913/controller/user"
+	"api.backend.xjco2913/controller/ws"
 	"api.backend.xjco2913/middleware"
 	"api.backend.xjco2913/util/config"
 	"github.com/gin-gonic/gin"
@@ -23,15 +24,19 @@ func NewRouter() *gin.Engine {
 	adminController := admin.NewAdminController()
 	momentController := moment.NewMomentController()
 	friendController := friend.NewFriendController()
+	websocketController := ws.NewWebsocketController()
 
-	// global middleware
-	// prometheus
+	// Global middleware
+	// Prometheus
 	r.Use(middleware.PrometheusRequests())
 	r.Use(middleware.PrometheusDuration())
 	r.Use(middleware.PrometheusResErr())
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// demo admin login api, only for test
+	// WebSocket
+	r.GET("/ws", gin.WrapF(websocketController.HandleConnections))
+
+	// Demo admin login api, only for test
 	r.GET("/api/getAdmin", func(c *gin.Context) {
 		username := c.Query("username")
 		password := c.Query("password")
@@ -73,7 +78,7 @@ func NewRouter() *gin.Engine {
 
 	api := r.Group("/api")
 	{
-		// group middleware
+		// Group middleware
 		api.Use(middleware.VerifyToken())
 
 		api.POST("/user/refresh", userController.RefreshToken)
@@ -101,20 +106,20 @@ func NewRouter() *gin.Engine {
 
 		api.POST("/user/avatar", userController.UploadAvatar)
 
-		// admin
+		// Admin
 		admin := api.Group("/admin")
 		{
 			admin.POST("/login", adminController.Login)
 		}
 
-		// moments
+		// Moments
 		moment := api.Group("/moment")
 		{
 			moment.POST("/create", momentController.Create)
 			moment.GET("/feed", momentController.Feed)
 		}
 
-		// activity
+		// Activity
 		activity := api.Group("/activity")
 		{
 			activity.POST("/create", activityController.Create)
@@ -130,7 +135,7 @@ func NewRouter() *gin.Engine {
 			activity.GET("/counts", activityController.Counts)
 		}
 
-		// friend
+		// Friend
 		friend := api.Group("/friend")
 		{
 			friend.POST("/follow", friendController.Follow)
