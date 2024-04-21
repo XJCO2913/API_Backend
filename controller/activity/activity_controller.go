@@ -612,3 +612,73 @@ func (a *ActivityController) ProfitWithinDateRange(c *gin.Context) {
 		Data:       responseData,
 	})
 }
+
+func (a *ActivityController) TagsInfo(c *gin.Context) {
+	resp, sErr := activity.Service().GetAllTagsInfo(c.Request.Context())
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get tags info successfully",
+		Data: gin.H{
+			"totalCount": resp.TotalCount,
+			"eachCount":  resp.EachCount,
+		},
+	})
+}
+
+func (a *ActivityController) Counts(c *gin.Context) {
+	resp, sErr := activity.Service().GetAllCounts(c.Request.Context())
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get all counts successfully",
+		Data: gin.H{
+			"activityCount":    resp.ActivityCount,
+			"participantCount": resp.ParticipantCount,
+			"membershipCount":  resp.MembershipCount,
+		},
+	})
+}
+
+func (a *ActivityController) GetProfitWithOption(c *gin.Context) {
+	op := c.Query("option")
+	if op != "week" && op != "month" && op != "year" {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Invalid option",
+		})
+		return
+	}
+
+	resp, sErr := activity.Service().GetProfitWithOption(c.Request.Context(), op)
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get profit successfully",
+		Data: gin.H{
+			"profits": resp.Profits,
+			"dates":   resp.Dates,
+		},
+	})
+}

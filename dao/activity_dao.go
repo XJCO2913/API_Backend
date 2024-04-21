@@ -141,3 +141,15 @@ func GetActivitiesWithinDateRange(ctx context.Context, start, end time.Time) ([]
 
 	return activities, nil
 }
+
+func GetActivitiesByEndDate(ctx context.Context, end time.Time) ([]*model.Activity, error) {
+	a := query.Use(DB).Activity
+
+	startOfDay := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, end.Location())
+	endOfDay := time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 999999999, end.Location())
+
+	return a.WithContext(ctx).Where(
+		a.EndDate.Gte(startOfDay),
+		a.EndDate.Lte(endOfDay),
+	).Find()
+}

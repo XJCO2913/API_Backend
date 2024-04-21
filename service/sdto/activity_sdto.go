@@ -117,3 +117,19 @@ type GetActivitiesByCreator struct {
 type GetActivitiesByCreatorOutput struct {
 	Activities []*GetActivitiesByCreator
 }
+
+type GetAllTagsInfoOutput struct {
+	TotalCount int
+	EachCount  map[string]int
+}
+
+type GetAllCountsOutput struct {
+	ActivityCount    int
+	ParticipantCount int
+	MembershipCount  int
+}
+
+type GetProfitOutput struct {
+	Profits []int
+	Dates   []string
+}

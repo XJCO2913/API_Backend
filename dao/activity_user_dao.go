@@ -52,3 +52,15 @@ func GetActivityUserByActivityIDs(ctx context.Context, activityIDs string) ([]*m
 
 	return activityUsers, nil
 }
+
+func ActivityUserCount(ctx context.Context) (int64, error) {
+	au := query.Use(DB).ActivityUser
+
+	return au.WithContext(ctx).Count()
+}
+
+func GetFinalFeesByActivityId(ctx context.Context, activityId string) ([]*model.ActivityUser, error) {
+	au := query.Use(DB).ActivityUser
+
+	return au.WithContext(ctx).Where(au.ActivityID.Eq(activityId)).Find()
+}

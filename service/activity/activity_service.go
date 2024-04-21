@@ -3,6 +3,7 @@ package activity
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -616,4 +617,191 @@ func (s *ActivityService) ProfitWithinDateRange(ctx context.Context, startTimest
 	}
 
 	return totalProfit, nil
+}
+
+func (s *ActivityService) GetAllTagsInfo(ctx context.Context) (*sdto.GetAllTagsInfoOutput, *errorx.ServiceErr) {
+	activities, err := dao.GetAllActivities(ctx)
+	if err != nil {
+		zlog.Error("error while get all activities", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	var (
+		totalCount = 0
+		eachCount  = make(map[string]int)
+	)
+	for _, activity := range activities {
+		if activity.Tags == nil || *activity.Tags == "" {
+			continue
+		}
+
+		tagArr := strings.Split(*activity.Tags, "|")
+
+		totalCount += len(tagArr)
+		for _, tag := range tagArr {
+			eachCount[tag]++
+		}
+	}
+
+	return &sdto.GetAllTagsInfoOutput{
+		TotalCount: totalCount,
+		EachCount:  eachCount,
+	}, nil
+}
+
+func (s *ActivityService) GetAllCounts(ctx context.Context) (*sdto.GetAllCountsOutput, *errorx.ServiceErr) {
+	var (
+		activityCnt    = 0
+		participantCnt = 0
+		membershipCnt  = 0
+	)
+
+	activities, err := dao.GetAllActivities(ctx)
+	if err != nil {
+		zlog.Error("error while get all activities", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+	activityCnt = len(activities)
+
+	cnt, err := dao.ActivityUserCount(ctx)
+	if err != nil {
+		zlog.Error("error while get activity_user count", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+	participantCnt = int(cnt)
+
+	users, err := dao.GetAllUsers(ctx)
+	if err != nil {
+		zlog.Error("error while get all users", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+	for _, user := range users {
+		if user.MembershipType != 0 {
+			membershipCnt++
+		}
+	}
+
+	return &sdto.GetAllCountsOutput{
+		ActivityCount:    activityCnt,
+		ParticipantCount: participantCnt,
+		MembershipCount:  membershipCnt,
+	}, nil
+}
+
+func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*sdto.GetProfitOutput, *errorx.ServiceErr) {
+	profits := []int{}
+	dates := []string{}
+
+	switch op {
+	case "week":
+		now := time.Now()
+		for i := 0; i < 7; i++ {
+			endActivities, err := dao.GetActivitiesByEndDate(ctx, now)
+			if err != nil {
+				zlog.Error("error while get activities by end date", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+
+			totalProfit := 0
+			for _, endActivity := range endActivities {
+				activityUsers, err := dao.GetFinalFeesByActivityId(ctx, endActivity.ActivityID)
+				if err != nil {
+					zlog.Error("error while get final fees by activity id", zap.Error(err))
+					return nil, errorx.NewInternalErr()
+				}
+
+				for _, au := range activityUsers {
+					totalProfit += int(au.FinalFee)
+				}
+			}
+
+			profits = append(profits, totalProfit)
+			dates = append(dates, fmt.Sprintf("%s %d", now.Month(), now.Day()))
+			now = now.Add(24 * time.Hour)
+		}
+
+	case "month":
+		now := time.Now()
+		for i := 0; i < 4; i++ {
+			startOfWeek := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+			endOfWeek := time.Date(
+				now.Add(7*24*time.Hour).Year(), 
+				now.Add(7*24*time.Hour).Month(), 
+				now.Add(7*24*time.Hour).Day(), 
+				23, 59, 59, 999999999, 
+				now.Add(7*24*time.Hour).Location(),
+		    )
+
+			oneWeekActivities, err := dao.GetActivitiesWithinDateRange(ctx, startOfWeek, endOfWeek)
+			if err != nil {
+				zlog.Error("error while get activities of the week", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+
+			totalProfit := 0
+			for _, activity := range oneWeekActivities {
+				aus, err := dao.GetFinalFeesByActivityId(ctx, activity.ActivityID)
+				if err != nil {
+					zlog.Error("error while get final fees by activity id", zap.Error(err))
+					return nil, errorx.NewInternalErr()
+				}
+
+				for _, au := range aus {
+					totalProfit += int(au.FinalFee)
+				}
+			} 
+
+			profits = append(profits, totalProfit)
+			dates = append(dates, fmt.Sprintf("week %d", i+1))
+			now = endOfWeek
+		}
+
+	case "year":
+		now := time.Now()
+		for i := 0; i < 12; i++ {
+			startOfMonth := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+			endOfMonth := time.Date(
+				now.Add(30*24*time.Hour).Year(),
+				now.Add(30*24*time.Hour).Month(),
+				now.Day(),
+				0,0,0,0,
+				now.Add(30*24*time.Hour).Location(),
+			)
+
+			oneYearActivities, err := dao.GetActivitiesWithinDateRange(ctx, startOfMonth, endOfMonth)
+			if err != nil {
+				zlog.Error("error while get activities of the week", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+
+			totalProfit := 0
+			for _, activity := range oneYearActivities {
+				aus, err := dao.GetFinalFeesByActivityId(ctx, activity.ActivityID)
+				if err != nil {
+					zlog.Error("error while get final fees by activity id", zap.Error(err))
+					return nil, errorx.NewInternalErr()
+				}
+
+				for _, au := range aus {
+					totalProfit += int(au.FinalFee)
+				}
+			}
+
+			profits = append(profits, totalProfit)
+			dates = append(dates, fmt.Sprintf("%v %v", now.Month(), now.Day()))
+			now = endOfMonth
+		}
+
+	default:
+		return nil, errorx.NewServicerErr(
+			400,
+			"invalid option",
+			nil,
+		)
+	}
+
+	return &sdto.GetProfitOutput{
+		Profits: profits,
+		Dates:   dates,
+	}, nil
 }

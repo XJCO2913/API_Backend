@@ -125,7 +125,9 @@ func NewRouter() *gin.Engine {
 			activity.POST("/signup", activityController.SignUpByActivityID)
 			activity.GET("/user", activityController.GetByUserID)
 			activity.GET("/creator", activityController.GetByCreatorID)
-			activity.GET("/profit", activityController.ProfitWithinDateRange)
+			activity.GET("/profit", activityController.GetProfitWithOption)
+			activity.GET("/tags", activityController.TagsInfo)
+			activity.GET("/counts", activityController.Counts)
 		}
 
 		// friend
