@@ -2,6 +2,7 @@ package ws
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 	"time"
 
@@ -15,6 +16,8 @@ var (
 	ConnectCh    = make(chan dto.ConnectionEvent, 1)
 	DisconnectCh = make(chan dto.ConnectionEvent, 1)
 	ServicesCh   = make(chan dto.Msg, 1)
+
+	Pool = make(map[string]*Client)
 )
 
 var upgrader = websocket.Upgrader{
@@ -54,6 +57,8 @@ func (wsc *WebsocketController) HandleConnections(w http.ResponseWriter, r *http
 			break
 		}
 
+		fmt.Println(string(message))
+
 		var m dto.Msg
 		if err = json.Unmarshal(message, &m); err != nil {
 			zlog.Error("JSON unmarshal failed", zap.String("message", string(message)), zap.Error(err))
@@ -62,6 +67,7 @@ func (wsc *WebsocketController) HandleConnections(w http.ResponseWriter, r *http
 
 		switch m.Type {
 		case "connect", "disconnect":
+			fmt.Println("here2222")
 			event := dto.ConnectionEvent{
 				UserID: m.SenderID,
 				Conn:   conn,
@@ -72,6 +78,7 @@ func (wsc *WebsocketController) HandleConnections(w http.ResponseWriter, r *http
 				DisconnectCh <- event
 			}
 		default:
+			fmt.Println("here service")
 			ServicesCh <- m
 		}
 	}

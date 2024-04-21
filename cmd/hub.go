@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"api.backend.xjco2913/controller/ws"
@@ -12,14 +13,21 @@ type Hub struct {
 	Pool map[string]*ws.Client
 }
 
+var (
+	localHub = NewHub()
+)
+
 func NewHub() *Hub {
-	return &Hub{}
+	return &Hub{
+		Pool: ws.Pool,
+	}
 }
 
 func (h *Hub) Run() {
 	for {
 		select {
 		case event := <-ws.ConnectCh:
+			fmt.Println("11111")
 			if _, exists := h.Pool[event.UserID]; !exists {
 				h.Pool[event.UserID] = &ws.Client{
 					UserID:    event.UserID,
@@ -32,6 +40,7 @@ func (h *Hub) Run() {
 			}
 
 		case event := <-ws.DisconnectCh:
+			fmt.Println(222222)
 			if _, ok := h.Pool[event.UserID]; ok {
 				delete(h.Pool, event.UserID)
 				zlog.Info("Client disconnected", zap.String("userID", event.UserID))
@@ -39,8 +48,10 @@ func (h *Hub) Run() {
 			}
 
 		case msg := <-ws.ServicesCh:
+			fmt.Println(333333, msg.Type)
 			switch msg.Type {
 			case "user_status":
+				fmt.Println(888998899)
 				if client, ok := h.Pool[msg.SenderID]; ok {
 					onlineUsers := []string{}
 					for userID, client := range h.Pool {
@@ -50,9 +61,11 @@ func (h *Hub) Run() {
 						}
 					}
 					// An array of IDs of all online users
+					fmt.Println(onlineUsers)
 					client.Conn.WriteJSON(map[string]interface{}{
 						"onlineUsers": onlineUsers,
 					})
+					fmt.Println("finish")
 				}
 				// Other service cases TBD
 			}

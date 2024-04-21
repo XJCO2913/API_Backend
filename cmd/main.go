@@ -18,8 +18,7 @@ func main() {
 
 	r := NewRouter()
 
-	hub := NewHub()
-	go hub.Run()
+	go localHub.Run()
 
 	port = "8080"
 	if env, ok := os.LookupEnv("DEPLOY_ENV"); ok {

@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
+	"api.backend.xjco2913/controller/ws"
 	"api.backend.xjco2913/dao"
 	"api.backend.xjco2913/dao/minio"
 	"api.backend.xjco2913/dao/model"
@@ -292,6 +294,23 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 			MembershipType: user.MembershipType,
 		}
 	}
+
+	sort.SliceStable(userDtos, func(i, j int) bool {
+		_, okI := ws.Pool[userDtos[i].UserID]
+		_, okJ := ws.Pool[userDtos[j].UserID]
+
+		if okI && okJ {
+			return userDtos[i].UserID < userDtos[j].UserID
+		}
+		if okI {
+			return true
+		}
+		if okJ {
+			return false
+		}
+
+		return userDtos[i].UserID < userDtos[j].UserID
+	})
 
 	return userDtos, nil
 }
