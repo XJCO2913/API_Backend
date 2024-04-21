@@ -28,12 +28,14 @@ func (h *Hub) Run() {
 					IsAdmin:   false,
 				}
 				zlog.Info("Client connected", zap.String("userID", event.UserID))
+				h.broadcastToAdmins("User connected: " + event.UserID)
 			}
 
 		case event := <-ws.DisconnectCh:
 			if _, ok := h.Pool[event.UserID]; ok {
 				delete(h.Pool, event.UserID)
 				zlog.Info("Client disconnected", zap.String("userID", event.UserID))
+				h.broadcastToAdmins("User disconnected: " + event.UserID)
 			}
 
 		case msg := <-ws.ServicesCh:
@@ -53,6 +55,18 @@ func (h *Hub) Run() {
 					})
 				}
 				// Other service cases TBD
+			}
+		}
+	}
+}
+
+func (h *Hub) broadcastToAdmins(message string) {
+	for _, client := range h.Pool {
+		if client.IsAdmin {
+			if client.Conn != nil {
+				client.Conn.WriteJSON(map[string]interface{}{
+					"message": message,
+				})
 			}
 		}
 	}
