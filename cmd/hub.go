@@ -36,7 +36,7 @@ func (h *Hub) Run() {
 					IsAdmin:   false,
 				}
 				zlog.Info("Client connected", zap.String("userID", event.UserID))
-				h.broadcastToAdmins("User connected: " + event.UserID)
+				h.broadcastToAdmins(`{"Type":"new_online", "userID":"` + event.UserID + `"}`)
 			}
 
 		case event := <-ws.DisconnectCh:
@@ -75,11 +75,9 @@ func (h *Hub) Run() {
 
 func (h *Hub) broadcastToAdmins(message string) {
 	for _, client := range h.Pool {
-		if client.IsAdmin {
+		if !client.IsAdmin {
 			if client.Conn != nil {
-				client.Conn.WriteJSON(map[string]interface{}{
-					"message": message,
-				})
+				client.Conn.WriteMessage(1, []byte(message))
 			}
 		}
 	}
