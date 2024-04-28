@@ -16,7 +16,7 @@ func CreateNewLike(ctx context.Context, newLike *model.Like) error {
 	return nil
 }
 
-func GetLikeByID(ctx context.Context, userID, momentID string) (*model.Like, error) {
+func GetLikeByIDs(ctx context.Context, userID, momentID string) (*model.Like, error) {
 	a := query.Use(DB).Like
 
 	like, err := a.WithContext(ctx).Where(
@@ -27,4 +27,18 @@ func GetLikeByID(ctx context.Context, userID, momentID string) (*model.Like, err
 		return nil, err
 	}
 	return like, nil
+}
+
+func DeleteLikeByIDs(ctx context.Context, userID, momentID string) error {
+	a := query.Use(DB).Like
+
+	_, err := a.WithContext(ctx).Where(
+		a.UserID.Eq(userID),
+		a.MomentID.Eq(momentID),
+	).Delete()
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
