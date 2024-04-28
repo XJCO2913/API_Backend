@@ -21,6 +21,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		Activity:     newActivity(db, opts...),
 		ActivityUser: newActivityUser(db, opts...),
 		Admin:        newAdmin(db, opts...),
+		Comment:      newComment(db, opts...),
 		Follow:       newFollow(db, opts...),
 		GPSRoute:     newGPSRoute(db, opts...),
 		Like:         newLike(db, opts...),
@@ -38,6 +39,7 @@ type Query struct {
 	Activity     activity
 	ActivityUser activityUser
 	Admin        admin
+	Comment      comment
 	Follow       follow
 	GPSRoute     gPSRoute
 	Like         like
@@ -56,6 +58,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		Activity:     q.Activity.clone(db),
 		ActivityUser: q.ActivityUser.clone(db),
 		Admin:        q.Admin.clone(db),
+		Comment:      q.Comment.clone(db),
 		Follow:       q.Follow.clone(db),
 		GPSRoute:     q.GPSRoute.clone(db),
 		Like:         q.Like.clone(db),
@@ -81,6 +84,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		Activity:     q.Activity.replaceDB(db),
 		ActivityUser: q.ActivityUser.replaceDB(db),
 		Admin:        q.Admin.replaceDB(db),
+		Comment:      q.Comment.replaceDB(db),
 		Follow:       q.Follow.replaceDB(db),
 		GPSRoute:     q.GPSRoute.replaceDB(db),
 		Like:         q.Like.replaceDB(db),
@@ -96,6 +100,7 @@ type queryCtx struct {
 	Activity     *activityDo
 	ActivityUser *activityUserDo
 	Admin        *adminDo
+	Comment      *commentDo
 	Follow       *followDo
 	GPSRoute     *gPSRouteDo
 	Like         *likeDo
@@ -111,6 +116,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		Activity:     q.Activity.WithContext(ctx),
 		ActivityUser: q.ActivityUser.WithContext(ctx),
 		Admin:        q.Admin.WithContext(ctx),
+		Comment:      q.Comment.WithContext(ctx),
 		Follow:       q.Follow.WithContext(ctx),
 		GPSRoute:     q.GPSRoute.WithContext(ctx),
 		Like:         q.Like.WithContext(ctx),
