@@ -304,13 +304,13 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 	// get gpx data
 	path, err := dao.GetPathAsText(ctx, activity.RouteID)
 	if err != nil {
-		zlog.Error("error while get GPX route from mysql", zap.Error(err))
+		zlog.Error("Error while get GPX route from mysql", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
 	pathText, err := util.GPXRoute(path)
 	if err != nil {
-		zlog.Error("error while parse gpx route to text", zap.String("path", path))
+		zlog.Error("Error while parse gpx route to text", zap.String("path", path))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -725,12 +725,12 @@ func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*
 		for i := 0; i < 4; i++ {
 			startOfWeek := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 			endOfWeek := time.Date(
-				now.Add(7*24*time.Hour).Year(), 
-				now.Add(7*24*time.Hour).Month(), 
-				now.Add(7*24*time.Hour).Day(), 
-				23, 59, 59, 999999999, 
+				now.Add(7*24*time.Hour).Year(),
+				now.Add(7*24*time.Hour).Month(),
+				now.Add(7*24*time.Hour).Day(),
+				23, 59, 59, 999999999,
 				now.Add(7*24*time.Hour).Location(),
-		    )
+			)
 
 			oneWeekActivities, err := dao.GetActivitiesWithinDateRange(ctx, startOfWeek, endOfWeek)
 			if err != nil {
@@ -749,7 +749,7 @@ func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*
 				for _, au := range aus {
 					totalProfit += int(au.FinalFee)
 				}
-			} 
+			}
 
 			profits = append(profits, totalProfit)
 			dates = append(dates, fmt.Sprintf("week %d", i+1))
@@ -764,7 +764,7 @@ func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*
 				now.Add(30*24*time.Hour).Year(),
 				now.Add(30*24*time.Hour).Month(),
 				now.Day(),
-				0,0,0,0,
+				0, 0, 0, 0,
 				now.Add(30*24*time.Hour).Location(),
 			)
 
