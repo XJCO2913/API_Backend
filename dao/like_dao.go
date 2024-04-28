@@ -15,3 +15,16 @@ func CreateNewLike(ctx context.Context, newLike *model.Like) error {
 
 	return nil
 }
+
+func GetLikeByID(ctx context.Context, userID, momentID string) (*model.Like, error) {
+	a := query.Use(DB).Like
+
+	like, err := a.WithContext(ctx).Where(
+		a.UserID.Eq(userID),
+		a.MomentID.Eq(momentID),
+	).First()
+	if err != nil {
+		return nil, err
+	}
+	return like, nil
+}
