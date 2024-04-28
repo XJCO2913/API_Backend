@@ -14,8 +14,12 @@ import (
 
 type LikeService struct{}
 
-func NewLikeService() *LikeService {
-	return &LikeService{}
+var (
+	likeService LikeService
+)
+
+func Service() *LikeService {
+	return &likeService
 }
 
 func (s *LikeService) Create(ctx context.Context, input *sdto.CreateLikeInput) *errorx.ServiceErr {
