@@ -23,6 +23,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		Admin:        newAdmin(db, opts...),
 		Follow:       newFollow(db, opts...),
 		GPSRoute:     newGPSRoute(db, opts...),
+		Like:         newLike(db, opts...),
 		Log:          newLog(db, opts...),
 		Moment:       newMoment(db, opts...),
 		Organiser:    newOrganiser(db, opts...),
@@ -39,6 +40,7 @@ type Query struct {
 	Admin        admin
 	Follow       follow
 	GPSRoute     gPSRoute
+	Like         like
 	Log          log
 	Moment       moment
 	Organiser    organiser
@@ -56,6 +58,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		Admin:        q.Admin.clone(db),
 		Follow:       q.Follow.clone(db),
 		GPSRoute:     q.GPSRoute.clone(db),
+		Like:         q.Like.clone(db),
 		Log:          q.Log.clone(db),
 		Moment:       q.Moment.clone(db),
 		Organiser:    q.Organiser.clone(db),
@@ -80,6 +83,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		Admin:        q.Admin.replaceDB(db),
 		Follow:       q.Follow.replaceDB(db),
 		GPSRoute:     q.GPSRoute.replaceDB(db),
+		Like:         q.Like.replaceDB(db),
 		Log:          q.Log.replaceDB(db),
 		Moment:       q.Moment.replaceDB(db),
 		Organiser:    q.Organiser.replaceDB(db),
@@ -94,6 +98,7 @@ type queryCtx struct {
 	Admin        *adminDo
 	Follow       *followDo
 	GPSRoute     *gPSRouteDo
+	Like         *likeDo
 	Log          *logDo
 	Moment       *momentDo
 	Organiser    *organiserDo
@@ -108,6 +113,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		Admin:        q.Admin.WithContext(ctx),
 		Follow:       q.Follow.WithContext(ctx),
 		GPSRoute:     q.GPSRoute.WithContext(ctx),
+		Like:         q.Like.WithContext(ctx),
 		Log:          q.Log.WithContext(ctx),
 		Moment:       q.Moment.WithContext(ctx),
 		Organiser:    q.Organiser.WithContext(ctx),
