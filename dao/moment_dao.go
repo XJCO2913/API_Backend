@@ -30,6 +30,16 @@ func GetAllMoment(ctx context.Context) ([]*model.Moment, error) {
 	return query.Use(DB).WithContext(ctx).Moment.Find()
 }
 
+func GetMomentByID(ctx context.Context, momentID int32) (*model.Moment, error) {
+	m := query.Use(DB).Moment
+
+	moment, err := m.WithContext(ctx).Where(m.ID.Eq(momentID)).First()
+	if err != nil {
+		return nil, err
+	}
+	return moment, nil
+}
+
 func GetMomentsByTime(ctx context.Context, limit int, latestTime time.Time) ([]*model.Moment, error) {
 	m := query.Use(DB).Moment
 

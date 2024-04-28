@@ -25,6 +25,7 @@ func Service() *LikeService {
 func (s *LikeService) Create(ctx context.Context, input *sdto.CreateLikeInput) *errorx.ServiceErr {
 	like, err := dao.GetLikeByIDs(ctx, input.UserID, input.MomentID)
 	if err != gorm.ErrRecordNotFound || like != nil {
+		zlog.Error("User already liked this moment", zap.String("userID", input.UserID), zap.String("momentID", input.MomentID))
 		return errorx.NewServicerErr(
 			errorx.ErrExternal,
 			"Like already exists",
