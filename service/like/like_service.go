@@ -35,8 +35,8 @@ func (s *LikeService) Create(ctx context.Context, input *sdto.CreateLikeInput) *
 		}
 	}
 
-	like, err := dao.GetLikeByIDs(ctx, input.UserID, input.MomentID)
-	if err != gorm.ErrRecordNotFound || like != nil {
+	_, err = dao.GetLikeByIDs(ctx, input.UserID, input.MomentID)
+	if err != gorm.ErrRecordNotFound {
 		zlog.Error("User already liked this moment", zap.String("userID", input.UserID), zap.String("momentID", input.MomentID))
 		return errorx.NewServicerErr(
 			errorx.ErrExternal,
@@ -51,6 +51,27 @@ func (s *LikeService) Create(ctx context.Context, input *sdto.CreateLikeInput) *
 	})
 	if err != nil {
 		zlog.Error("Error while create new like", zap.String("userID", input.UserID), zap.String("momentID", input.MomentID), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
+}
+
+func (s *LikeService) DeleteByIDs(ctx context.Context, userID, momentID string) *errorx.ServiceErr {
+	_, err := dao.GetLikeByIDs(ctx, userID, momentID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("Like not found by user ID and moment ID", zap.String("userID", userID), zap.String("momentID", momentID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "Like not found by user ID and moment ID", nil)
+		} else {
+			zlog.Error("Failed to retrieve like by user ID and moment ID", zap.String("userID", userID), zap.String("momentID", momentID), zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	}
+
+	err = dao.DeleteLikeByIDs(ctx, userID, momentID)
+	if err != nil {
+		zlog.Error("Error while delete the like", zap.String("userID", userID), zap.String("momentID", momentID), zap.Error(err))
 		return errorx.NewInternalErr()
 	}
 
