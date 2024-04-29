@@ -120,7 +120,7 @@ func NewRouter() *gin.Engine {
 			moment.POST("/create", momentController.Create)
 			moment.GET("/feed", momentController.Feed)
 			moment.POST("/like", likeController.Create)
-			moment.DELETE("/dislike", likeController.DeleteByIDs)
+			moment.DELETE("/unlike", likeController.DeleteByIDs)
 		}
 
 		// Activity
