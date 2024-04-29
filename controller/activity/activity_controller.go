@@ -91,7 +91,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 	if _, err := io.Copy(gpxBuf, gpxFile); err != nil {
 		c.JSON(500, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  fmt.Sprintf("Fail copy image data: %s", err.Error()),
+			StatusMsg:  fmt.Sprintf("Failed to copy image data: %s", err.Error()),
 		})
 		return
 	}
