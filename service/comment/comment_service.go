@@ -9,6 +9,7 @@ import (
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
 	"api.backend.xjco2913/util/zlog"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -35,10 +36,19 @@ func (s *CommentService) Create(ctx context.Context, input *sdto.CreateCommentIn
 		}
 	}
 
+	// Generate a uuid for the new comment
+	uuid, err := uuid.NewUUID()
+	if err != nil {
+		zlog.Error("Error while generate uuid: " + err.Error())
+		return errorx.NewInternalErr()
+	}
+
+	commentID := uuid.String()
 	err = dao.CreateNewComment(ctx, &model.Comment{
-		AuthorID: input.AuthorID,
-		MomentID: input.MomentID,
-		Content:  input.Content,
+		AuthorID:  input.AuthorID,
+		MomentID:  input.MomentID,
+		Content:   input.Content,
+		CommentID: commentID,
 	})
 	if err != nil {
 		zlog.Error("Error while create new comment", zap.String("authorID", input.AuthorID), zap.String("momentID", input.MomentID), zap.Error(err))
