@@ -41,6 +41,38 @@ func (lc *LikeController) Create(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg:  "Like created successfully",
+		StatusMsg:  "Create Like successfully",
+	})
+}
+
+func (lc *LikeController) DeleteByIDs(c *gin.Context) {
+	userID, userIDExists := c.Get("userID")
+	momentID := c.Query("momentID")
+
+	if !userIDExists {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "User ID is required",
+		})
+		return
+	}
+
+	input := &sdto.DeleteLikeInput{
+		UserID:   userID.(string),
+		MomentID: momentID,
+	}
+
+	err := like.Service().DeleteByIDs(c.Request.Context(), input)
+	if err != nil {
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Delete like successfully",
 	})
 }
