@@ -198,7 +198,6 @@ func (m *MomentController) Create(c *gin.Context) {
 			})
 			return
 		}
-
 	}
 
 	c.JSON(200, dto.CommonRes{

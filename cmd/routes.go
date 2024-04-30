@@ -5,6 +5,7 @@ import (
 
 	"api.backend.xjco2913/controller/activity"
 	"api.backend.xjco2913/controller/admin"
+	"api.backend.xjco2913/controller/comment"
 	"api.backend.xjco2913/controller/friend"
 	"api.backend.xjco2913/controller/like"
 	"api.backend.xjco2913/controller/moment"
@@ -27,6 +28,7 @@ func NewRouter() *gin.Engine {
 	friendController := friend.NewFriendController()
 	websocketController := ws.NewWebsocketController()
 	likeController := like.NewLikeController()
+	commentController := comment.NewCommentController()
 
 	// Global middleware
 	// Prometheus
@@ -121,6 +123,7 @@ func NewRouter() *gin.Engine {
 			moment.GET("/feed", momentController.Feed)
 			moment.POST("/like", likeController.Create)
 			moment.DELETE("/unlike", likeController.DeleteByIDs)
+			moment.POST("comment", commentController.Create)
 		}
 
 		// Activity

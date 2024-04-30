@@ -30,7 +30,7 @@ func (u *UserController) SignUp(c *gin.Context) {
 		return
 	}
 
-	// check the gender, gender must be 0, 1, 2
+	// Check the gender, gender must be 0, 1, 2
 	if *req.Gender < 0 || *req.Gender > 2 {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
