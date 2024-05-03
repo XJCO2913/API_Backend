@@ -36,3 +36,12 @@ type FeedMomentOutput struct {
 	NextTime      int64
 	GPXRouteText  map[int][][]string
 }
+
+type PersonLike struct {
+	Name      string
+	AvatarUrl string
+}
+
+type GetLikesOutput struct {
+	PersonLikes []PersonLike
+}

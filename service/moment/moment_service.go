@@ -146,7 +146,7 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 	}
 
 	res := &sdto.FeedMomentOutput{
-		GPXRouteText: make(map[int][][]string),
+		GPXRouteText:  make(map[int][][]string),
 		AuthorInfoMap: make(map[string]*model.User),
 	}
 	for i, moment := range moments {
@@ -209,4 +209,38 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 	res.NextTime = nextTime
 
 	return res, nil
+}
+
+func (m *MomentService) GetLikesByMomentId(ctx context.Context, momentId string) (*sdto.GetLikesOutput, *errorx.ServiceErr) {
+	likes, err := dao.GetLikeByMomentId(ctx, momentId)
+	if err != nil {
+		zlog.Error("error while get moment likes", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	personLikes := []sdto.PersonLike{}
+	for _, like := range likes {
+		likeId := like.UserID
+
+		personLike, err := dao.GetUserByID(ctx, likeId)
+		if err != nil {
+			zlog.Error("error while get user liked by id", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		url, err := minio.GetUserAvatarUrl(ctx, *personLike.AvatarURL)
+		if err != nil {
+			zlog.Error("error while get user avatar url", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		personLikes = append(personLikes, sdto.PersonLike{
+			Name:      personLike.Username,
+			AvatarUrl: url,
+		})
+	}
+
+	return &sdto.GetLikesOutput{
+		PersonLikes: personLikes,
+	}, nil
 }
