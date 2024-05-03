@@ -233,11 +233,21 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		birthdayStr = user.Birthday.Format(time.RFC822Z)
 	}
 
+	var avatarUrl string
+	if user.AvatarURL != nil && *user.AvatarURL != "" {
+		avatarUrl, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+		if err != nil {
+			zlog.Error("error while get user avatar url", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+	}
+
 	return &sdto.AuthenticateOutput{
-		Token:    tokenStr,
-		Gender:   user.Gender,
-		Birthday: birthdayStr,
-		Region:   user.Region,
+		Token:     tokenStr,
+		Gender:    user.Gender,
+		Birthday:  birthdayStr,
+		Region:    user.Region,
+		AvatarUrl: avatarUrl,
 	}, nil
 }
 

@@ -14,10 +14,11 @@ type AuthenticateInput struct {
 }
 
 type AuthenticateOutput struct {
-	Token    string
-	Gender   int32
-	Birthday string
-	Region   string
+	Token     string
+	Gender    int32
+	Birthday  string
+	Region    string
+	AvatarUrl string
 }
 
 type GetAllOutput struct {

@@ -104,10 +104,11 @@ func (u *UserController) Login(c *gin.Context) {
 		Data: gin.H{
 			"token": out.Token,
 			"userInfo": gin.H{
-				"username": req.Username,
-				"gender":   out.Gender,
-				"birthday": out.Birthday,
-				"region":   out.Region,
+				"username":  req.Username,
+				"gender":    out.Gender,
+				"birthday":  out.Birthday,
+				"region":    out.Region,
+				"avatarUrl": out.AvatarUrl,
 			},
 		},
 	})
