@@ -2,6 +2,7 @@ package moment
 
 import (
 	"context"
+	"errors"
 	"time"
 
 	"api.backend.xjco2913/dao"
@@ -14,6 +15,7 @@ import (
 	"api.backend.xjco2913/util/zlog"
 	"github.com/google/uuid"
 	"go.uber.org/zap"
+	"gorm.io/gorm"
 )
 
 const (
@@ -287,4 +289,18 @@ func (m *MomentService) GetCommentListByMomentId(ctx context.Context, momentId s
 	return &sdto.GetCommentListOutput{
 		CommentList: commentlist,
 	}, nil
+}
+
+func (m *MomentService) IsLiked(ctx context.Context, momentId, userId string) (bool, *errorx.ServiceErr) {
+	likeModel, err := dao.GetLikeByIDs(ctx, userId, momentId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+
+		zlog.Error("error while get like by two ids", zap.Error(err))
+		return false, errorx.NewInternalErr()
+	}
+
+	return likeModel != nil, nil
 }

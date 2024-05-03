@@ -289,6 +289,16 @@ func (m *MomentController) Feed(c *gin.Context) {
 			return
 		}
 		moments[i]["comments"] = commentResp.CommentList
+
+		isLiked, sErr := moment.Service().IsLiked(context.Background(), momentID, userId)
+		if sErr != nil {
+			c.JSON(sErr.Code(), dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg: sErr.Error(),
+			})
+			return
+		}
+		moments[i]["isLiked"] = isLiked
 	}
 
 	c.JSON(200, dto.CommonRes{
