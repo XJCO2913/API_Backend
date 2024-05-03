@@ -289,16 +289,20 @@ func (s *ActivityService) GetByID(ctx context.Context, activityID string) (*sdto
 			}
 		}
 
-		participantInfos = append(participantInfos, sdto.ParticipantInfo{
+		participantInfo := sdto.ParticipantInfo{
 			UserID:         user.UserID,
 			Username:       user.Username,
 			Gender:         user.Gender,
-			Birthday:       user.Birthday.Format(time.RFC822),
 			Region:         user.Region,
 			MembershipTime: user.MembershipTime,
 			AvatarURL:      avatarURL,
 			MembershipType: user.MembershipType,
-		})
+		}
+		if user.Birthday != nil {
+			participantInfo.Birthday = user.Birthday.Format(time.RFC822)
+		}
+
+		participantInfos = append(participantInfos, participantInfo)
 	}
 
 	// get gpx data
