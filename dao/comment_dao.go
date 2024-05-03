@@ -15,3 +15,9 @@ func CreateNewComment(ctx context.Context, newComment *model.Comment) error {
 
 	return nil
 }
+
+func GetCommentsByMomentId(ctx context.Context, momentId string) ([]*model.Comment, error) {
+	c := query.Use(DB).Comment
+
+	return c.WithContext(ctx).Where(c.MomentID.Eq(momentId)).Find()
+}

@@ -146,7 +146,7 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 	}
 
 	res := &sdto.FeedMomentOutput{
-		GPXRouteText: make(map[int][][]string),
+		GPXRouteText:  make(map[int][][]string),
 		AuthorInfoMap: make(map[string]*model.User),
 	}
 	for i, moment := range moments {
@@ -209,4 +209,82 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 	res.NextTime = nextTime
 
 	return res, nil
+}
+
+func (m *MomentService) GetLikesByMomentId(ctx context.Context, momentId string) (*sdto.GetLikesOutput, *errorx.ServiceErr) {
+	likes, err := dao.GetLikeByMomentId(ctx, momentId)
+	if err != nil {
+		zlog.Error("error while get moment likes", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	personLikes := []sdto.MomentUser{}
+	for _, like := range likes {
+		likeId := like.UserID
+
+		personLike, err := dao.GetUserByID(ctx, likeId)
+		if err != nil {
+			zlog.Error("error while get user liked by id", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		var url string
+		if personLike.AvatarURL != nil && *personLike.AvatarURL != "" {
+			url, err = minio.GetUserAvatarUrl(ctx, *personLike.AvatarURL)
+			if err != nil {
+				zlog.Error("error while get user avatar url", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+		}
+
+		personLikes = append(personLikes, sdto.MomentUser{
+			Name:      personLike.Username,
+			AvatarUrl: url,
+		})
+	}
+
+	return &sdto.GetLikesOutput{
+		PersonLikes: personLikes,
+	}, nil
+}
+
+func (m *MomentService) GetCommentListByMomentId(ctx context.Context, momentId string) (*sdto.GetCommentListOutput, *errorx.ServiceErr) {
+	commentlist := []sdto.MomentComment{}
+
+	commentModels, err := dao.GetCommentsByMomentId(ctx, momentId)
+	if err != nil {
+		zlog.Error("error while get moment comments", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	for _, commentModel := range commentModels {
+		var comment sdto.MomentComment
+		
+		author, err := dao.GetUserByID(ctx, commentModel.AuthorID)
+		if err != nil {
+			zlog.Error("error while get comment user", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+		
+		var url string
+		if author.AvatarURL != nil && *author.AvatarURL != "" {
+			url, err = minio.GetUserAvatarUrl(ctx, *author.AvatarURL)
+			if err != nil {
+				zlog.Error("error while get user avatar url", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+		}
+
+		comment.Id = commentModel.CommentID
+		comment.CreatedAt = *commentModel.CreatedAt
+		comment.Message = commentModel.Content
+		comment.Author.Name = author.Username
+		comment.Author.AvatarUrl = url
+
+		commentlist = append(commentlist, comment)
+	}
+
+	return &sdto.GetCommentListOutput{
+		CommentList: commentlist,
+	}, nil
 }

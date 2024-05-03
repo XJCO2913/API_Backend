@@ -267,6 +267,28 @@ func (m *MomentController) Feed(c *gin.Context) {
 		if GPXPath, ok := res.GPXRouteText[i]; ok {
 			moments[i]["media"] = GPXPath
 		}
+
+		// get moment liked person
+		likeResp, sErr := moment.Service().GetLikesByMomentId(context.Background(), momentID)
+		if sErr != nil {
+			c.JSON(sErr.Code(), dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg: sErr.Error(),
+			})
+			return
+		}
+		moments[i]["personLikes"] = likeResp.PersonLikes
+
+		// get comment list
+		commentResp, sErr := moment.Service().GetCommentListByMomentId(context.Background(), momentID)
+		if sErr != nil {
+			c.JSON(sErr.Code(), dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg: sErr.Error(),
+			})
+			return
+		}
+		moments[i]["comments"] = commentResp.CommentList
 	}
 
 	c.JSON(200, dto.CommonRes{

@@ -1,6 +1,10 @@
 package sdto
 
-import "api.backend.xjco2913/dao/model"
+import (
+	"time"
+
+	"api.backend.xjco2913/dao/model"
+)
 
 type CreateMomentInput struct {
 	UserID  string
@@ -35,4 +39,24 @@ type FeedMomentOutput struct {
 	AuthorInfoMap map[string]*model.User
 	NextTime      int64
 	GPXRouteText  map[int][][]string
+}
+
+type MomentUser struct {
+	Name      string `json:"name"`
+	AvatarUrl string `json:"avatarUrl"`
+}
+
+type MomentComment struct {
+	Id        string     `json:"id"`
+	Author    MomentUser `json:"author"`
+	CreatedAt time.Time  `json:"createdAt"`
+	Message   string     `json:"message"`
+}
+
+type GetLikesOutput struct {
+	PersonLikes []MomentUser
+}
+
+type GetCommentListOutput struct {
+	CommentList []MomentComment
 }

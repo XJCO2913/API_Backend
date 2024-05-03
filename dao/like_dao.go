@@ -42,3 +42,9 @@ func DeleteLikeByIDs(ctx context.Context, userID, momentID string) error {
 
 	return nil
 }
+
+func GetLikeByMomentId(ctx context.Context, momentId string) ([]*model.Like, error) {
+	l := query.Use(DB).Like
+
+	return l.WithContext(ctx).Where(l.MomentID.Eq(momentId)).Find()
+}
