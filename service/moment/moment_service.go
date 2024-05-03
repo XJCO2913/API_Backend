@@ -288,3 +288,13 @@ func (m *MomentService) GetCommentListByMomentId(ctx context.Context, momentId s
 		CommentList: commentlist,
 	}, nil
 }
+
+func (m *MomentService) IsLiked(ctx context.Context, momentId, userId string) (bool, *errorx.ServiceErr) {
+	likeModel, err := dao.GetLikeByIDs(ctx, userId, momentId)
+	if err != nil {
+		zlog.Error("error while get like by towo ids", zap.Error(err))
+		return false, errorx.NewInternalErr()
+	}
+
+	return likeModel != nil, nil
+}
