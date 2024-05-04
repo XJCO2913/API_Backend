@@ -28,3 +28,11 @@ func GetOrganiserByID(ctx context.Context, userID string) (*model.Organiser, err
 
 	return organiser, nil
 }
+
+func UpdateOrgStatus(ctx context.Context, userId string, newStatus int32) error {
+	o := query.Use(DB).Organiser
+
+	_, err := o.WithContext(ctx).Where(o.UserID.Eq(userId)).Update(o.Status, newStatus)
+
+	return err
+}
