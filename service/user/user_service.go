@@ -200,7 +200,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	} else {
 		organiser, err := dao.GetOrganiserByID(ctx, user.UserID)
 		isOrganiser := false
-		if err == nil && organiser != nil {
+		if err == nil && organiser != nil && organiser.Status == 2 {
 			isOrganiser = true
 		}
 

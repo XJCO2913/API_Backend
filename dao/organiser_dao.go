@@ -36,3 +36,15 @@ func UpdateOrgStatus(ctx context.Context, userId string, newStatus int32) error 
 
 	return err
 }
+
+// default status is 'untreated'
+func CreateNewOrg(ctx context.Context, userId string) error {
+	o := query.Use(DB).Organiser
+
+	newOrg := model.Organiser{
+		UserID: userId,
+		Status: 1,
+	}
+
+	return o.WithContext(ctx).Create(&newOrg)
+}

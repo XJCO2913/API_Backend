@@ -133,3 +133,42 @@ func (o *OrganiserService) Refuse(ctx context.Context, userId string) *errorx.Se
 
 	return nil
 }
+
+func (o *OrganiserService) Apply(ctx context.Context, userId string) *errorx.ServiceErr {
+	_, err := dao.GetUserByID(ctx, userId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return errorx.NewServicerErr(
+				400,
+				"User not found",
+				nil,
+			)
+		}
+
+		zlog.Error("error while get user by id", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	// check if already exist
+	_, err = dao.GetOrganiserByID(ctx, userId)
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Error("error while get org by userId", zap.Error(err))
+			return errorx.NewInternalErr()
+		}
+	} else {
+		return errorx.NewServicerErr(
+			400,
+			"You have already applied, please wait for admin review",
+			nil,
+		)
+	}
+
+	err = dao.CreateNewOrg(ctx, userId)
+	if err != nil {
+		zlog.Error("error while create new org record", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
+}
