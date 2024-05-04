@@ -64,3 +64,20 @@ func GetFinalFeesByActivityId(ctx context.Context, activityId string) ([]*model.
 
 	return au.WithContext(ctx).Where(au.ActivityID.Eq(activityId)).Find()
 }
+
+func UpdateActivityUserRoute(ctx context.Context, activityID, userID string, routeID int32) error {
+	a := query.Use(DB).ActivityUser
+
+	activityUser, err := FindActivityUserByIDs(ctx, activityID, userID)
+	if err != nil {
+		return err
+	}
+
+	activityUser.RouteID = &routeID
+	err = a.WithContext(ctx).Save(activityUser)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

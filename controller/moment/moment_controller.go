@@ -25,7 +25,7 @@ func (m *MomentController) Create(c *gin.Context) {
 	if !ok {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "missing userID in token",
+			StatusMsg:  "Missing userID in token",
 		})
 		return
 	}
@@ -67,7 +67,7 @@ func (m *MomentController) Create(c *gin.Context) {
 			// 文件数量为0
 			c.JSON(400, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  "moment cannot be empty",
+				StatusMsg:  "Moment cannot be empty",
 			})
 			return
 		}
@@ -78,7 +78,7 @@ func (m *MomentController) Create(c *gin.Context) {
 		// 文件数量过多
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "only allow upload one type of file",
+			StatusMsg:  "Only allow upload one type of file",
 		})
 		return
 	}
@@ -91,7 +91,7 @@ func (m *MomentController) Create(c *gin.Context) {
 		if err != nil {
 			c.JSON(400, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  fmt.Sprintf("Fail to get gpx file: %s", err.Error()),
+				StatusMsg:  fmt.Sprintf("Failed to get gpx file: %s", err.Error()),
 			})
 			return
 		}
@@ -101,7 +101,7 @@ func (m *MomentController) Create(c *gin.Context) {
 		if _, err := io.Copy(gpxBuf, gpxFile); err != nil {
 			c.JSON(400, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  fmt.Sprintf("Fail copy image data: %s", err.Error()),
+				StatusMsg:  fmt.Sprintf("Failed copy image data: %s", err.Error()),
 			})
 			return
 		}
@@ -124,7 +124,7 @@ func (m *MomentController) Create(c *gin.Context) {
 		if err != nil {
 			c.JSON(400, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  fmt.Sprintf("Fail to get image file: %s", err.Error()),
+				StatusMsg:  fmt.Sprintf("Failed to get image file: %s", err.Error()),
 			})
 			return
 		}
@@ -134,7 +134,7 @@ func (m *MomentController) Create(c *gin.Context) {
 		if _, err := io.Copy(imageBuf, imageFile); err != nil {
 			c.JSON(400, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  fmt.Sprintf("Fail copy image data: %s", err.Error()),
+				StatusMsg:  fmt.Sprintf("Failed to copy image data: %s", err.Error()),
 			})
 			return
 		}
@@ -157,7 +157,7 @@ func (m *MomentController) Create(c *gin.Context) {
 		if err != nil {
 			c.JSON(400, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  fmt.Sprintf("Fail to get video file: %s", err.Error()),
+				StatusMsg:  fmt.Sprintf("Failed to get video file: %s", err.Error()),
 			})
 			return
 		}
@@ -167,7 +167,7 @@ func (m *MomentController) Create(c *gin.Context) {
 		if _, err := io.Copy(videoBuf, videoFile); err != nil {
 			c.JSON(400, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  fmt.Sprintf("Fail copy video data: %s", err.Error()),
+				StatusMsg:  fmt.Sprintf("Failed copy video data: %s", err.Error()),
 			})
 			return
 		}
@@ -211,7 +211,7 @@ func (m *MomentController) Feed(c *gin.Context) {
 	if userId == "" {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
-			StatusMsg:  "missing user Id in token",
+			StatusMsg:  "Missing user Id in token",
 		})
 		return
 	}
@@ -225,7 +225,7 @@ func (m *MomentController) Feed(c *gin.Context) {
 		if err != nil {
 			c.JSON(400, dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg:  "invalid latestTime: " + err.Error(),
+				StatusMsg:  "Invalid latestTime: " + err.Error(),
 			})
 			return
 		}
@@ -257,7 +257,7 @@ func (m *MomentController) Feed(c *gin.Context) {
 			},
 		}
 
-		// check and set media url
+		// Check and set media url
 		if res.Moments[i].ImageURL != nil {
 			moments[i]["media_image"] = res.Moments[i].ImageURL
 		}
@@ -268,23 +268,23 @@ func (m *MomentController) Feed(c *gin.Context) {
 			moments[i]["media"] = GPXPath
 		}
 
-		// get moment liked person
+		// Get moment liked person
 		likeResp, sErr := moment.Service().GetLikesByMomentId(context.Background(), momentID)
 		if sErr != nil {
 			c.JSON(sErr.Code(), dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg: sErr.Error(),
+				StatusMsg:  sErr.Error(),
 			})
 			return
 		}
 		moments[i]["personLikes"] = likeResp.PersonLikes
 
-		// get comment list
+		// Get comment list
 		commentResp, sErr := moment.Service().GetCommentListByMomentId(context.Background(), momentID)
 		if sErr != nil {
 			c.JSON(sErr.Code(), dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg: sErr.Error(),
+				StatusMsg:  sErr.Error(),
 			})
 			return
 		}
@@ -294,7 +294,7 @@ func (m *MomentController) Feed(c *gin.Context) {
 		if sErr != nil {
 			c.JSON(sErr.Code(), dto.CommonRes{
 				StatusCode: -1,
-				StatusMsg: sErr.Error(),
+				StatusMsg:  sErr.Error(),
 			})
 			return
 		}
