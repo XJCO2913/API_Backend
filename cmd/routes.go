@@ -158,9 +158,9 @@ func NewRouter() *gin.Engine {
 		organiser := api.Group("/org")
 		{
 			organiser.GET("", organiserController.GetAll)
-			organiser.POST("/agree")
-			organiser.POST("/refuse")
-			organiser.POST("/apply")
+			organiser.POST("/agree", organiserController.Agree)
+			organiser.POST("/refuse", organiserController.Refuse)
+			organiser.POST("/apply", organiserController.Apply)
 		}
 	}
 
