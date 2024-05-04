@@ -21,7 +21,7 @@ func Service() *FriendService {
 	return &friendService
 }
 
-func (f *FriendService) Follow(ctx context.Context, in *sdto.FollowInput) (*errorx.ServiceErr) {
+func (f *FriendService) Follow(ctx context.Context, in *sdto.FollowInput) *errorx.ServiceErr {
 	// check if the user to follow exist or not
 	if !dao.IsUserExisted(ctx, in.FollowingId) {
 		return errorx.NewServicerErr(
@@ -49,21 +49,34 @@ func (f *FriendService) GetAllFollower(ctx context.Context, userId string) (*sdt
 	}
 
 	// get avatar
-	for _, follower := range followers {
-		if follower.AvatarURL == nil || *follower.AvatarURL == "" {
-			continue
+	res := make([]*sdto.Follower, len(followers))
+	for i, follower := range followers {
+		var avatarUrl string
+		if follower.AvatarURL != nil && *follower.AvatarURL != "" {
+			avatarUrl, err = minio.GetUserAvatarUrl(ctx, *follower.AvatarURL)
+			if err != nil {
+				zlog.Error("error while get user avatar", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
 		}
-		avatarUrl, err := minio.GetUserAvatarUrl(ctx, *follower.AvatarURL)
+
+		// check if isFollowed
+		isFollowed, err := dao.CheckIsFollowed(ctx, userId, follower.UserID)
 		if err != nil {
-			zlog.Error("error while get user avatar", zap.Error(err))
+			zlog.Error("error while check if follow follower or not", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
 
-		follower.AvatarURL = &avatarUrl
-	} 
+		res[i] = &sdto.Follower{}
+		res[i].UserID = follower.UserID
+		res[i].Username = follower.Username
+		res[i].AvatarUrl = avatarUrl
+		res[i].Region = follower.Region
+		res[i].IsFollowed = isFollowed
+	}
 
 	return &sdto.GetAllFollowerOutput{
-		Followers: followers,
+		Followers: res,
 	}, nil
 }
 

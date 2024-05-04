@@ -10,6 +10,7 @@ const TableNameOrganiser = "organisers"
 type Organiser struct {
 	ID     int32  `gorm:"column:ID;primaryKey;autoIncrement:true" json:"ID"`
 	UserID string `gorm:"column:userId;not null" json:"userId"`
+	Status int32  `gorm:"column:status;not null;comment:-1 is refused, 1 is untreated, 2 is agreed" json:"status"` // -1 is refused, 1 is untreated, 2 is agreed
 }
 
 // TableName Organiser's table name
