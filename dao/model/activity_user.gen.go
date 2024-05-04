@@ -17,6 +17,7 @@ type ActivityUser struct {
 	CreatedAt  *time.Time `gorm:"column:createdAt;default:CURRENT_TIMESTAMP" json:"createdAt"`
 	UpdatedAt  *time.Time `gorm:"column:updatedAt;default:CURRENT_TIMESTAMP" json:"updatedAt"`
 	FinalFee   int32      `gorm:"column:finalFee;not null" json:"finalFee"`
+	RouteID    *int32     `gorm:"column:routeId" json:"routeId"`
 }
 
 // TableName ActivityUser's table name
