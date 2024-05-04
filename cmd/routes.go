@@ -159,7 +159,7 @@ func NewRouter() *gin.Engine {
 			organiser.GET("", organiserController.GetAll)
 			organiser.POST("/agree", organiserController.Agree)
 			organiser.POST("/refuse", organiserController.Refuse)
-			organiser.POST("/apply")
+			organiser.POST("/apply", organiserController.Apply)
 		}
 	}
 

@@ -80,3 +80,37 @@ func (o *OrganiserController) Refuse(c *gin.Context) {
 		StatusMsg:  "Refuse org apply successfully",
 	})
 }
+
+func (o *OrganiserController) Apply(c *gin.Context) {
+	userId := c.GetString("userID")
+	if userId == "" {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg: "Missing userID in token",
+		})
+		return
+	}
+
+	membershipType := c.GetFloat64("membershipType")
+	if membershipType != 1 && membershipType != 2 {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg: "Only membership can apply for organiser",
+		})
+		return
+	}
+
+	sErr := organiser.Service().Apply(context.Background(), userId)
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg: sErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg: "Apply created successfully, waiting for administrator review",
+	})
+}
