@@ -843,3 +843,49 @@ func (s *ActivityService) UploadRoute(ctx context.Context, input *sdto.UploadRou
 
 	return nil
 }
+
+func (s *ActivityService) GetRouteByIDs(ctx context.Context, input *sdto.GetRouteInput) (*sdto.GetRouteOutput, *errorx.ServiceErr) {
+	activity, err := dao.GetActivityByID(ctx, input.ActivityID)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("Activity not found by activity ID", zap.String("activityID", input.ActivityID))
+			return nil, errorx.NewServicerErr(errorx.ErrExternal, "Activity not found by activity ID", nil)
+		}
+		zlog.Error("Failed to retrieve activity by activity ID", zap.String("activityID", input.ActivityID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	activityUser, err := dao.FindActivityUserByIDs(ctx, activity.ActivityID, input.UserID)
+	if err != nil {
+		zlog.Error("Failed to find activity user association", zap.String("userID", input.UserID), zap.String("activityID", activity.ActivityID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	if activityUser.RouteID == nil {
+		zlog.Warn("No route available for this activity user association", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
+		return nil, errorx.NewServicerErr(errorx.ErrExternal, "No route available", nil)
+	}
+
+	// Retrieve the path as text
+	path, err := dao.GetPathAsText(ctx, *activityUser.RouteID)
+	if err != nil {
+		zlog.Error("Error while get GPX route from MySQL", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	// Parse the GPX route
+	pathText, err := util.GPXRoute(path)
+	if err != nil {
+		zlog.Error("Error while parse GPX route to text", zap.String("path", path), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	// Convert the path text to 2D string slice
+	gpxRouteText := util.GPXStrTo2DString(pathText)
+
+	output := &sdto.GetRouteOutput{
+		GPXRouteText: map[int][][]string{0: gpxRouteText},
+	}
+
+	return output, nil
+}

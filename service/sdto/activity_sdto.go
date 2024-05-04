@@ -139,3 +139,12 @@ type UploadRouteInput struct {
 	ActivityID string
 	GPXData    []byte
 }
+
+type GetRouteInput struct {
+	ActivityID string
+	UserID     string
+}
+
+type GetRouteOutput struct {
+	GPXRouteText map[int][][]string
+}

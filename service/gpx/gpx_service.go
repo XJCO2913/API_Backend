@@ -46,7 +46,7 @@ func (g *GPXService) ParseGPXData(ctx context.Context, in *sdto.ParseGPXDataInpu
 		return nil, errorx.NewInternalErr()
 	}
 
-	// get last inserted route
+	// Get last inserted route
 	lastGPXRoute, err := dao.GetLastGPSRoute(ctx)
 	if err != nil {
 		zlog.Error("Error while get last inserted gps route", zap.Error(err))
