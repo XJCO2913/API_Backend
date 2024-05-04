@@ -2,9 +2,11 @@ package dao
 
 import (
 	"context"
+	"errors"
 
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/dao/query"
+	"gorm.io/gorm"
 )
 
 func FollowById(ctx context.Context, followerId, followingId string) error {
@@ -95,4 +97,19 @@ func GetFriendsByUserID(ctx context.Context, userId string) ([]*model.User, erro
 	}
 
 	return friends, nil
+}
+
+func CheckIsFollowed(ctx context.Context, userId, otherUserId string) (bool, error) {
+	f := query.Use(DB).Follow
+
+	_, err := f.WithContext(ctx).Where(f.UserID.Eq(userId)).Where(f.FollowingID.Eq(otherUserId)).First()
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return false, nil
+		}
+
+		return false, err
+	}
+
+	return true, nil
 }

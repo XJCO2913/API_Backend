@@ -7,8 +7,16 @@ type FollowInput struct {
 	FollowingId string
 }
 
+type Follower struct {
+	UserID     string `json:"userId"`
+	AvatarUrl  string `json:"avatarUrl"`
+	Username   string `json:"username"`
+	Region     string `json:"region"`
+	IsFollowed bool   `json:"isFollowed"`
+}
+
 type GetAllFollowerOutput struct {
-	Followers []*model.User
+	Followers []*Follower
 }
 
 type GetAllFollowingOutput struct {
