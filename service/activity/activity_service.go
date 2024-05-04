@@ -626,7 +626,7 @@ func (s *ActivityService) ProfitWithinDateRange(ctx context.Context, startTimest
 func (s *ActivityService) GetAllTagsInfo(ctx context.Context) (*sdto.GetAllTagsInfoOutput, *errorx.ServiceErr) {
 	activities, err := dao.GetAllActivities(ctx)
 	if err != nil {
-		zlog.Error("error while get all activities", zap.Error(err))
+		zlog.Error("Error while get all activities", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -662,21 +662,21 @@ func (s *ActivityService) GetAllCounts(ctx context.Context) (*sdto.GetAllCountsO
 
 	activities, err := dao.GetAllActivities(ctx)
 	if err != nil {
-		zlog.Error("error while get all activities", zap.Error(err))
+		zlog.Error("Error while get all activities", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 	activityCnt = len(activities)
 
 	cnt, err := dao.ActivityUserCount(ctx)
 	if err != nil {
-		zlog.Error("error while get activity_user count", zap.Error(err))
+		zlog.Error("Error while get activity_user count", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 	participantCnt = int(cnt)
 
 	users, err := dao.GetAllUsers(ctx)
 	if err != nil {
-		zlog.Error("error while get all users", zap.Error(err))
+		zlog.Error("Error while get all users", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 	for _, user := range users {
@@ -702,7 +702,7 @@ func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*
 		for i := 0; i < 7; i++ {
 			endActivities, err := dao.GetActivitiesByEndDate(ctx, now)
 			if err != nil {
-				zlog.Error("error while get activities by end date", zap.Error(err))
+				zlog.Error("Error while get activities by end date", zap.Error(err))
 				return nil, errorx.NewInternalErr()
 			}
 
@@ -710,7 +710,7 @@ func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*
 			for _, endActivity := range endActivities {
 				activityUsers, err := dao.GetFinalFeesByActivityId(ctx, endActivity.ActivityID)
 				if err != nil {
-					zlog.Error("error while get final fees by activity id", zap.Error(err))
+					zlog.Error("Error while get final fees by activity id", zap.Error(err))
 					return nil, errorx.NewInternalErr()
 				}
 
@@ -738,7 +738,7 @@ func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*
 
 			oneWeekActivities, err := dao.GetActivitiesWithinDateRange(ctx, startOfWeek, endOfWeek)
 			if err != nil {
-				zlog.Error("error while get activities of the week", zap.Error(err))
+				zlog.Error("Error while get activities of the week", zap.Error(err))
 				return nil, errorx.NewInternalErr()
 			}
 
@@ -746,7 +746,7 @@ func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*
 			for _, activity := range oneWeekActivities {
 				aus, err := dao.GetFinalFeesByActivityId(ctx, activity.ActivityID)
 				if err != nil {
-					zlog.Error("error while get final fees by activity id", zap.Error(err))
+					zlog.Error("Error while get final fees by activity id", zap.Error(err))
 					return nil, errorx.NewInternalErr()
 				}
 
@@ -774,7 +774,7 @@ func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*
 
 			oneYearActivities, err := dao.GetActivitiesWithinDateRange(ctx, startOfMonth, endOfMonth)
 			if err != nil {
-				zlog.Error("error while get activities of the week", zap.Error(err))
+				zlog.Error("Error while get activities of the week", zap.Error(err))
 				return nil, errorx.NewInternalErr()
 			}
 
@@ -782,7 +782,7 @@ func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*
 			for _, activity := range oneYearActivities {
 				aus, err := dao.GetFinalFeesByActivityId(ctx, activity.ActivityID)
 				if err != nil {
-					zlog.Error("error while get final fees by activity id", zap.Error(err))
+					zlog.Error("Error while get final fees by activity id", zap.Error(err))
 					return nil, errorx.NewInternalErr()
 				}
 
@@ -799,7 +799,7 @@ func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*
 	default:
 		return nil, errorx.NewServicerErr(
 			400,
-			"invalid option",
+			"Invalid option",
 			nil,
 		)
 	}
@@ -808,4 +808,38 @@ func (s *ActivityService) GetProfitWithOption(ctx context.Context, op string) (*
 		Profits: profits,
 		Dates:   dates,
 	}, nil
+}
+
+func (s *ActivityService) UploadRoute(ctx context.Context, input *sdto.UploadRouteInput) *errorx.ServiceErr {
+	if _, err := dao.GetActivityByID(ctx, input.ActivityID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("Activity not found by activity ID", zap.String("activityID", input.ActivityID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "Activity not found by activity ID", nil)
+		}
+		zlog.Error("Failed to retrieve activity by activity ID", zap.String("activityID", input.ActivityID), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	if _, err := dao.FindActivityUserByIDs(ctx, input.ActivityID, input.UserID); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Warn("User has not signed up for this activity", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID))
+			return errorx.NewServicerErr(errorx.ErrExternal, "User has not signed up for this activity", nil)
+		}
+		zlog.Error("Failed to check user activity sign up", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	gpxInput := &sdto.ParseGPXDataInput{GPXData: input.GPXData}
+	parsedData, err := gpx.Service().ParseGPXData(ctx, gpxInput)
+	if err != nil {
+		zlog.Error("Failed to parse GPX data", zap.Error(err))
+		return errorx.NewServicerErr(errorx.ErrExternal, "Failed to parse GPX data", nil)
+	}
+
+	if err := dao.UpdateActivityUserRoute(ctx, input.ActivityID, input.UserID, parsedData.RouteID); err != nil {
+		zlog.Error("Failed to update ActivityUser with RouteID", zap.String("userID", input.UserID), zap.String("activityID", input.ActivityID), zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
 }
