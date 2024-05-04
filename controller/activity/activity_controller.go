@@ -32,7 +32,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 	}
 
 	var req dto.CreateActivityReq
-	if err := c.Bind(&req); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Wrong params: " + err.Error(),
@@ -67,7 +67,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 		return
 	}
 
-	// get gpx file
+	// Get gpx file
 	gpxFileHeader, err := c.FormFile("gpxFile")
 	if err != nil {
 		c.JSON(400, dto.CommonRes{
@@ -680,5 +680,45 @@ func (a *ActivityController) GetProfitWithOption(c *gin.Context) {
 			"profits": resp.Profits,
 			"dates":   resp.Dates,
 		},
+	})
+}
+
+func (ac *ActivityController) UploadRoute(c *gin.Context) {
+	userID, userIDExists := c.Get("userID")
+	if !userIDExists {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "User ID is required",
+		})
+		return
+	}
+
+	var req dto.UploadRouteReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Wrong params: " + err.Error(),
+		})
+		return
+	}
+
+	input := &sdto.UploadRouteInput{
+		UserID:     userID.(string),
+		ActivityID: req.ActivityID,
+		GPXData:    req.GPXData,
+	}
+
+	serviceErr := activity.Service().UploadRoute(c.Request.Context(), input)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Upload route successfully",
 	})
 }

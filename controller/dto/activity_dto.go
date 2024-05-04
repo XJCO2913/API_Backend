@@ -9,3 +9,8 @@ type CreateActivityReq struct {
 	Tags        string  `form:"tags"`
 	Level       string  `form:"level" binding:"required,oneof=small medium"`
 }
+
+type UploadRouteReq struct {
+	ActivityID string `json:"activityId" binding:"required"`
+	GPXData    []byte `json:"gpxData" binding:"required"`
+}
