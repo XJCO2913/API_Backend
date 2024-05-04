@@ -702,10 +702,30 @@ func (ac *ActivityController) UploadRoute(c *gin.Context) {
 		return
 	}
 
+	file, err := req.GPXData.Open()
+	if err != nil {
+		c.JSON(500, gin.H{
+			"status_code": -1,
+			"status_msg":  "Failed to open GPX file",
+		})
+		return
+	}
+	defer file.Close()
+
+	// Read file contents into byte slices
+	gpxData, err := io.ReadAll(file)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"status_code": -1,
+			"status_msg":  "Failed to read GPX file",
+		})
+		return
+	}
+
 	input := &sdto.UploadRouteInput{
 		UserID:     userID.(string),
 		ActivityID: req.ActivityID,
-		GPXData:    req.GPXData,
+		GPXData:    gpxData,
 	}
 
 	serviceErr := activity.Service().UploadRoute(c.Request.Context(), input)

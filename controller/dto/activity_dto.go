@@ -1,5 +1,7 @@
 package dto
 
+import "mime/multipart"
+
 type CreateActivityReq struct {
 	Name        string  `form:"name" binding:"required"`
 	Description *string `form:"description" binding:"required"`
@@ -11,6 +13,6 @@ type CreateActivityReq struct {
 }
 
 type UploadRouteReq struct {
-	ActivityID string `json:"activityId" binding:"required"`
-	GPXData    []byte `json:"gpxData" binding:"required"`
+	ActivityID string                `form:"activityId" binding:"required"`
+	GPXData    *multipart.FileHeader `form:"gpxData" binding:"required"`
 }
