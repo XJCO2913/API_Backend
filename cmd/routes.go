@@ -9,6 +9,7 @@ import (
 	"api.backend.xjco2913/controller/friend"
 	"api.backend.xjco2913/controller/like"
 	"api.backend.xjco2913/controller/moment"
+	"api.backend.xjco2913/controller/organiser"
 	"api.backend.xjco2913/controller/user"
 	"api.backend.xjco2913/controller/ws"
 	"api.backend.xjco2913/middleware"
@@ -29,6 +30,7 @@ func NewRouter() *gin.Engine {
 	websocketController := ws.NewWebsocketController()
 	likeController := like.NewLikeController()
 	commentController := comment.NewCommentController()
+	organiserController := organiser.NewOrganiserController()
 
 	// Global middleware
 	// Prometheus
@@ -150,6 +152,14 @@ func NewRouter() *gin.Engine {
 			friend.GET("/follower", friendController.GetAllFollower)
 			friend.GET("/following", friendController.GetAllFollowing)
 			friend.GET("/", friendController.GetAll)
+		}
+
+		organiser := api.Group("/org")
+		{
+			organiser.GET("", organiserController.GetAll)
+			organiser.POST("/agree")
+			organiser.POST("/refuse")
+			organiser.POST("/apply")
 		}
 	}
 
