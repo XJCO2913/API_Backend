@@ -140,6 +140,7 @@ func NewRouter() *gin.Engine {
 			activity.GET("/profit", activityController.GetProfitWithOption)
 			activity.GET("/tags", activityController.TagsInfo)
 			activity.GET("/counts", activityController.Counts)
+			activity.POST("/route", activityController.UploadRoute)
 		}
 
 		// Friend
