@@ -32,7 +32,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 	}
 
 	var req dto.CreateActivityReq
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Wrong params: " + err.Error(),
@@ -694,7 +694,7 @@ func (ac *ActivityController) UploadRoute(c *gin.Context) {
 	}
 
 	var req dto.UploadRouteReq
-	if err := c.ShouldBindJSON(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Wrong params: " + err.Error(),
