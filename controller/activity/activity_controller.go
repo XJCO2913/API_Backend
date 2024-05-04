@@ -32,7 +32,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 	}
 
 	var req dto.CreateActivityReq
-	if err := c.Bind(&req); err != nil {
+	if err := c.ShouldBind(&req); err != nil {
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Wrong params: " + err.Error(),
@@ -67,7 +67,7 @@ func (a *ActivityController) Create(c *gin.Context) {
 		return
 	}
 
-	// get gpx file
+	// Get gpx file
 	gpxFileHeader, err := c.FormFile("gpxFile")
 	if err != nil {
 		c.JSON(400, dto.CommonRes{
@@ -680,5 +680,65 @@ func (a *ActivityController) GetProfitWithOption(c *gin.Context) {
 			"profits": resp.Profits,
 			"dates":   resp.Dates,
 		},
+	})
+}
+
+func (ac *ActivityController) UploadRoute(c *gin.Context) {
+	userID, userIDExists := c.Get("userID")
+	if !userIDExists {
+		c.JSON(403, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "User ID is required",
+		})
+		return
+	}
+
+	var req dto.UploadRouteReq
+	if err := c.ShouldBind(&req); err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Wrong params: " + err.Error(),
+		})
+		return
+	}
+
+	file, err := req.GPXData.Open()
+	if err != nil {
+		c.JSON(500, gin.H{
+			"status_code": -1,
+			"status_msg":  "Failed to open GPX file",
+		})
+		return
+	}
+	defer file.Close()
+
+	// Read file contents into byte slices
+	gpxData, err := io.ReadAll(file)
+	if err != nil {
+		c.JSON(500, gin.H{
+			"status_code": -1,
+			"status_msg":  "Failed to read GPX file",
+		})
+		return
+	}
+
+	input := &sdto.UploadRouteInput{
+		UserID:     userID.(string),
+		ActivityID: req.ActivityID,
+		GPXData:    gpxData,
+	}
+
+	serviceErr := activity.Service().UploadRoute(c.Request.Context(), input)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  serviceErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Upload route successfully",
 	})
 }

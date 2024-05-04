@@ -133,3 +133,9 @@ type GetProfitOutput struct {
 	Profits []int
 	Dates   []string
 }
+
+type UploadRouteInput struct {
+	UserID     string
+	ActivityID string
+	GPXData    []byte
+}
