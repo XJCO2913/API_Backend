@@ -51,13 +51,13 @@ func (f *FriendService) GetAllFollower(ctx context.Context, userId string) (*sdt
 	// get avatar
 	res := make([]*sdto.Follower, len(followers))
 	for i, follower := range followers {
-		if follower.AvatarURL == nil || *follower.AvatarURL == "" {
-			continue
-		}
-		avatarUrl, err := minio.GetUserAvatarUrl(ctx, *follower.AvatarURL)
-		if err != nil {
-			zlog.Error("error while get user avatar", zap.Error(err))
-			return nil, errorx.NewInternalErr()
+		var avatarUrl string
+		if follower.AvatarURL != nil && *follower.AvatarURL != "" {
+			avatarUrl, err = minio.GetUserAvatarUrl(ctx, *follower.AvatarURL)
+			if err != nil {
+				zlog.Error("error while get user avatar", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
 		}
 
 		// check if isFollowed
