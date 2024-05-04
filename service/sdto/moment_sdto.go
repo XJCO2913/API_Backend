@@ -42,15 +42,15 @@ type FeedMomentOutput struct {
 }
 
 type MomentUser struct {
-	Name      string `json:"name"`
-	AvatarUrl string `json:"avatarUrl"`
+	Name      string
+	AvatarUrl string
 }
 
 type MomentComment struct {
-	Id        string     `json:"id"`
-	Author    MomentUser `json:"author"`
-	CreatedAt time.Time  `json:"createdAt"`
-	Message   string     `json:"message"`
+	Id        string
+	Author    MomentUser
+	CreatedAt time.Time
+	Message   string
 }
 
 type GetLikesOutput struct {

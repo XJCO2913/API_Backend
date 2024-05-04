@@ -41,7 +41,7 @@ func (m *MomentService) Create(ctx context.Context, in *sdto.CreateMomentInput) 
 		MomentID: momentIdStr,
 	})
 	if err != nil {
-		zlog.Error("error while create new moment", zap.Error(err))
+		zlog.Error("Error while create new moment", zap.Error(err))
 		return errorx.NewInternalErr()
 	}
 
@@ -52,7 +52,7 @@ func (m *MomentService) CreateWithImage(ctx context.Context, in *sdto.CreateMome
 	imageName := uuid.New()
 	err := minio.UploadMomentImage(ctx, imageName.String(), in.ImageData)
 	if err != nil {
-		zlog.Error("error while store moment image into minio", zap.Error(err))
+		zlog.Error("Error while store moment image into minio", zap.Error(err))
 		return errorx.NewInternalErr()
 	}
 
@@ -66,9 +66,9 @@ func (m *MomentService) CreateWithImage(ctx context.Context, in *sdto.CreateMome
 		MomentID: momentIdStr,
 	})
 	if err != nil {
-		zlog.Error("error while create new moment", zap.Error(err))
+		zlog.Error("Error while create new moment", zap.Error(err))
 
-		// async remove image in minio
+		// Async remove image in minio
 		go func() {
 			minio.RemoveObjectFromMoment(ctx, imageNameStr)
 		}()
@@ -92,16 +92,16 @@ func (m *MomentService) CreateWithVideo(ctx context.Context, in *sdto.CreateMome
 		MomentID: momentIdStr,
 	})
 	if err != nil {
-		zlog.Error("error while create new moment", zap.Error(err))
+		zlog.Error("Error while create new moment", zap.Error(err))
 		return errorx.NewInternalErr()
 	}
 
-	// async upload video
+	// Async upload video
 	go func() {
 		err := minio.UploadMomentVideo(ctx, videoNameStr, in.VideoData)
 		if err != nil {
-			// error, remove moment record in mysql
-			zlog.Error("error while async upload moment video", zap.Error(err))
+			// Error, remove moment record in mysql
+			zlog.Error("Error while async upload moment video", zap.Error(err))
 			dao.DeleteMomentByID(ctx, newMomentID)
 		}
 	}()
@@ -126,7 +126,7 @@ func (m *MomentService) CreateWithGPX(ctx context.Context, in *sdto.CreateMoment
 		MomentID: momentIdStr,
 	})
 	if err != nil {
-		zlog.Error("error while create new moment", zap.Error(err))
+		zlog.Error("Error while create new moment", zap.Error(err))
 		return errorx.NewInternalErr()
 	}
 
@@ -136,7 +136,7 @@ func (m *MomentService) CreateWithGPX(ctx context.Context, in *sdto.CreateMoment
 func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sdto.FeedMomentOutput, *errorx.ServiceErr) {
 	moments, err := dao.GetMomentsByTime(ctx, MOMENT_FEED_LIMIT, time.UnixMilli(in.LatestTime))
 	if err != nil {
-		zlog.Error("error while get moment feed by latest time", zap.Error(err))
+		zlog.Error("Error while get moment feed by latest time", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -152,18 +152,18 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 		AuthorInfoMap: make(map[string]*model.User),
 	}
 	for i, moment := range moments {
-		// get author info
+		// Get author info
 		author, err := dao.GetUserByID(ctx, moment.AuthorID)
 		if err != nil {
-			zlog.Error("error while get moment author info", zap.Error(err), zap.String("momentID", moment.MomentID))
+			zlog.Error("Error while get moment author info", zap.Error(err), zap.String("momentID", moment.MomentID))
 			return nil, errorx.NewInternalErr()
 		}
 
-		// get author avatar url
+		// Get author avatar url
 		if author.AvatarURL != nil {
 			url, err := minio.GetUserAvatarUrl(ctx, *author.AvatarURL)
 			if err != nil {
-				zlog.Error("error while get author avatar url", zap.Error(err))
+				zlog.Error("Error while get author avatar url", zap.Error(err))
 				return nil, errorx.NewInternalErr()
 			}
 
@@ -175,7 +175,7 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 		if moment.ImageURL != nil {
 			url, err := minio.GetMomentImageUrl(ctx, *moment.ImageURL)
 			if err != nil {
-				zlog.Error("error while get moment image url from minio", zap.Error(err))
+				zlog.Error("Error while get moment image url from minio", zap.Error(err))
 				return nil, errorx.NewInternalErr()
 			}
 
@@ -184,7 +184,7 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 		if moment.VideoURL != nil {
 			url, err := minio.GetMomentImageUrl(ctx, *moment.VideoURL)
 			if err != nil {
-				zlog.Error("error while get moment video url from minio", zap.Error(err))
+				zlog.Error("Error while get moment video url from minio", zap.Error(err))
 				return nil, errorx.NewInternalErr()
 			}
 
@@ -193,13 +193,13 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 		if moment.RouteID != nil {
 			path, err := dao.GetPathAsText(ctx, *moment.RouteID)
 			if err != nil {
-				zlog.Error("error while get GPX route from mysql", zap.Error(err))
+				zlog.Error("Error while get GPX route from mysql", zap.Error(err))
 				return nil, errorx.NewInternalErr()
 			}
 
 			pathText, err := util.GPXRoute(path)
 			if err != nil {
-				zlog.Error("error while parse gpx route to text", zap.String("path", path))
+				zlog.Error("Error while parse gpx route to text", zap.String("path", path))
 				return nil, errorx.NewInternalErr()
 			}
 
@@ -216,7 +216,7 @@ func (m *MomentService) Feed(ctx context.Context, in *sdto.FeedMomentInput) (*sd
 func (m *MomentService) GetLikesByMomentId(ctx context.Context, momentId string) (*sdto.GetLikesOutput, *errorx.ServiceErr) {
 	likes, err := dao.GetLikeByMomentId(ctx, momentId)
 	if err != nil {
-		zlog.Error("error while get moment likes", zap.Error(err))
+		zlog.Error("Error while get moment likes", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -226,7 +226,7 @@ func (m *MomentService) GetLikesByMomentId(ctx context.Context, momentId string)
 
 		personLike, err := dao.GetUserByID(ctx, likeId)
 		if err != nil {
-			zlog.Error("error while get user liked by id", zap.Error(err))
+			zlog.Error("Error while get user liked by id", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
 
@@ -234,7 +234,7 @@ func (m *MomentService) GetLikesByMomentId(ctx context.Context, momentId string)
 		if personLike.AvatarURL != nil && *personLike.AvatarURL != "" {
 			url, err = minio.GetUserAvatarUrl(ctx, *personLike.AvatarURL)
 			if err != nil {
-				zlog.Error("error while get user avatar url", zap.Error(err))
+				zlog.Error("Error while get user avatar url", zap.Error(err))
 				return nil, errorx.NewInternalErr()
 			}
 		}
@@ -255,24 +255,24 @@ func (m *MomentService) GetCommentListByMomentId(ctx context.Context, momentId s
 
 	commentModels, err := dao.GetCommentsByMomentId(ctx, momentId)
 	if err != nil {
-		zlog.Error("error while get moment comments", zap.Error(err))
+		zlog.Error("Error while get moment comments", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
 	for _, commentModel := range commentModels {
 		var comment sdto.MomentComment
-		
+
 		author, err := dao.GetUserByID(ctx, commentModel.AuthorID)
 		if err != nil {
-			zlog.Error("error while get comment user", zap.Error(err))
+			zlog.Error("Error while get comment user", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
-		
+
 		var url string
 		if author.AvatarURL != nil && *author.AvatarURL != "" {
 			url, err = minio.GetUserAvatarUrl(ctx, *author.AvatarURL)
 			if err != nil {
-				zlog.Error("error while get user avatar url", zap.Error(err))
+				zlog.Error("Error while get user avatar url", zap.Error(err))
 				return nil, errorx.NewInternalErr()
 			}
 		}
@@ -298,7 +298,7 @@ func (m *MomentService) IsLiked(ctx context.Context, momentId, userId string) (b
 			return false, nil
 		}
 
-		zlog.Error("error while get like by two ids", zap.Error(err))
+		zlog.Error("Error while get like by two ids", zap.Error(err))
 		return false, errorx.NewInternalErr()
 	}
 

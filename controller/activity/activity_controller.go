@@ -683,7 +683,7 @@ func (a *ActivityController) GetProfitWithOption(c *gin.Context) {
 	})
 }
 
-func (ac *ActivityController) UploadRoute(c *gin.Context) {
+func (a *ActivityController) UploadRoute(c *gin.Context) {
 	userID, userIDExists := c.Get("userID")
 	if !userIDExists {
 		c.JSON(403, dto.CommonRes{
@@ -740,5 +740,46 @@ func (ac *ActivityController) UploadRoute(c *gin.Context) {
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Upload route successfully",
+	})
+}
+
+func (a *ActivityController) GetRouteByIDs(c *gin.Context) {
+	activityID := c.Query("activityID")
+
+	userID, userIDExists := c.Get("userID")
+	if !userIDExists {
+		c.JSON(403, gin.H{
+			"status_code": -1,
+			"status_msg":  "User ID is required",
+		})
+		return
+	}
+
+	input := &sdto.GetRouteInput{
+		UserID:     userID.(string),
+		ActivityID: activityID,
+	}
+
+	output, serviceErr := activity.Service().GetRouteByIDs(c.Request.Context(), input)
+	if serviceErr != nil {
+		c.JSON(serviceErr.Code(), gin.H{
+			"status_code": -1,
+			"status_msg":  serviceErr.Error(),
+		})
+		return
+	}
+
+	// Convert map[int][][]string to [][]string
+	var routes [][]string
+	for _, segment := range output.GPXRouteText {
+		routes = append(routes, segment...)
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get route successfully",
+		Data: gin.H{
+			"route": routes,
+		},
 	})
 }
