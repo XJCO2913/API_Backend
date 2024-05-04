@@ -769,11 +769,17 @@ func (a *ActivityController) GetRouteByIDs(c *gin.Context) {
 		return
 	}
 
+	// Convert map[int][][]string to [][]string
+	var routes [][]string
+	for _, segment := range output.GPXRouteText {
+		routes = append(routes, segment...)
+	}
+
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Get route successfully",
 		Data: gin.H{
-			"route": output.GPXRouteText,
+			"route": routes,
 		},
 	})
 }
