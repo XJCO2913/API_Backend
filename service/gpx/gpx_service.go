@@ -22,7 +22,7 @@ func Service() *GPXService {
 	return &gpxService
 }
 
-// store the gpx data as GEO type in mysql, and return route id
+// Store the gpx data as GEO type in mysql, and return route id
 func (g *GPXService) ParseGPXData(ctx context.Context, in *sdto.ParseGPXDataInput) (*sdto.ParseGPXDataOutput, *errorx.ServiceErr) {
 	gpxLonLatData, err := util.GPXToLonLat(in.GPXData)
 	if err != nil {
