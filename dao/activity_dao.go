@@ -32,7 +32,7 @@ func FindActivityByName(ctx context.Context, name string) (*model.Activity, erro
 func GetAllActivities(ctx context.Context) ([]*model.Activity, error) {
 	a := query.Use(DB).Activity
 
-	activities, err := a.WithContext(ctx).Find()
+	activities, err := a.WithContext(ctx).Order(a.CreatedAt.Desc()).Find()
 	if err != nil {
 		return nil, err
 	}
