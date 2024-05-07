@@ -30,7 +30,7 @@ func newNotification(db *gorm.DB, opts ...gen.DOOption) notification {
 	_notification.NotificationID = field.NewString(tableName, "notificationId")
 	_notification.ReceiverID = field.NewString(tableName, "receiverId")
 	_notification.SenderID = field.NewString(tableName, "senderId")
-	_notification.RoureID = field.NewInt32(tableName, "roureId")
+	_notification.RouteID = field.NewInt32(tableName, "routeId")
 	_notification.Type = field.NewInt32(tableName, "type")
 	_notification.Status = field.NewInt32(tableName, "status")
 	_notification.CreatedAt = field.NewTime(tableName, "createdAt")
@@ -48,7 +48,7 @@ type notification struct {
 	NotificationID field.String
 	ReceiverID     field.String
 	SenderID       field.String
-	RoureID        field.Int32
+	RouteID        field.Int32
 	Type           field.Int32 // 1 is admin notification, 2 is route notification
 	Status         field.Int32 // -1 is unread, 1 is read
 	CreatedAt      field.Time
@@ -72,7 +72,7 @@ func (n *notification) updateTableName(table string) *notification {
 	n.NotificationID = field.NewString(table, "notificationId")
 	n.ReceiverID = field.NewString(table, "receiverId")
 	n.SenderID = field.NewString(table, "senderId")
-	n.RoureID = field.NewInt32(table, "roureId")
+	n.RouteID = field.NewInt32(table, "routeId")
 	n.Type = field.NewInt32(table, "type")
 	n.Status = field.NewInt32(table, "status")
 	n.CreatedAt = field.NewTime(table, "createdAt")
@@ -109,7 +109,7 @@ func (n *notification) fillFieldMap() {
 	n.fieldMap["notificationId"] = n.NotificationID
 	n.fieldMap["receiverId"] = n.ReceiverID
 	n.fieldMap["senderId"] = n.SenderID
-	n.fieldMap["roureId"] = n.RoureID
+	n.fieldMap["routeId"] = n.RouteID
 	n.fieldMap["type"] = n.Type
 	n.fieldMap["status"] = n.Status
 	n.fieldMap["createdAt"] = n.CreatedAt
