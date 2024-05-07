@@ -772,6 +772,7 @@ func (a *ActivityController) GetRouteByIDs(c *gin.Context) {
 		StatusMsg:  "Get route successfully",
 		Data: gin.H{
 			"route": routes,
+			"avatarUrl": output.AvatarUrl,
 		},
 	})
 }
