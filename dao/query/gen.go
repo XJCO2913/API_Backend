@@ -27,6 +27,7 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		Like:         newLike(db, opts...),
 		Log:          newLog(db, opts...),
 		Moment:       newMoment(db, opts...),
+		Notification: newNotification(db, opts...),
 		Organiser:    newOrganiser(db, opts...),
 		Tag:          newTag(db, opts...),
 		User:         newUser(db, opts...),
@@ -45,6 +46,7 @@ type Query struct {
 	Like         like
 	Log          log
 	Moment       moment
+	Notification notification
 	Organiser    organiser
 	Tag          tag
 	User         user
@@ -64,6 +66,7 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		Like:         q.Like.clone(db),
 		Log:          q.Log.clone(db),
 		Moment:       q.Moment.clone(db),
+		Notification: q.Notification.clone(db),
 		Organiser:    q.Organiser.clone(db),
 		Tag:          q.Tag.clone(db),
 		User:         q.User.clone(db),
@@ -90,6 +93,7 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		Like:         q.Like.replaceDB(db),
 		Log:          q.Log.replaceDB(db),
 		Moment:       q.Moment.replaceDB(db),
+		Notification: q.Notification.replaceDB(db),
 		Organiser:    q.Organiser.replaceDB(db),
 		Tag:          q.Tag.replaceDB(db),
 		User:         q.User.replaceDB(db),
@@ -106,6 +110,7 @@ type queryCtx struct {
 	Like         *likeDo
 	Log          *logDo
 	Moment       *momentDo
+	Notification *notificationDo
 	Organiser    *organiserDo
 	Tag          *tagDo
 	User         *userDo
@@ -122,6 +127,7 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		Like:         q.Like.WithContext(ctx),
 		Log:          q.Log.WithContext(ctx),
 		Moment:       q.Moment.WithContext(ctx),
+		Notification: q.Notification.WithContext(ctx),
 		Organiser:    q.Organiser.WithContext(ctx),
 		Tag:          q.Tag.WithContext(ctx),
 		User:         q.User.WithContext(ctx),
