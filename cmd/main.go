@@ -16,6 +16,10 @@ var (
 func main() {
 	ctx := context.Background()
 
+	ClearJunkAvatarFile(ctx)
+	ClearJunkMomentMediaFile(ctx)
+	ClearJunkActivityImageFile(ctx)
+
 	r := NewRouter()
 
 	go localHub.Run()
@@ -31,6 +35,8 @@ func main() {
 
 	// Async flush logs into mysql
 	go FlushLogs(ctx)
+
+	// Clear junk avatar object file
 
 	zlog.Info(fmt.Sprintf("Starting listening at :%v...", port))
 	r.Run(fmt.Sprintf(":%v", port))

@@ -153,3 +153,63 @@ func GetObjectUrl(ctx context.Context, bucketName, objectName string, exp time.D
 
 	return preSignedUrl, nil
 }
+
+func RemoveUnusedAvatar(ctx context.Context, inUsedAvatar map[string]bool) {
+	c, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	avatarObjCh := minioClient.ListObjects(c, AVATAR_BUCKET, minio.ListObjectsOptions{})
+	for avatarObj := range avatarObjCh {
+		if avatarObj.Err != nil {
+			panic(avatarObj.Err)
+		}
+
+		if _, ok := inUsedAvatar[avatarObj.Key]; !ok {
+			// if avatar is not in unused, remove it
+			err := minioClient.RemoveObject(c, AVATAR_BUCKET, avatarObj.Key, minio.RemoveObjectOptions{})
+			if err != nil {
+				panic("error while remove junk avatar: " + err.Error())
+			}
+		}
+	}
+}
+
+func RemoveUnusedMomentMedia(ctx context.Context, inUsedMomentMedia map[string]bool) {
+	c, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	momentObjCh := minioClient.ListObjects(c, MOMENT_BUCKET, minio.ListObjectsOptions{})
+	for momentObj := range momentObjCh {
+		if momentObj.Err != nil {
+			panic(momentObj.Err)
+		}
+
+		if _, ok := inUsedMomentMedia[momentObj.Key]; !ok {
+			// if moment media file is unused, remove it
+			err := minioClient.RemoveObject(c, MOMENT_BUCKET, momentObj.Key, minio.RemoveObjectOptions{})
+			if err != nil {
+				panic("error while clear junk moment media file: " + err.Error())
+			}
+		}
+	}
+}
+
+func RemoveUnusedActivityImage(ctx context.Context, inUsedImage map[string]bool) {
+	c, cancel := context.WithCancel(ctx)
+	defer cancel()
+
+	activityObjCh := minioClient.ListObjects(c, ACTIVITY_BUCKET, minio.ListObjectsOptions{})
+	for activityObj := range activityObjCh {
+		if activityObj.Err != nil {
+			panic(activityObj.Err)
+		}
+
+		if _, ok := inUsedImage[activityObj.Key]; !ok {
+			// if moment media file is unused, remove it
+			err := minioClient.RemoveObject(c, AVATAR_BUCKET, activityObj.Key, minio.RemoveObjectOptions{})
+			if err != nil {
+				panic("error while clear junk activity image file: " + err.Error())
+			}
+		}
+	}
+}
