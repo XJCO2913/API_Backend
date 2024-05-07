@@ -744,18 +744,12 @@ func (a *ActivityController) UploadRoute(c *gin.Context) {
 }
 
 func (a *ActivityController) GetRouteByIDs(c *gin.Context) {
-	var req dto.GetRouteReq
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(400, dto.CommonRes{
-			StatusCode: -1,
-			StatusMsg:  "Wrong params: " + err.Error(),
-		})
-		return
-	}
+	activityID := c.Query("activityID")
+	userID := c.Query("userID")
 
 	input := &sdto.GetRouteInput{
-		UserID:     req.UserID,
-		ActivityID: req.ActivityID,
+		UserID:     userID,
+		ActivityID: activityID,
 	}
 
 	output, serviceErr := activity.Service().GetRouteByIDs(c.Request.Context(), input)
