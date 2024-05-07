@@ -60,7 +60,7 @@ func (n *NotifyService) Pull(ctx context.Context, userId string) (*sdto.PullNoti
 
 		// get route data
 		var routeData [][]string
-		if notification.RouteID != nil {
+		if notification.Type == 2 && notification.RouteID != nil {
 			path, err := dao.GetPathAsText(ctx, *notification.RouteID)
 			if err != nil {
 				zlog.Error("Error while get GPX route from mysql", zap.Error(err))
@@ -81,6 +81,13 @@ func (n *NotifyService) Pull(ctx context.Context, userId string) (*sdto.PullNoti
 		res[i].Route = routeData
 		res[i].Type = notification.Type
 		res[i].CreatedAt = notification.CreatedAt
+
+		// mark notification as read
+		err = dao.ReadNotificationsById(ctx, notification.NotificationID)
+		if err != nil {
+			zlog.Error("error while read mark notification as read", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
 	}
 
 	return &sdto.PullNotificationOutput{

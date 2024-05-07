@@ -12,3 +12,23 @@ func PullNotificationByReceiverId(ctx context.Context, receiverId string) ([]*mo
 
 	return n.WithContext(ctx).Where(n.ReceiverID.Eq(receiverId)).Find()
 }
+
+func ReadNotificationsById(ctx context.Context, notificationId string) error {
+	n := query.Use(DB).Notification
+
+	notification, err := n.WithContext(ctx).Where(n.NotificationID.Eq(notificationId)).First()
+	if err != nil {
+		return err
+	}
+	// mark notification as read
+	if notification.Status == 1 {
+		return nil
+	}
+	notification.Status = 1
+	_, err = n.WithContext(ctx).Where(n.NotificationID.Eq(notificationId)).Updates(notification)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
