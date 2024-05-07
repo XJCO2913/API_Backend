@@ -41,7 +41,7 @@ type GetByIDOutput struct {
 	Region         string
 	MembershipTime int64
 	AvatarURL      string
-	OrganiserID    string
+	IsOrganiser    bool
 	MembershipType int32
 }
 

@@ -184,12 +184,11 @@ func (u *UserController) GetByID(c *gin.Context) {
 		return
 	}
 
-	isOrganiser := userDetail.OrganiserID != ""
 	responseData := gin.H{
 		"userId":         userDetail.UserID,
 		"username":       userDetail.Username,
 		"avatarUrl":      userDetail.AvatarURL,
-		"isOrganiser":    isOrganiser,
+		"isOrganiser":    userDetail.IsOrganiser,
 		"gender":         userDetail.Gender,
 		"birthday":       userDetail.Birthday,
 		"region":         userDetail.Region,
