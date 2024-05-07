@@ -350,11 +350,16 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 			return nil, errorx.NewInternalErr()
 		}
 	}
-
-	organiserID := ""
+	
+	isOrganiserExist := true
 	organiser, err := dao.GetOrganiserByID(ctx, userID)
-	if err == nil && organiser != nil {
-		organiserID = organiser.UserID
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Error("error while get organiser by id", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		isOrganiserExist = false
 	}
 
 	userDto := &sdto.GetByIDOutput{
@@ -365,7 +370,7 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		Region:         user.Region,
 		MembershipTime: user.MembershipTime,
 		AvatarURL:      avatarURL,
-		OrganiserID:    organiserID,
+		IsOrganiser:    isOrganiserExist && organiser.Status == 2,
 		MembershipType: user.MembershipType,
 	}
 

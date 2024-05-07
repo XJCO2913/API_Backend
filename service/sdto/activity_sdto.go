@@ -147,4 +147,5 @@ type GetRouteInput struct {
 
 type GetRouteOutput struct {
 	GPXRouteText map[int][][]string
+	AvatarUrl    string
 }

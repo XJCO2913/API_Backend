@@ -857,6 +857,9 @@ func (s *ActivityService) GetRouteByIDs(ctx context.Context, input *sdto.GetRout
 
 	activityUser, err := dao.FindActivityUserByIDs(ctx, activity.ActivityID, input.UserID)
 	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, errorx.NewServicerErr(errorx.ErrExternal, "This user do not participate in this activity", nil)
+		}
 		zlog.Error("Failed to find activity user association", zap.String("userID", input.UserID), zap.String("activityID", activity.ActivityID), zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
@@ -883,8 +886,24 @@ func (s *ActivityService) GetRouteByIDs(ctx context.Context, input *sdto.GetRout
 	// Convert the path text to 2D string slice
 	gpxRouteText := util.GPXStrTo2DString(pathText)
 
+	// Get user avatar url
+	var avatarUrl string
+	user, err := dao.GetUserByID(ctx, input.UserID)
+	if err != nil {
+		zlog.Error("error while get user by id", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+	if user.AvatarURL != nil && *user.AvatarURL != "" {
+		avatarUrl, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+		if err != nil {
+			zlog.Error("error while get user avatar", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+	}
+
 	output := &sdto.GetRouteOutput{
 		GPXRouteText: map[int][][]string{0: gpxRouteText},
+		AvatarUrl:    avatarUrl,
 	}
 
 	return output, nil
