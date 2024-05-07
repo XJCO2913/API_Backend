@@ -41,7 +41,7 @@ func (lc *LikeController) Create(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg:  "Create Like successfully",
+		StatusMsg:  "Create like successfully",
 	})
 }
 

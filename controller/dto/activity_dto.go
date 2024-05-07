@@ -16,3 +16,8 @@ type UploadRouteReq struct {
 	ActivityID string                `form:"activityId" binding:"required"`
 	GPXData    *multipart.FileHeader `form:"gpxData" binding:"required"`
 }
+
+type GetRouteReq struct {
+	ActivityID string `json:"activityId" binding:"required"`
+	UserID     string `json:"userId" binding:"required"`
+}
