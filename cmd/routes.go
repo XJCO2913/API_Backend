@@ -169,6 +169,7 @@ func NewRouter() *gin.Engine {
 		{
 			notify.GET("/pull", notifyController.Pull)
 			notify.POST("/route", notifyController.ShareRoute)
+			notify.POST("/org", notifyController.OrgResult)
 		}
 	}
 

@@ -24,3 +24,8 @@ type ShareRouteInput struct {
 	ReceiverID string
 	RouteData  [][]string
 }
+
+type OrgResultInput struct {
+	ReceiverID string
+	IsAgreed   bool
+}

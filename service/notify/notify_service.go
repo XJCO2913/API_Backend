@@ -124,3 +124,30 @@ func (n *NotifyService) ShareRoute(ctx context.Context, in *sdto.ShareRouteInput
 
 	return nil
 }
+
+func (n *NotifyService) OrgResult(ctx context.Context, in *sdto.OrgResultInput) *errorx.ServiceErr {
+	newNotificationId := uuid.New()
+	newNotification := model.Notification{
+		NotificationID: newNotificationId.String(),
+		ReceiverID:     in.ReceiverID,
+		SenderID:       "03616eec-dd45-11ee-bf61-0242ac150006", // hard code as user 'yuerfei'
+		Type:           1,
+		Status:         -1,
+	}
+
+	var orgRes int32
+	if in.IsAgreed {
+		orgRes = 1
+	} else {
+		orgRes = -1
+	}
+	newNotification.OrgResult = &orgRes
+
+	err := dao.PushNotification(ctx, &newNotification)
+	if err != nil {
+		zlog.Error("error while push route notification", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
+}

@@ -65,6 +65,34 @@ func (n *NotifyController) ShareRoute(c *gin.Context) {
 
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
-		StatusMsg: "Share route successfully",
+		StatusMsg:  "Share route successfully",
+	})
+}
+
+func (n *NotifyController) OrgResult(c *gin.Context) {
+	var req dto.OrgResultReq
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Wrong Params: " + err.Error(),
+		})
+		return
+	}
+
+	sErr := notify.Service().OrgResult(context.Background(), &sdto.OrgResultInput{
+		ReceiverID: req.ReceiverID,
+		IsAgreed:   req.IsAgreed,
+	})
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Push organiser apply result successfully",
 	})
 }

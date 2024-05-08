@@ -20,6 +20,7 @@ type Notification struct {
 	Status         int32      `gorm:"column:status;not null;default:-1;comment:-1 is unread, 1 is read" json:"status"`                     // -1 is unread, 1 is read
 	CreatedAt      *time.Time `gorm:"column:createdAt;default:CURRENT_TIMESTAMP" json:"createdAt"`
 	UpdatedAt      *time.Time `gorm:"column:updatedAt;default:CURRENT_TIMESTAMP" json:"updatedAt"`
+	OrgResult      *int32     `gorm:"column:orgResult;comment:-1 is refused, 1 is agreed" json:"orgResult"` // -1 is refused, 1 is agreed
 }
 
 // TableName Notification's table name

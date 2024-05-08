@@ -35,6 +35,7 @@ func newNotification(db *gorm.DB, opts ...gen.DOOption) notification {
 	_notification.Status = field.NewInt32(tableName, "status")
 	_notification.CreatedAt = field.NewTime(tableName, "createdAt")
 	_notification.UpdatedAt = field.NewTime(tableName, "updatedAt")
+	_notification.OrgResult = field.NewInt32(tableName, "orgResult")
 
 	_notification.fillFieldMap()
 
@@ -53,6 +54,7 @@ type notification struct {
 	Status         field.Int32 // -1 is unread, 1 is read
 	CreatedAt      field.Time
 	UpdatedAt      field.Time
+	OrgResult      field.Int32 // -1 is refused, 1 is agreed
 
 	fieldMap map[string]field.Expr
 }
@@ -77,6 +79,7 @@ func (n *notification) updateTableName(table string) *notification {
 	n.Status = field.NewInt32(table, "status")
 	n.CreatedAt = field.NewTime(table, "createdAt")
 	n.UpdatedAt = field.NewTime(table, "updatedAt")
+	n.OrgResult = field.NewInt32(table, "orgResult")
 
 	n.fillFieldMap()
 
@@ -105,7 +108,7 @@ func (n *notification) GetFieldByName(fieldName string) (field.OrderExpr, bool) 
 }
 
 func (n *notification) fillFieldMap() {
-	n.fieldMap = make(map[string]field.Expr, 8)
+	n.fieldMap = make(map[string]field.Expr, 9)
 	n.fieldMap["notificationId"] = n.NotificationID
 	n.fieldMap["receiverId"] = n.ReceiverID
 	n.fieldMap["senderId"] = n.SenderID
@@ -114,6 +117,7 @@ func (n *notification) fillFieldMap() {
 	n.fieldMap["status"] = n.Status
 	n.fieldMap["createdAt"] = n.CreatedAt
 	n.fieldMap["updatedAt"] = n.UpdatedAt
+	n.fieldMap["orgResult"] = n.OrgResult
 }
 
 func (n notification) clone(db *gorm.DB) notification {
