@@ -22,19 +22,19 @@ func Service() *FriendService {
 }
 
 func (f *FriendService) Follow(ctx context.Context, in *sdto.FollowInput) *errorx.ServiceErr {
-	// check if the user to follow exist or not
+	// Check if the user to follow exist or not
 	if !dao.IsUserExisted(ctx, in.FollowingId) {
 		return errorx.NewServicerErr(
 			errorx.ErrExternal,
-			"following user is not found",
+			"Following user is not found",
 			nil,
 		)
 	}
 
-	// follow
+	// Follow
 	err := dao.FollowById(ctx, in.FollowerId, in.FollowingId)
 	if err != nil {
-		zlog.Error("error while store new follow relation", zap.Error(err))
+		zlog.Error("Error while store new follow relation", zap.Error(err))
 		return errorx.NewInternalErr()
 	}
 
@@ -44,26 +44,26 @@ func (f *FriendService) Follow(ctx context.Context, in *sdto.FollowInput) *error
 func (f *FriendService) GetAllFollower(ctx context.Context, userId string) (*sdto.GetAllFollowerOutput, *errorx.ServiceErr) {
 	followers, err := dao.GetFollowersByUserID(ctx, userId)
 	if err != nil {
-		zlog.Error("error while get all followers by user ID", zap.Error(err))
+		zlog.Error("Error while get all followers by user ID", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
-	// get avatar
+	// Get avatar
 	res := make([]*sdto.Follower, len(followers))
 	for i, follower := range followers {
 		var avatarUrl string
 		if follower.AvatarURL != nil && *follower.AvatarURL != "" {
 			avatarUrl, err = minio.GetUserAvatarUrl(ctx, *follower.AvatarURL)
 			if err != nil {
-				zlog.Error("error while get user avatar", zap.Error(err))
+				zlog.Error("Error while get user avatar", zap.Error(err))
 				return nil, errorx.NewInternalErr()
 			}
 		}
 
-		// check if isFollowed
+		// Check if isFollowed
 		isFollowed, err := dao.CheckIsFollowed(ctx, userId, follower.UserID)
 		if err != nil {
-			zlog.Error("error while check if follow follower or not", zap.Error(err))
+			zlog.Error("Error while check if follow follower or not", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
 
@@ -83,18 +83,18 @@ func (f *FriendService) GetAllFollower(ctx context.Context, userId string) (*sdt
 func (f *FriendService) GetAllFollowing(ctx context.Context, userId string) (*sdto.GetAllFollowingOutput, *errorx.ServiceErr) {
 	followings, err := dao.GetFollowingsByUserID(ctx, userId)
 	if err != nil {
-		zlog.Error("error while get followings by user id", zap.Error(err))
+		zlog.Error("Error while get followings by user id", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
-	// get avatar
+	// Get avatar
 	for _, following := range followings {
 		if following.AvatarURL == nil || *following.AvatarURL == "" {
 			continue
 		}
 		avatarUrl, err := minio.GetUserAvatarUrl(ctx, *following.AvatarURL)
 		if err != nil {
-			zlog.Error("error while get user avatar", zap.Error(err))
+			zlog.Error("Error while get user avatar", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
 
@@ -109,18 +109,18 @@ func (f *FriendService) GetAllFollowing(ctx context.Context, userId string) (*sd
 func (f *FriendService) GetAll(ctx context.Context, userId string) (*sdto.GetAllFriendsOutput, *errorx.ServiceErr) {
 	friends, err := dao.GetFriendsByUserID(ctx, userId)
 	if err != nil {
-		zlog.Error("error while get user friends", zap.Error(err))
+		zlog.Error("Error while get user friends", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
-	// get avatar
+	// Get avatar
 	for _, friend := range friends {
 		if friend.AvatarURL == nil || *friend.AvatarURL == "" {
 			continue
 		}
 		avatarUrl, err := minio.GetUserAvatarUrl(ctx, *friend.AvatarURL)
 		if err != nil {
-			zlog.Error("error while get user avatar", zap.Error(err))
+			zlog.Error("Error while get user avatar", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
 
@@ -129,5 +129,17 @@ func (f *FriendService) GetAll(ctx context.Context, userId string) (*sdto.GetAll
 
 	return &sdto.GetAllFriendsOutput{
 		Friends: friends,
+	}, nil
+}
+
+func (f *FriendService) GetFollowerCount(ctx context.Context, userID string) (*sdto.FollowerCountOutput, *errorx.ServiceErr) {
+	followers, err := dao.GetFollowersByUserID(ctx, userID)
+	if err != nil {
+		zlog.Error("Failed to retrieve followers", zap.String("userID", userID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	return &sdto.FollowerCountOutput{
+		Count: len(followers),
 	}, nil
 }
