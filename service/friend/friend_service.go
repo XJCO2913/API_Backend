@@ -143,3 +143,15 @@ func (f *FriendService) GetFollowerCount(ctx context.Context, userID string) (*s
 		Count: len(followers),
 	}, nil
 }
+
+func (f *FriendService) GetFollowingCount(ctx context.Context, userID string) (*sdto.FollowingCountOutput, *errorx.ServiceErr) {
+	followings, err := dao.GetFollowingsByUserID(ctx, userID)
+	if err != nil {
+		zlog.Error("Failed to retrieve followings", zap.String("userID", userID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	return &sdto.FollowingCountOutput{
+		Count: len(followings),
+	}, nil
+}

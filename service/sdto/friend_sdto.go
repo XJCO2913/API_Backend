@@ -30,3 +30,7 @@ type GetAllFriendsOutput struct {
 type FollowerCountOutput struct {
 	Count int
 }
+
+type FollowingCountOutput struct {
+	Count int
+}
