@@ -60,3 +60,7 @@ type GetLikesOutput struct {
 type GetCommentListOutput struct {
 	CommentList []MomentComment
 }
+
+type GetMomentOutput struct {
+    Moments []*model.Moment
+}

@@ -304,3 +304,15 @@ func (m *MomentService) IsLiked(ctx context.Context, momentId, userId string) (b
 
 	return likeModel != nil, nil
 }
+
+func (m *MomentService) GetByUserID(ctx context.Context, userID string) (*sdto.GetMomentOutput, *errorx.ServiceErr) {
+	moments, err := dao.GetMomentsByUserID(ctx, userID)
+	if err != nil {
+		zlog.Error("Failed to retrieve moments", zap.String("userID", userID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	return &sdto.GetMomentOutput{
+		Moments: moments,
+	}, nil
+}
