@@ -8,11 +8,11 @@ type FollowInput struct {
 }
 
 type Follower struct {
-	UserID     string
-	AvatarUrl  string
-	Username   string
-	Region     string
-	IsFollowed bool
+	UserID     string `json:"userId"`
+	AvatarUrl  string `json:"avatarUrl"`
+	Username   string `json:"username"`
+	Region     string `json:"region"`
+	IsFollowed bool   `json:"isFollowed"`
 }
 
 type GetAllFollowerOutput struct {
