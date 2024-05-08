@@ -310,3 +310,56 @@ func (m *MomentController) Feed(c *gin.Context) {
 		},
 	})
 }
+
+func (m *MomentController) GetByUserID(c *gin.Context) {
+	userID := c.GetString("userID")
+	if userID == "" {
+		c.JSON(400, dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  "Missing user ID in token",
+		})
+		return
+	}
+
+	res, sErr := moment.Service().GetByUserID(context.Background(), userID)
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	moments := make([]gin.H, len(res.Moments))
+	for i, moment := range res.Moments {
+		moments[i] = gin.H{
+			"id":        moment.MomentID,
+			"createdAt": moment.CreatedAt,
+			"content":   moment.Content,
+		}
+
+		// Add media URLs if present
+		if moment.ImageURL != nil {
+			moments[i]["imageUrl"] = moment.ImageURL
+		}
+		if moment.VideoURL != nil {
+			moments[i]["videoUrl"] = moment.VideoURL
+		}
+		if gpxText, ok := res.GPXRouteText[i]; ok {
+			moments[i]["gpxRoute"] = gpxText
+		}
+	}
+
+	c.JSON(200, dto.CommonRes{
+		StatusCode: 0,
+		StatusMsg:  "Get user moments successfully ",
+		Data: gin.H{
+			"moments": moments,
+			"user": gin.H{
+				"id":        res.User.UserID,
+				"username":  res.User.Username,
+				"avatarUrl": res.User.AvatarURL,
+			},
+		},
+	})
+}
