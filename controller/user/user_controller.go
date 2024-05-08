@@ -205,6 +205,24 @@ func (u *UserController) GetByID(c *gin.Context) {
 		return
 	}
 
+	followerCount, err := friend.Service().GetFollowerCount(c.Request.Context(), currentUserID.(string))
+	if err != nil {
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
+	followingCount, err := friend.Service().GetFollowingCount(c.Request.Context(), currentUserID.(string))
+	if err != nil {
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
 	responseData := gin.H{
 		"userId":         userDetail.UserID,
 		"username":       userDetail.Username,
@@ -215,6 +233,8 @@ func (u *UserController) GetByID(c *gin.Context) {
 		"region":         userDetail.Region,
 		"membershipTime": userDetail.MembershipTime,
 		"membershipType": userDetail.MembershipType,
+		"followers":      followerCount.Count,
+		"followings":     followingCount.Count,
 	}
 
 	c.JSON(200, dto.CommonRes{
