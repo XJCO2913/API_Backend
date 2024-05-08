@@ -32,3 +32,9 @@ func ReadNotificationsById(ctx context.Context, notificationId string) error {
 
 	return nil
 }
+
+func PushNotification(ctx context.Context, newNotification *model.Notification) error {
+	n := query.Use(DB).Notification
+
+	return n.WithContext(ctx).Create(newNotification)
+}

@@ -19,3 +19,8 @@ type Notification struct {
 type PullNotificationOutput struct {
 	NotificationList []*Notification
 }
+
+type ShareRouteInput struct {
+	ReceiverID string
+	RouteData  [][]string
+}

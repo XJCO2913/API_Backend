@@ -6,10 +6,13 @@ import (
 
 	"api.backend.xjco2913/dao"
 	"api.backend.xjco2913/dao/minio"
+	"api.backend.xjco2913/dao/model"
+	"api.backend.xjco2913/service/gpx"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/sdto/errorx"
 	"api.backend.xjco2913/util"
 	"api.backend.xjco2913/util/zlog"
+	"github.com/google/uuid"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
@@ -93,4 +96,31 @@ func (n *NotifyService) Pull(ctx context.Context, userId string) (*sdto.PullNoti
 	return &sdto.PullNotificationOutput{
 		NotificationList: res,
 	}, nil
+}
+
+func (n *NotifyService) ShareRoute(ctx context.Context, in *sdto.ShareRouteInput) *errorx.ServiceErr {
+	gpxResp, sErr := gpx.Service().ParseLonLatData(ctx, &sdto.ParseLonLatDataInput{
+		LonLatData: in.RouteData,
+	})
+	if sErr != nil {
+		return sErr
+	}
+
+	newNotificationId := uuid.New()
+	newNotification := model.Notification{
+		NotificationID: newNotificationId.String(),
+		SenderID:       "03616eec-dd45-11ee-bf61-0242ac150006", // hard code as user 'yuerfei'
+		ReceiverID:     in.ReceiverID,
+		RouteID:        &gpxResp.RouteID,
+		Type:           2,
+		Status:         -1,
+	}
+
+	err := dao.PushNotification(ctx, &newNotification)
+	if err != nil {
+		zlog.Error("error while push route notification", zap.Error(err))
+		return errorx.NewInternalErr()
+	}
+
+	return nil
 }

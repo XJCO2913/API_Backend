@@ -168,6 +168,7 @@ func NewRouter() *gin.Engine {
 		notify := api.Group("/notify")
 		{
 			notify.GET("/pull", notifyController.Pull)
+			notify.POST("/route", notifyController.ShareRoute)
 		}
 	}
 
