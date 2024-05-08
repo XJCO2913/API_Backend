@@ -65,3 +65,13 @@ type UploadAvatarInput struct {
 type RefreshTokenOutput struct {
 	NewToken string
 }
+
+type MockUser struct {
+	UserID    string `json:"userId"`
+	Username  string `json:"username"`
+	AvatarUrl string `json:"avatarUrl"`
+}
+
+type MockUserListOutput struct {
+	MockUserList []*MockUser
+}

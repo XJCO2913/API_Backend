@@ -350,7 +350,7 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 			return nil, errorx.NewInternalErr()
 		}
 	}
-	
+
 	isOrganiserExist := true
 	organiser, err := dao.GetOrganiserByID(ctx, userID)
 	if err != nil {
@@ -764,5 +764,41 @@ func (s *UserService) RefreshToken(ctx context.Context, userID string) (*sdto.Re
 
 	return &sdto.RefreshTokenOutput{
 		NewToken: newToken,
+	}, nil
+}
+
+func (s *UserService) MockUserList(ctx context.Context) (*sdto.MockUserListOutput, *errorx.ServiceErr) {
+	mockUserIds := []string{
+		"2ef6f808-d145-11ee-902f-3e2d4f58d7cc",
+		"03616eec-dd45-11ee-bf61-0242ac150006",
+		"c9d7b071-faf1-11ee-bc92-0242ac150007",
+	}
+
+	mockUserList := make([]*sdto.MockUser, len(mockUserIds))
+	for i, mockUserId := range mockUserIds {
+		userModel, err := dao.GetUserByID(ctx, mockUserId)
+		if err != nil {
+			zlog.Error("error while get user by id", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		var avatarUrl string
+		if userModel.AvatarURL != nil && *userModel.AvatarURL != "" {
+			avatarUrl, err = minio.GetUserAvatarUrl(ctx, *userModel.AvatarURL)
+			if err != nil {
+				zlog.Error("error while get user avatar", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+		}
+
+		mockUserList[i] = &sdto.MockUser{
+			UserID:    userModel.UserID,
+			Username:  userModel.Username,
+			AvatarUrl: avatarUrl,
+		}
+	}
+
+	return &sdto.MockUserListOutput{
+		MockUserList: mockUserList,
 	}, nil
 }

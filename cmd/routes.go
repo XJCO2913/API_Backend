@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	"api.backend.xjco2913/controller/activity"
 	"api.backend.xjco2913/controller/admin"
 	"api.backend.xjco2913/controller/comment"
+	"api.backend.xjco2913/controller/dto"
 	"api.backend.xjco2913/controller/friend"
 	"api.backend.xjco2913/controller/like"
 	"api.backend.xjco2913/controller/moment"
@@ -14,6 +16,7 @@ import (
 	"api.backend.xjco2913/controller/user"
 	"api.backend.xjco2913/controller/ws"
 	"api.backend.xjco2913/middleware"
+	userService "api.backend.xjco2913/service/user"
 	"api.backend.xjco2913/util/config"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -170,6 +173,27 @@ func NewRouter() *gin.Engine {
 			notify.GET("/pull", notifyController.Pull)
 			notify.POST("/route", notifyController.ShareRoute)
 			notify.POST("/org", notifyController.OrgResult)
+		}
+
+		// mock data api
+		mock := api.Group("/mock")
+		{
+			mock.GET("/shareList", func(c *gin.Context) {
+				resp, sErr := userService.Service().MockUserList(context.Background())
+				if sErr != nil {
+					c.JSON(sErr.Code(), dto.CommonRes{
+						StatusCode: -1,
+						StatusMsg:  sErr.Error(),
+					})
+					return
+				}
+
+				c.JSON(200, dto.CommonRes{
+					StatusCode: 0,
+					StatusMsg:  "Get user list successfully",
+					Data:       resp.MockUserList,
+				})
+			})
 		}
 	}
 

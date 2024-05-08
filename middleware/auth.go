@@ -32,6 +32,11 @@ func VerifyToken() gin.HandlerFunc {
 			return
 		}
 
+		if ctx.Request.URL.Path == "/api/mock/shareList" {
+			ctx.Next()
+			return
+		}
+
 		// verify token
 		authHeader := ctx.GetHeader("Authorization")
 		if util.IsEmpty(authHeader) {
