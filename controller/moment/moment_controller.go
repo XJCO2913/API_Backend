@@ -36,7 +36,7 @@ func (m *MomentController) Create(c *gin.Context) {
 	imageFileHeader, errImage := c.FormFile("imageFile")
 	GPXFileHeader, errGPX := c.FormFile("gpxFile")
 
-	// 获取文件数量和可用文件头
+	// Get the number of files and available file headers
 	fileHeaderMap := map[string]*multipart.FileHeader{
 		"gpxFile":   GPXFileHeader,
 		"imageFile": imageFileHeader,
@@ -58,13 +58,13 @@ func (m *MomentController) Create(c *gin.Context) {
 		validFileHeader = "videoFile"
 	}
 
-	// 处理文件
-	// 1. 在content为空的情况下只能传一个文件, 其他数量(包括0)的文件都是逻辑错误的
-	// 2. 如果content不为空, 那么可以不传文件
+	// Process files
+	// 1. When the content is empty, only one file can be transferred. Any other number of files (including 0) is a logical error.
+	// 2. If the content is not empty, then the file does not need to be transferred.
 	switch {
 	case fileCnt == 0:
 		if content == "" {
-			// 文件数量为0
+			// The number of files is 0
 			c.JSON(400, dto.CommonRes{
 				StatusCode: -1,
 				StatusMsg:  "Moment cannot be empty",
@@ -75,7 +75,7 @@ func (m *MomentController) Create(c *gin.Context) {
 		validFileHeader = "null"
 
 	case fileCnt > 1:
-		// 文件数量过多
+		// Too many files
 		c.JSON(400, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Only allow upload one type of file",
@@ -86,7 +86,7 @@ func (m *MomentController) Create(c *gin.Context) {
 	fileHeader := fileHeaderMap[validFileHeader]
 	switch validFileHeader {
 	case "gpxFile":
-		// parser gpx file logic
+		// Parser gpx file logic
 		gpxFile, err := fileHeader.Open()
 		if err != nil {
 			c.JSON(400, dto.CommonRes{
@@ -186,7 +186,7 @@ func (m *MomentController) Create(c *gin.Context) {
 		}
 
 	case "null":
-		// 只有content, 没有文件
+		// Only content, no files
 		sErr := moment.Service().Create(c.Request.Context(), &sdto.CreateMomentInput{
 			UserID:  userId.(string),
 			Content: content,
