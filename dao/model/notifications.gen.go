@@ -15,11 +15,12 @@ type Notification struct {
 	NotificationID string     `gorm:"column:notificationId;primaryKey" json:"notificationId"`
 	ReceiverID     string     `gorm:"column:receiverId;not null" json:"receiverId"`
 	SenderID       string     `gorm:"column:senderId;not null" json:"senderId"`
-	RoureID        int32      `gorm:"column:roureId;not null" json:"roureId"`
+	RouteID        *int32     `gorm:"column:routeId" json:"routeId"`
 	Type           int32      `gorm:"column:type;not null;default:1;comment:1 is admin notification, 2 is route notification" json:"type"` // 1 is admin notification, 2 is route notification
 	Status         int32      `gorm:"column:status;not null;default:-1;comment:-1 is unread, 1 is read" json:"status"`                     // -1 is unread, 1 is read
 	CreatedAt      *time.Time `gorm:"column:createdAt;default:CURRENT_TIMESTAMP" json:"createdAt"`
 	UpdatedAt      *time.Time `gorm:"column:updatedAt;default:CURRENT_TIMESTAMP" json:"updatedAt"`
+	OrgResult      *int32     `gorm:"column:orgResult;comment:-1 is refused, 1 is agreed" json:"orgResult"` // -1 is refused, 1 is agreed
 }
 
 // TableName Notification's table name

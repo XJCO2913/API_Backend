@@ -27,6 +27,11 @@ func VerifyToken() gin.HandlerFunc {
 			return
 		}
 
+		if ctx.Request.URL.Path == "/api/notify/route" {
+			ctx.Next()
+			return
+		}
+
 		// verify token
 		authHeader := ctx.GetHeader("Authorization")
 		if util.IsEmpty(authHeader) {

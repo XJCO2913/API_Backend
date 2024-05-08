@@ -57,3 +57,37 @@ func (g *GPXService) ParseGPXData(ctx context.Context, in *sdto.ParseGPXDataInpu
 		RouteID: lastGPXRoute.ID,
 	}, nil
 }
+
+// Store the [[lon, lat], [lon, lat]...] data into mysql and return route id
+func (g *GPXService) ParseLonLatData(ctx context.Context, in *sdto.ParseLonLatDataInput) (*sdto.ParseLonLatDataOutput, *errorx.ServiceErr) {
+	lonLatStrData := util.StrStrToGPXStr(in.LonLatData)
+
+	linestring := lonLatStrData[0]
+	for i := 1; i < len(lonLatStrData); i++ {
+		linestring += ", "
+		linestring += lonLatStrData[i]
+	}
+
+	// ST_GeomFromText('LINESTRING(?)')
+	err := dao.DB.WithContext(ctx).Exec(
+		fmt.Sprintf(
+			"INSERT INTO GPSRoutes (path) VALUES (ST_GeomFromText('LINESTRING(%s)'));",
+			linestring,
+		),
+	).Error
+	if err != nil {
+		zlog.Error("Error while store gpx route into mysql", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	// Get last inserted route
+	lastGPXRoute, err := dao.GetLastGPSRoute(ctx)
+	if err != nil {
+		zlog.Error("Error while get last inserted gps route", zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	return &sdto.ParseLonLatDataOutput{
+		RouteID: lastGPXRoute.ID,
+	}, nil
+}

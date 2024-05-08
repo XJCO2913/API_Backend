@@ -65,3 +65,13 @@ func GPXStrTo2DString(gpxStr string) [][]string {
 
 	return res
 }
+
+// Convert [[x,x], [y,y], [z,z]...] ==> ["x x", "y y", "z z"...]
+func StrStrToGPXStr(gpxStrStr [][]string) []string {
+	res := []string{}
+	for _, gpxPoint := range gpxStrStr {
+		res = append(res, fmt.Sprintf("%v %v", gpxPoint[0], gpxPoint[1]))
+	}
+
+	return res
+}
