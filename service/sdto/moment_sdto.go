@@ -60,3 +60,9 @@ type GetLikesOutput struct {
 type GetCommentListOutput struct {
 	CommentList []MomentComment
 }
+
+type GetMomentOutput struct {
+	Moments      []*model.Moment
+	GPXRouteText map[int][][]string
+	User         *model.User
+}
