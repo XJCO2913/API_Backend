@@ -62,5 +62,7 @@ type GetCommentListOutput struct {
 }
 
 type GetMomentOutput struct {
-    Moments []*model.Moment
+	Moments      []*model.Moment
+	GPXRouteText map[int][][]string
+	User         *model.User
 }

@@ -312,7 +312,58 @@ func (m *MomentService) GetByUserID(ctx context.Context, userID string) (*sdto.G
 		return nil, errorx.NewInternalErr()
 	}
 
-	return &sdto.GetMomentOutput{
-		Moments: moments,
-	}, nil
+	user, err := dao.GetUserByID(ctx, userID)
+	if err != nil {
+		zlog.Error("Error while retrieve user info", zap.String("userID", userID), zap.Error(err))
+		return nil, errorx.NewInternalErr()
+	}
+
+	res := &sdto.GetMomentOutput{
+		Moments:      moments,
+		GPXRouteText: make(map[int][][]string),
+		User:         user,
+	}
+
+	for i, moment := range moments {
+		// Enhance moment with image, video and route info
+		if moment.ImageURL != nil {
+			url, err := minio.GetMomentImageUrl(ctx, *moment.ImageURL)
+			if err != nil {
+				zlog.Error("Error while get moment image url", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+
+			moment.ImageURL = &url
+		}
+
+		if moment.VideoURL != nil {
+			url, err := minio.GetMomentImageUrl(ctx, *moment.VideoURL)
+			if err != nil {
+				zlog.Error("Error while get moment video url", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+
+			moment.VideoURL = &url
+		}
+
+		if moment.RouteID != nil {
+			path, err := dao.GetPathAsText(ctx, *moment.RouteID)
+			if err != nil {
+				zlog.Error("Error while get GPX route from mysql", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+
+			pathText, err := util.GPXRoute(path)
+			if err != nil {
+				zlog.Error("Error while parse gpx route to text", zap.String("path", path))
+				return nil, errorx.NewInternalErr()
+			}
+
+			res.GPXRouteText[i] = util.GPXStrTo2DString(pathText)
+		}
+	}
+
+	res.Moments = moments
+
+	return res, nil
 }
