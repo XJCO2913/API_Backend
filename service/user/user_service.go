@@ -189,7 +189,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	cachedToken, err := redis.RDB().Get(ctx, cacheTokenKey).Result()
 	if err != nil && err != redis.KEY_NOT_FOUND {
 		// error occur
-		zlog.Error("Fail to get cached token", zap.Error(err), zap.String("cachedTokenKey", cacheTokenKey))
+		zlog.Error("Failed to get cached token", zap.Error(err), zap.String("cachedTokenKey", cacheTokenKey))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -223,7 +223,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 		// Store the token into cache
 		err = redis.RDB().Set(ctx, cacheTokenKey, tokenStr, 24*time.Hour).Err()
 		if err != nil {
-			zlog.Error("Fail to store token into cache", zap.Error(err))
+			zlog.Error("Failed to store token into cache", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
 	}
@@ -237,13 +237,14 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	if user.AvatarURL != nil && *user.AvatarURL != "" {
 		avatarUrl, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
 		if err != nil {
-			zlog.Error("error while get user avatar url", zap.Error(err))
+			zlog.Error("Error while get user avatar url", zap.Error(err))
 			return nil, errorx.NewInternalErr()
 		}
 	}
 
 	return &sdto.AuthenticateOutput{
 		Token:     tokenStr,
+		UserID:    user.UserID,
 		Gender:    user.Gender,
 		Birthday:  birthdayStr,
 		Region:    user.Region,

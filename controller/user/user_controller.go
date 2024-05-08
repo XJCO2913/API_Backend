@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"api.backend.xjco2913/controller/dto"
+	"api.backend.xjco2913/service/friend"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/user"
 	"api.backend.xjco2913/util"
@@ -98,35 +99,55 @@ func (u *UserController) Login(c *gin.Context) {
 		return
 	}
 
+	followerCount, err := friend.Service().GetFollowerCount(c.Request.Context(), out.UserID)
+	if err != nil {
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
+	followingCount, err := friend.Service().GetFollowingCount(c.Request.Context(), out.UserID)
+	if err != nil {
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Login successfully",
 		Data: gin.H{
 			"token": out.Token,
 			"userInfo": gin.H{
-				"username":  req.Username,
-				"gender":    out.Gender,
-				"birthday":  out.Birthday,
-				"region":    out.Region,
-				"avatarUrl": out.AvatarUrl,
+				"username":   req.Username,
+				"gender":     out.Gender,
+				"birthday":   out.Birthday,
+				"region":     out.Region,
+				"avatarUrl":  out.AvatarUrl,
+				"followers":  followerCount.Count,
+				"followings": followingCount.Count,
 			},
 		},
 	})
 }
 
-func (u *UserController) GetAll(ctx *gin.Context) {
-	isAdmin, exists := ctx.Get("isAdmin")
+func (u *UserController) GetAll(c *gin.Context) {
+	isAdmin, exists := c.Get("isAdmin")
 	if !exists || !isAdmin.(bool) {
-		ctx.JSON(403, dto.CommonRes{
+		c.JSON(403, dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  "Forbidden: Only admins can access this resource",
 		})
 		return
 	}
 
-	users, err := user.Service().GetAll(ctx.Request.Context())
+	users, err := user.Service().GetAll(c.Request.Context())
 	if err != nil {
-		ctx.JSON(err.Code(), dto.CommonRes{
+		c.JSON(err.Code(), dto.CommonRes{
 			StatusCode: -1,
 			StatusMsg:  err.Error(),
 		})
@@ -152,7 +173,7 @@ func (u *UserController) GetAll(ctx *gin.Context) {
 		}
 	}
 
-	ctx.JSON(200, dto.CommonRes{
+	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Get users successfully",
 		Data:       userInfos,
