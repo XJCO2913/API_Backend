@@ -21,9 +21,13 @@ func Use(db *gorm.DB, opts ...gen.DOOption) *Query {
 		Activity:     newActivity(db, opts...),
 		ActivityUser: newActivityUser(db, opts...),
 		Admin:        newAdmin(db, opts...),
+		Comment:      newComment(db, opts...),
+		Follow:       newFollow(db, opts...),
 		GPSRoute:     newGPSRoute(db, opts...),
+		Like:         newLike(db, opts...),
 		Log:          newLog(db, opts...),
 		Moment:       newMoment(db, opts...),
+		Notification: newNotification(db, opts...),
 		Organiser:    newOrganiser(db, opts...),
 		Tag:          newTag(db, opts...),
 		User:         newUser(db, opts...),
@@ -36,9 +40,13 @@ type Query struct {
 	Activity     activity
 	ActivityUser activityUser
 	Admin        admin
+	Comment      comment
+	Follow       follow
 	GPSRoute     gPSRoute
+	Like         like
 	Log          log
 	Moment       moment
+	Notification notification
 	Organiser    organiser
 	Tag          tag
 	User         user
@@ -52,9 +60,13 @@ func (q *Query) clone(db *gorm.DB) *Query {
 		Activity:     q.Activity.clone(db),
 		ActivityUser: q.ActivityUser.clone(db),
 		Admin:        q.Admin.clone(db),
+		Comment:      q.Comment.clone(db),
+		Follow:       q.Follow.clone(db),
 		GPSRoute:     q.GPSRoute.clone(db),
+		Like:         q.Like.clone(db),
 		Log:          q.Log.clone(db),
 		Moment:       q.Moment.clone(db),
+		Notification: q.Notification.clone(db),
 		Organiser:    q.Organiser.clone(db),
 		Tag:          q.Tag.clone(db),
 		User:         q.User.clone(db),
@@ -75,9 +87,13 @@ func (q *Query) ReplaceDB(db *gorm.DB) *Query {
 		Activity:     q.Activity.replaceDB(db),
 		ActivityUser: q.ActivityUser.replaceDB(db),
 		Admin:        q.Admin.replaceDB(db),
+		Comment:      q.Comment.replaceDB(db),
+		Follow:       q.Follow.replaceDB(db),
 		GPSRoute:     q.GPSRoute.replaceDB(db),
+		Like:         q.Like.replaceDB(db),
 		Log:          q.Log.replaceDB(db),
 		Moment:       q.Moment.replaceDB(db),
+		Notification: q.Notification.replaceDB(db),
 		Organiser:    q.Organiser.replaceDB(db),
 		Tag:          q.Tag.replaceDB(db),
 		User:         q.User.replaceDB(db),
@@ -88,9 +104,13 @@ type queryCtx struct {
 	Activity     *activityDo
 	ActivityUser *activityUserDo
 	Admin        *adminDo
+	Comment      *commentDo
+	Follow       *followDo
 	GPSRoute     *gPSRouteDo
+	Like         *likeDo
 	Log          *logDo
 	Moment       *momentDo
+	Notification *notificationDo
 	Organiser    *organiserDo
 	Tag          *tagDo
 	User         *userDo
@@ -101,9 +121,13 @@ func (q *Query) WithContext(ctx context.Context) *queryCtx {
 		Activity:     q.Activity.WithContext(ctx),
 		ActivityUser: q.ActivityUser.WithContext(ctx),
 		Admin:        q.Admin.WithContext(ctx),
+		Comment:      q.Comment.WithContext(ctx),
+		Follow:       q.Follow.WithContext(ctx),
 		GPSRoute:     q.GPSRoute.WithContext(ctx),
+		Like:         q.Like.WithContext(ctx),
 		Log:          q.Log.WithContext(ctx),
 		Moment:       q.Moment.WithContext(ctx),
+		Notification: q.Notification.WithContext(ctx),
 		Organiser:    q.Organiser.WithContext(ctx),
 		Tag:          q.Tag.WithContext(ctx),
 		User:         q.User.WithContext(ctx),

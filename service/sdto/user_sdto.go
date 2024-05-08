@@ -14,10 +14,11 @@ type AuthenticateInput struct {
 }
 
 type AuthenticateOutput struct {
-	Token    string
-	Gender   int32
-	Birthday string
-	Region   string
+	Token     string
+	Gender    int32
+	Birthday  string
+	Region    string
+	AvatarUrl string
 }
 
 type GetAllOutput struct {
@@ -30,7 +31,6 @@ type GetAllOutput struct {
 	AvatarURL      string
 	OrganiserID    string
 	MembershipType int32
-	IsSubscribed   int32
 }
 
 type GetByIDOutput struct {
@@ -41,9 +41,8 @@ type GetByIDOutput struct {
 	Region         string
 	MembershipTime int64
 	AvatarURL      string
-	OrganiserID    string
+	IsOrganiser    bool
 	MembershipType int32
-	IsSubscribed   int32
 }
 
 type GetAllStatusOutput struct {
@@ -65,4 +64,14 @@ type UploadAvatarInput struct {
 
 type RefreshTokenOutput struct {
 	NewToken string
+}
+
+type MockUser struct {
+	UserID    string `json:"userId"`
+	Username  string `json:"username"`
+	AvatarUrl string `json:"avatarUrl"`
+}
+
+type MockUserListOutput struct {
+	MockUserList []*MockUser
 }

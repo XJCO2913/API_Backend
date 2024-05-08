@@ -1,13 +1,22 @@
 package main
 
 import (
+	"context"
 	"time"
 
 	"api.backend.xjco2913/controller/activity"
 	"api.backend.xjco2913/controller/admin"
+	"api.backend.xjco2913/controller/comment"
+	"api.backend.xjco2913/controller/dto"
+	"api.backend.xjco2913/controller/friend"
+	"api.backend.xjco2913/controller/like"
 	"api.backend.xjco2913/controller/moment"
+	"api.backend.xjco2913/controller/notify"
+	"api.backend.xjco2913/controller/organiser"
 	"api.backend.xjco2913/controller/user"
+	"api.backend.xjco2913/controller/ws"
 	"api.backend.xjco2913/middleware"
+	userService "api.backend.xjco2913/service/user"
 	"api.backend.xjco2913/util/config"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
@@ -21,15 +30,24 @@ func NewRouter() *gin.Engine {
 	activityController := activity.NewActivityController()
 	adminController := admin.NewAdminController()
 	momentController := moment.NewMomentController()
+	friendController := friend.NewFriendController()
+	websocketController := ws.NewWebsocketController()
+	likeController := like.NewLikeController()
+	commentController := comment.NewCommentController()
+	organiserController := organiser.NewOrganiserController()
+	notifyController := notify.NewNotifyController()
 
-	// global middleware
-	// prometheus
+	// Global middleware
+	// Prometheus
 	r.Use(middleware.PrometheusRequests())
 	r.Use(middleware.PrometheusDuration())
 	r.Use(middleware.PrometheusResErr())
 	r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 
-	// demo admin login api, only for test
+	// WebSocket
+	r.GET("/ws", gin.WrapF(websocketController.HandleConnections))
+
+	// Demo admin login api, only for test
 	r.GET("/api/getAdmin", func(c *gin.Context) {
 		username := c.Query("username")
 		password := c.Query("password")
@@ -71,7 +89,7 @@ func NewRouter() *gin.Engine {
 
 	api := r.Group("/api")
 	{
-		// group middleware
+		// Group middleware
 		api.Use(middleware.VerifyToken())
 
 		api.POST("/user/refresh", userController.RefreshToken)
@@ -99,26 +117,83 @@ func NewRouter() *gin.Engine {
 
 		api.POST("/user/avatar", userController.UploadAvatar)
 
-		// admin
+		// Admin
 		admin := api.Group("/admin")
 		{
 			admin.POST("/login", adminController.Login)
 		}
 
-		// moments
+		// Moments
 		moment := api.Group("/moment")
 		{
 			moment.POST("/create", momentController.Create)
 			moment.GET("/feed", momentController.Feed)
+			moment.POST("/like", likeController.Create)
+			moment.DELETE("/unlike", likeController.DeleteByIDs)
+			moment.POST("/comment", commentController.Create)
 		}
 
-		// activity
+		// Activity
 		activity := api.Group("/activity")
 		{
 			activity.POST("/create", activityController.Create)
 			activity.GET("", activityController.GetByID)
 			activity.GET("/all", activityController.GetAll)
 			activity.GET("/feed", activityController.Feed)
+			activity.DELETE("", activityController.DeleteByID)
+			activity.POST("/signup", activityController.SignUpByActivityID)
+			activity.GET("/user", activityController.GetByUserID)
+			activity.GET("/creator", activityController.GetByCreatorID)
+			activity.GET("/profit", activityController.GetProfitWithOption)
+			activity.GET("/tags", activityController.TagsInfo)
+			activity.GET("/counts", activityController.Counts)
+			activity.POST("/route", activityController.UploadRoute)
+			activity.GET("/route", activityController.GetRouteByIDs)
+		}
+
+		// Friend
+		friend := api.Group("/friend")
+		{
+			friend.POST("/follow", friendController.Follow)
+			friend.GET("/follower", friendController.GetAllFollower)
+			friend.GET("/following", friendController.GetAllFollowing)
+			friend.GET("/", friendController.GetAll)
+		}
+
+		organiser := api.Group("/org")
+		{
+			organiser.GET("", organiserController.GetAll)
+			organiser.POST("/agree", organiserController.Agree)
+			organiser.POST("/refuse", organiserController.Refuse)
+			organiser.POST("/apply", organiserController.Apply)
+		}
+
+		notify := api.Group("/notify")
+		{
+			notify.GET("/pull", notifyController.Pull)
+			notify.POST("/route", notifyController.ShareRoute)
+			notify.POST("/org", notifyController.OrgResult)
+		}
+
+		// mock data api
+		mock := api.Group("/mock")
+		{
+			mock.GET("/shareList", func(c *gin.Context) {
+				resp, sErr := userService.Service().MockUserList(context.Background())
+				if sErr != nil {
+					c.JSON(sErr.Code(), dto.CommonRes{
+						StatusCode: -1,
+						StatusMsg:  sErr.Error(),
+					})
+					return
+				}
+
+				c.JSON(200, dto.CommonRes{
+					StatusCode: 0,
+					StatusMsg:  "Get user list successfully",
+					Data:       resp.MockUserList,
+				})
+			})
 		}
 	}
 

@@ -29,6 +29,7 @@ func newOrganiser(db *gorm.DB, opts ...gen.DOOption) organiser {
 	_organiser.ALL = field.NewAsterisk(tableName)
 	_organiser.ID = field.NewInt32(tableName, "ID")
 	_organiser.UserID = field.NewString(tableName, "userId")
+	_organiser.Status = field.NewInt32(tableName, "status")
 
 	_organiser.fillFieldMap()
 
@@ -41,6 +42,7 @@ type organiser struct {
 	ALL    field.Asterisk
 	ID     field.Int32
 	UserID field.String
+	Status field.Int32 // -1 is refused, 1 is untreated, 2 is agreed
 
 	fieldMap map[string]field.Expr
 }
@@ -59,6 +61,7 @@ func (o *organiser) updateTableName(table string) *organiser {
 	o.ALL = field.NewAsterisk(table)
 	o.ID = field.NewInt32(table, "ID")
 	o.UserID = field.NewString(table, "userId")
+	o.Status = field.NewInt32(table, "status")
 
 	o.fillFieldMap()
 
@@ -85,9 +88,10 @@ func (o *organiser) GetFieldByName(fieldName string) (field.OrderExpr, bool) {
 }
 
 func (o *organiser) fillFieldMap() {
-	o.fieldMap = make(map[string]field.Expr, 2)
+	o.fieldMap = make(map[string]field.Expr, 3)
 	o.fieldMap["ID"] = o.ID
 	o.fieldMap["userId"] = o.UserID
+	o.fieldMap["status"] = o.Status
 }
 
 func (o organiser) clone(db *gorm.DB) organiser {

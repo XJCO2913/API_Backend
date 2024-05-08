@@ -5,9 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"reflect"
+	"sort"
 	"strings"
 	"time"
 
+	"api.backend.xjco2913/controller/ws"
 	"api.backend.xjco2913/dao"
 	"api.backend.xjco2913/dao/minio"
 	"api.backend.xjco2913/dao/model"
@@ -59,7 +61,7 @@ func (u *UserService) Create(ctx context.Context, in *sdto.CreateUserInput) *err
 	// Parse birthday
 	var birthdayEntity *time.Time = nil
 	if !util.IsEmpty(in.Birthday) {
-		birthday, err := time.Parse("2006-01-02", in.Birthday)
+		birthday, err := time.Parse(time.RFC822Z, in.Birthday)
 		if err != nil {
 			zlog.Error("Error while parse birthday " + in.Birthday)
 			return errorx.NewServicerErr(
@@ -198,7 +200,7 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 	} else {
 		organiser, err := dao.GetOrganiserByID(ctx, user.UserID)
 		isOrganiser := false
-		if err == nil && organiser != nil {
+		if err == nil && organiser != nil && organiser.Status == 2 {
 			isOrganiser = true
 		}
 
@@ -228,14 +230,24 @@ func (u *UserService) Authenticate(ctx context.Context, in *sdto.AuthenticateInp
 
 	var birthdayStr string
 	if user.Birthday != nil {
-		birthdayStr = user.Birthday.Format("2006-01-02")
+		birthdayStr = user.Birthday.Format(time.RFC822Z)
+	}
+
+	var avatarUrl string
+	if user.AvatarURL != nil && *user.AvatarURL != "" {
+		avatarUrl, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+		if err != nil {
+			zlog.Error("error while get user avatar url", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
 	}
 
 	return &sdto.AuthenticateOutput{
-		Token:    tokenStr,
-		Gender:   user.Gender,
-		Birthday: birthdayStr,
-		Region:   user.Region,
+		Token:     tokenStr,
+		Gender:    user.Gender,
+		Birthday:  birthdayStr,
+		Region:    user.Region,
+		AvatarUrl: avatarUrl,
 	}, nil
 }
 
@@ -262,7 +274,7 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 	for i, user := range users {
 		var birthday string
 		if user.Birthday != nil {
-			birthday = user.Birthday.Format("2006-01-02")
+			birthday = user.Birthday.Format(time.RFC822Z)
 		}
 
 		// get avatar url from minio
@@ -290,9 +302,25 @@ func (s *UserService) GetAll(ctx context.Context) ([]*sdto.GetAllOutput, *errorx
 			AvatarURL:      avatarURL,
 			OrganiserID:    organiserID,
 			MembershipType: user.MembershipType,
-			IsSubscribed:   user.IsSubscribed,
 		}
 	}
+
+	sort.SliceStable(userDtos, func(i, j int) bool {
+		_, okI := ws.Pool[userDtos[i].UserID]
+		_, okJ := ws.Pool[userDtos[j].UserID]
+
+		if okI && okJ {
+			return userDtos[i].UserID < userDtos[j].UserID
+		}
+		if okI {
+			return true
+		}
+		if okJ {
+			return false
+		}
+
+		return userDtos[i].UserID < userDtos[j].UserID
+	})
 
 	return userDtos, nil
 }
@@ -311,7 +339,7 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 
 	var birthday string
 	if user.Birthday != nil {
-		birthday = user.Birthday.Format("2006-01-02")
+		birthday = user.Birthday.Format(time.RFC822Z)
 	}
 
 	// get avatar url from minio
@@ -323,10 +351,15 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		}
 	}
 
-	organiserID := ""
+	isOrganiserExist := true
 	organiser, err := dao.GetOrganiserByID(ctx, userID)
-	if err == nil && organiser != nil {
-		organiserID = organiser.UserID
+	if err != nil {
+		if !errors.Is(err, gorm.ErrRecordNotFound) {
+			zlog.Error("error while get organiser by id", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		isOrganiserExist = false
 	}
 
 	userDto := &sdto.GetByIDOutput{
@@ -337,9 +370,8 @@ func (s *UserService) GetByID(ctx context.Context, userID string) (*sdto.GetByID
 		Region:         user.Region,
 		MembershipTime: user.MembershipTime,
 		AvatarURL:      avatarURL,
-		OrganiserID:    organiserID,
+		IsOrganiser:    isOrganiserExist && organiser.Status == 2,
 		MembershipType: user.MembershipType,
-		IsSubscribed:   user.IsSubscribed,
 	}
 
 	return userDto, nil
@@ -543,12 +575,12 @@ func (s *UserService) UpdateByID(ctx context.Context, userID string, input sdto.
 		if *input.Birthday == "" {
 			addUpdate("birthday", nil)
 		} else {
-			_, err := time.Parse("2006-01-02", *input.Birthday)
+			birthday, err := time.Parse(time.RFC822Z, *input.Birthday)
 			if err != nil {
 				zlog.Error("Error while parsing birthday", zap.String("birthday", *input.Birthday), zap.Error(err))
 				return errorx.NewServicerErr(errorx.ErrExternal, "Invalid birthday format", nil)
 			}
-			addUpdate("birthday", *input.Birthday)
+			addUpdate("birthday", birthday)
 		}
 	}
 
@@ -583,24 +615,15 @@ func (s *UserService) Subscribe(ctx context.Context, userID string, membershipTy
 		}
 	}
 
-	if user.IsSubscribed == 1 {
+	if user.MembershipType != 0 {
 		zlog.Warn("User has already subscribed", zap.String("userID", userID))
 		return errorx.NewServicerErr(errorx.ErrExternal, "User has already subscribed", nil)
 	}
 
-	var newExpiration int64
-	// If a user has refused to renew, but wants to resubscribe, and membership has not expired
-	if user.MembershipType != 0 {
-		// Extend from expiry date
-		newExpiration = user.MembershipTime + 30*24*60*60
-	} else {
-		// New users subscribe to membership
-		newExpiration = time.Now().Unix() + 30*24*60*60
-	}
+	newExpiration := time.Now().Unix() + 30*24*60*60
 
 	updates := map[string]interface{}{
 		"membershipTime": newExpiration,
-		"isSubscribed":   1,
 		"membershipType": membershipType,
 	}
 
@@ -625,14 +648,23 @@ func (s *UserService) CancelByID(ctx context.Context, userID string) *errorx.Ser
 		}
 	}
 
-	if user.IsSubscribed == 0 {
-		zlog.Warn("User has not subscribed", zap.String("userID", userID))
+	if user.MembershipType == 0 {
+		zlog.Error("User has not subscribed", zap.String("userID", userID))
 		return errorx.NewServicerErr(errorx.ErrExternal, "User has not subscribed", nil)
 	}
 
+	// No-reason refund (7 days after subscription start date)
+	cancellationDeadline := user.MembershipTime - 23*24*60*60
+
+	// Check if the current time is before the cancellation deadline
+	if time.Now().Unix() > cancellationDeadline {
+		zlog.Error("Cancellation period has expired", zap.String("userID", userID))
+		return errorx.NewServicerErr(errorx.ErrExternal, "Cancellation period has expired", nil)
+	}
+
 	updates := map[string]interface{}{
-		// No renewal next month
-		"isSubscribed": 0,
+		"membershipType": 0,
+		"membershipTime": 0,
 	}
 
 	err = dao.UpdateUserByID(ctx, userID, updates)
@@ -689,10 +721,10 @@ func (s *UserService) RefreshToken(ctx context.Context, userID string) (*sdto.Re
 	user, err := dao.GetUserByID(ctx, userID)
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
-			return nil, errorx.NewServicerErr(400, "user not found", nil)
+			return nil, errorx.NewServicerErr(400, "User not found", nil)
 		}
 
-		zlog.Error("error while find user by userID", zap.Error(err), zap.String("userID", userID))
+		zlog.Error("Error while find user by userID", zap.Error(err), zap.String("userID", userID))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -700,7 +732,7 @@ func (s *UserService) RefreshToken(ctx context.Context, userID string) (*sdto.Re
 	cacheKey := fmt.Sprintf("jwt:%v", user.Username)
 	err = redis.RDB().Del(ctx, cacheKey).Err()
 	if err != nil {
-		zlog.Error("error while delete jwt cache", zap.Error(err))
+		zlog.Error("Error while delete jwt cache", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
@@ -712,25 +744,61 @@ func (s *UserService) RefreshToken(ctx context.Context, userID string) (*sdto.Re
 	}
 
 	claims := jwt.MapClaims{
-		"userID":  user.UserID,
-		"isAdmin": false,
-		"exp":     time.Now().Add(24 * time.Hour).Unix(),
+		"userID":         user.UserID,
+		"isAdmin":        false,
+		"exp":            time.Now().Add(24 * time.Hour).Unix(),
 		"isOrganiser":    isOrganiser,
 		"membershipType": user.MembershipType,
 	}
 	newToken, err := util.GenerateJWTToken(claims)
 	if err != nil {
-		zlog.Error("error while generate new jwt token", zap.Error(err))
+		zlog.Error("Error while generate new jwt token", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
 	err = redis.RDB().Set(ctx, cacheKey, newToken, 24*time.Hour).Err()
 	if err != nil {
-		zlog.Error("error while set jwt cache", zap.Error(err))
+		zlog.Error("Error while set jwt cache", zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
 
 	return &sdto.RefreshTokenOutput{
 		NewToken: newToken,
+	}, nil
+}
+
+func (s *UserService) MockUserList(ctx context.Context) (*sdto.MockUserListOutput, *errorx.ServiceErr) {
+	mockUserIds := []string{
+		"2ef6f808-d145-11ee-902f-3e2d4f58d7cc",
+		"03616eec-dd45-11ee-bf61-0242ac150006",
+		"c9d7b071-faf1-11ee-bc92-0242ac150007",
+	}
+
+	mockUserList := make([]*sdto.MockUser, len(mockUserIds))
+	for i, mockUserId := range mockUserIds {
+		userModel, err := dao.GetUserByID(ctx, mockUserId)
+		if err != nil {
+			zlog.Error("error while get user by id", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		var avatarUrl string
+		if userModel.AvatarURL != nil && *userModel.AvatarURL != "" {
+			avatarUrl, err = minio.GetUserAvatarUrl(ctx, *userModel.AvatarURL)
+			if err != nil {
+				zlog.Error("error while get user avatar", zap.Error(err))
+				return nil, errorx.NewInternalErr()
+			}
+		}
+
+		mockUserList[i] = &sdto.MockUser{
+			UserID:    userModel.UserID,
+			Username:  userModel.Username,
+			AvatarUrl: avatarUrl,
+		}
+	}
+
+	return &sdto.MockUserListOutput{
+		MockUserList: mockUserList,
 	}, nil
 }

@@ -27,7 +27,7 @@ func newAdmin(db *gorm.DB, opts ...gen.DOOption) admin {
 
 	tableName := _admin.adminDo.TableName()
 	_admin.ALL = field.NewAsterisk(tableName)
-	_admin.ID = field.NewInt32(tableName, "id")
+	_admin.ID = field.NewString(tableName, "id")
 	_admin.AvatarURL = field.NewString(tableName, "avatarUrl")
 	_admin.Username = field.NewString(tableName, "username")
 	_admin.Password = field.NewString(tableName, "password")
@@ -43,7 +43,7 @@ type admin struct {
 	adminDo adminDo
 
 	ALL       field.Asterisk
-	ID        field.Int32
+	ID        field.String
 	AvatarURL field.String
 	Username  field.String
 	Password  field.String
@@ -65,7 +65,7 @@ func (a admin) As(alias string) *admin {
 
 func (a *admin) updateTableName(table string) *admin {
 	a.ALL = field.NewAsterisk(table)
-	a.ID = field.NewInt32(table, "id")
+	a.ID = field.NewString(table, "id")
 	a.AvatarURL = field.NewString(table, "avatarUrl")
 	a.Username = field.NewString(table, "username")
 	a.Password = field.NewString(table, "password")

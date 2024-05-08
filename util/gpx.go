@@ -3,6 +3,7 @@ package util
 import (
 	"fmt"
 	"regexp"
+	"strings"
 
 	"github.com/tkrajina/gpxgo/gpx"
 )
@@ -48,4 +49,29 @@ func GPXRoute(linestring string) (string, error) {
 
 	// not match
 	return "", fmt.Errorf("invalid linestring format")
+}
+
+// Convert x x, y y, z z,... ==> [ [x,x], [y,y], [z,z]... ]
+func GPXStrTo2DString(gpxStr string) [][]string {
+	res := [][]string{}
+	pairs := strings.Split(gpxStr, ",")
+
+	for _, pair := range pairs {
+		pair := strings.TrimSpace(pair)
+		xy := strings.Split(pair, " ")
+
+		res = append(res, xy)
+	}
+
+	return res
+}
+
+// Convert [[x,x], [y,y], [z,z]...] ==> ["x x", "y y", "z z"...]
+func StrStrToGPXStr(gpxStrStr [][]string) []string {
+	res := []string{}
+	for _, gpxPoint := range gpxStrStr {
+		res = append(res, fmt.Sprintf("%v %v", gpxPoint[0], gpxPoint[1]))
+	}
+
+	return res
 }

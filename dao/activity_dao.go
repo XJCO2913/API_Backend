@@ -3,6 +3,7 @@ package dao
 import (
 	"context"
 	"strings"
+	"time"
 
 	"api.backend.xjco2913/dao/model"
 	"api.backend.xjco2913/dao/query"
@@ -31,7 +32,7 @@ func FindActivityByName(ctx context.Context, name string) (*model.Activity, erro
 func GetAllActivities(ctx context.Context) ([]*model.Activity, error) {
 	a := query.Use(DB).Activity
 
-	activities, err := a.WithContext(ctx).Find()
+	activities, err := a.WithContext(ctx).Order(a.CreatedAt.Desc()).Find()
 	if err != nil {
 		return nil, err
 	}
@@ -86,4 +87,69 @@ func GetActivityLimit(ctx context.Context, limit int) ([]*model.Activity, error)
 	}
 
 	return res, nil
+}
+
+func GetActivitiesByUserID(ctx context.Context, userID string) ([]*model.Activity, error) {
+	var activityUsers []*model.ActivityUser
+	var activities []*model.Activity
+
+	a := query.Use(DB).ActivityUser
+
+	activityUsers, err := a.WithContext(ctx).Where(a.UserID.Eq(userID)).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	activityIDs := make([]string, len(activityUsers))
+	for i, userActivity := range activityUsers {
+		activityIDs[i] = userActivity.ActivityID
+	}
+
+	if len(activityIDs) > 0 {
+		a := query.Use(DB).Activity
+
+		activities, err = a.WithContext(ctx).Where(a.ActivityID.In(activityIDs...)).Find()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	return activities, nil
+}
+
+func GetActivitiesByCreatorID(ctx context.Context, creatorID string) ([]*model.Activity, error) {
+	a := query.Use(DB).Activity
+
+	activities, err := a.WithContext(ctx).Where(a.CreatorID.Eq(creatorID)).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	return activities, nil
+}
+
+func GetActivitiesWithinDateRange(ctx context.Context, start, end time.Time) ([]*model.Activity, error) {
+	a := query.Use(DB).Activity
+
+	activities, err := a.WithContext(ctx).Where(
+		a.EndDate.Gte(start),
+		a.EndDate.Lte(end),
+	).Find()
+	if err != nil {
+		return nil, err
+	}
+
+	return activities, nil
+}
+
+func GetActivitiesByEndDate(ctx context.Context, end time.Time) ([]*model.Activity, error) {
+	a := query.Use(DB).Activity
+
+	startOfDay := time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, end.Location())
+	endOfDay := time.Date(end.Year(), end.Month(), end.Day(), 23, 59, 59, 999999999, end.Location())
+
+	return a.WithContext(ctx).Where(
+		a.EndDate.Gte(startOfDay),
+		a.EndDate.Lte(endOfDay),
+	).Find()
 }
