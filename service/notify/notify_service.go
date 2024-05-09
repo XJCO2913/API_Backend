@@ -79,9 +79,16 @@ func (n *NotifyService) Pull(ctx context.Context, userId string) (*sdto.PullNoti
 			routeData = util.GPXStrTo2DString(pathText)
 		}
 
+		// get organiser result
+		var orgResult *int32
+		if notification.Type == 1 && notification.OrgResult != nil {
+			orgResult = notification.OrgResult
+		}
+
 		res[i].NotificationID = notification.NotificationID
 		res[i].Sender = &sender
 		res[i].Route = routeData
+		res[i].OrgResult = orgResult
 		res[i].Type = notification.Type
 		res[i].CreatedAt = notification.CreatedAt
 

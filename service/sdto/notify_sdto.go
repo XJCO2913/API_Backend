@@ -12,6 +12,7 @@ type Notification struct {
 	NotificationID string      `json:"notificationId"`
 	Sender         *NotifyUser `json:"sender"`
 	Route          [][]string  `json:"route"`
+	OrgResult      *int32       `json:"orgResult"`
 	Type           int32       `json:"type"`
 	CreatedAt      *time.Time  `json:"createdAt"`
 }
