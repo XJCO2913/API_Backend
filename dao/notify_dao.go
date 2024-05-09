@@ -38,3 +38,9 @@ func PushNotification(ctx context.Context, newNotification *model.Notification) 
 
 	return n.WithContext(ctx).Create(newNotification)
 }
+
+func GetUnreadNotificationByUserId(ctx context.Context, userId string) ([]*model.Notification, error) {
+	n := query.Use(DB).Notification
+
+	return n.WithContext(ctx).Where(n.ReceiverID.Eq(userId)).Where(n.Status.Eq(-1)).Find()
+}

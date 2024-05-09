@@ -158,3 +158,17 @@ func (n *NotifyService) OrgResult(ctx context.Context, in *sdto.OrgResultInput) 
 
 	return nil
 }
+
+func (n *NotifyService) UnreadCount(ctx context.Context, userId string) (int, *errorx.ServiceErr) {
+	unread, err := dao.GetUnreadNotificationByUserId(ctx, userId)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return 0, nil
+		}
+
+		zlog.Error("error while get unread notification count", zap.Error(err))
+		return -1, errorx.NewInternalErr()
+	}
+
+	return len(unread), nil
+}
