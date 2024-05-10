@@ -381,9 +381,26 @@ func (m *MomentService) GetLatestByUserID(ctx context.Context, userID string) (*
 		return nil, errorx.NewInternalErr()
 	}
 
+	gpxRouteText := [][]string{}
+	if moment.RouteID != nil {
+		path, err := dao.GetPathAsText(ctx, *moment.RouteID)
+		if err != nil {
+			zlog.Error("Error while getting GPX route from MySQL", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+
+		pathText, err := util.GPXRoute(path)
+		if err != nil {
+			zlog.Error("Error while parsing GPX route to text", zap.String("path", path))
+			return nil, errorx.NewInternalErr()
+		}
+
+		gpxRouteText = util.GPXStrTo2DString(pathText)
+	}
+
 	res := &sdto.GetLatestMomentOutput{
-		Moments:      []*model.Moment{moment},
-		GPXRouteText: make(map[int][][]string),
+		Moment:       moment,
+		GPXRouteText: gpxRouteText,
 		User:         user,
 	}
 
@@ -407,22 +424,6 @@ func (m *MomentService) GetLatestByUserID(ctx context.Context, userID string) (*
 			}
 
 			moment.VideoURL = &url
-		}
-
-		if moment.RouteID != nil {
-			path, err := dao.GetPathAsText(ctx, *moment.RouteID)
-			if err != nil {
-				zlog.Error("Error while get GPX route from mysql", zap.Error(err))
-				return nil, errorx.NewInternalErr()
-			}
-
-			pathText, err := util.GPXRoute(path)
-			if err != nil {
-				zlog.Error("Error while parse gpx route to text", zap.String("path", path))
-				return nil, errorx.NewInternalErr()
-			}
-
-			res.GPXRouteText[0] = util.GPXStrTo2DString(pathText)
 		}
 	}
 

@@ -68,7 +68,7 @@ type GetMomentOutput struct {
 }
 
 type GetLatestMomentOutput struct {
-	Moments      []*model.Moment
-	GPXRouteText map[int][][]string
+	Moment       *model.Moment
+	GPXRouteText [][]string
 	User         *model.User
 }

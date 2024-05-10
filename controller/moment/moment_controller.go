@@ -200,9 +200,35 @@ func (m *MomentController) Create(c *gin.Context) {
 		}
 	}
 
+	// Retrieve the latest moment after creation
+	res, sErr := moment.Service().GetLatestByUserID(context.Background(), userId.(string))
+	if sErr != nil {
+		c.JSON(sErr.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  sErr.Error(),
+		})
+		return
+	}
+
+	moment := res.Moment
+
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Create new moment successfully",
+		Data: gin.H{
+			"moment": gin.H{
+				"id":       moment.MomentID,
+				"content":  moment.Content,
+				"imageUrl": moment.ImageURL,
+				"videoUrl": moment.VideoURL,
+				"gpxRoute": res.GPXRouteText,
+				"user": gin.H{
+					"id":        res.User.UserID,
+					"username":  res.User.Username,
+					"avatarUrl": res.User.AvatarURL,
+				},
+			},
+		},
 	})
 }
 
