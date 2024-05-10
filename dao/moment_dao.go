@@ -61,3 +61,14 @@ func GetMomentsByUserID(ctx context.Context, userID string) ([]*model.Moment, er
 
 	return moments, nil
 }
+
+func GetLatestMomentByUserID(ctx context.Context, userID string) (*model.Moment, error) {
+	m := query.Use(DB).Moment
+
+	moment, err := m.WithContext(ctx).Where(m.AuthorID.Eq(userID)).Order(m.CreatedAt.Desc()).First()
+	if err != nil {
+		return nil, err
+	}
+
+	return moment, nil
+}
