@@ -221,6 +221,8 @@ func (m *MomentController) Create(c *gin.Context) {
 			"name":      res.User.Username,
 			"avatarUrl": res.User.AvatarURL,
 		},
+		"comments":    []gin.H{},
+		"personLikes": []gin.H{},
 	}
 
 	if moment.ImageURL != nil {
