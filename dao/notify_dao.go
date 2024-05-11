@@ -16,7 +16,7 @@ func PullNotificationByReceiverId(ctx context.Context, receiverId string) ([]*mo
 func ReadNotificationsById(ctx context.Context, notificationId string) error {
 	n := query.Use(DB).Notification
 
-	notification, err := n.WithContext(ctx).Where(n.NotificationID.Eq(notificationId)).First()
+	notification, err := n.WithContext(ctx).Where(n.NotificationID.Eq(notificationId)).Order(n.CreatedAt.Desc()).First()
 	if err != nil {
 		return err
 	}
