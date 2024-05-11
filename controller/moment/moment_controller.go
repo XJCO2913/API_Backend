@@ -212,23 +212,32 @@ func (m *MomentController) Create(c *gin.Context) {
 
 	moment := res.Moment
 
+	momentResp := gin.H{
+		"id":        moment.MomentID,
+		"message":   moment.Content,
+		"createdAt": res.Moment.CreatedAt,
+		"authorInfo": gin.H{
+			"ID":        res.User.UserID,
+			"name":      res.User.Username,
+			"avatarUrl": res.User.AvatarURL,
+		},
+	}
+
+	if moment.ImageURL != nil {
+		momentResp["media_image"] = moment.ImageURL
+	}
+	if moment.VideoURL != nil {
+		momentResp["media_video"] = moment.VideoURL
+	}
+	if moment.RouteID != nil {
+		momentResp["media"] = res.GPXRouteText
+	}
+
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Create new moment successfully",
 		Data: gin.H{
-			"moment": gin.H{
-				"id":        moment.MomentID,
-				"message":   moment.Content,
-				"media_image":  moment.ImageURL,
-				"media_video":  moment.VideoURL,
-				"media":  res.GPXRouteText,
-				"createdAt": res.Moment.CreatedAt,
-				"authorInfo": gin.H{
-					"ID":        res.User.UserID,
-					"name":  res.User.Username,
-					"avatarUrl": res.User.AvatarURL,
-				},
-			},
+			"moment": momentResp,
 		},
 	})
 }
