@@ -50,6 +50,36 @@ func (wsc *WebsocketController) HandleConnections(w http.ResponseWriter, r *http
 	}
 	defer conn.Close()
 
+	// heartbeat
+	go func() {
+		heatbeatInterval := 5 * time.Second
+		ticker := time.NewTicker(heatbeatInterval)
+		defer ticker.Stop()
+
+		for range ticker.C {
+			// Send heartbeat message to client
+			err := conn.WriteMessage(1, []byte("HEARTBEAT"))
+			if err != nil {
+				fmt.Println("Failed to send heartbeat, close the connection")
+
+				// remove connection from pool
+				for userId, client := range Pool {
+					if client.Conn == conn {
+						delete(Pool, userId)
+
+						DisconnectCh <- dto.ConnectionEvent{
+							UserID: userId,
+						}
+					}
+				}
+
+				conn.Close()
+				ticker.Stop()
+				return
+			}
+		}
+	}()
+
 	for {
 		_, message, err := conn.ReadMessage()
 		if err != nil {

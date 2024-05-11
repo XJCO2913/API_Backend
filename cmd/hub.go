@@ -40,12 +40,8 @@ func (h *Hub) Run() {
 			}
 
 		case event := <-ws.DisconnectCh:
-			fmt.Println(222222)
-			if _, ok := h.Pool[event.UserID]; ok {
-				delete(h.Pool, event.UserID)
-				zlog.Info("Client disconnected", zap.String("userID", event.UserID))
-				h.broadcastToAdmins("User disconnected: " + event.UserID)
-			}
+			zlog.Info("Client disconnected", zap.String("userID", event.UserID))
+			h.broadcastToAdmins(`{"Type": "new_offline", "userID":"` + event.UserID + `"}`)
 
 		case msg := <-ws.ServicesCh:
 			fmt.Println(333333, msg.Type)
