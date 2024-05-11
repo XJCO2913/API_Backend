@@ -217,14 +217,15 @@ func (m *MomentController) Create(c *gin.Context) {
 		StatusMsg:  "Create new moment successfully",
 		Data: gin.H{
 			"moment": gin.H{
-				"id":       moment.MomentID,
-				"content":  moment.Content,
-				"imageUrl": moment.ImageURL,
-				"videoUrl": moment.VideoURL,
-				"gpxRoute": res.GPXRouteText,
-				"user": gin.H{
-					"id":        res.User.UserID,
-					"username":  res.User.Username,
+				"id":        moment.MomentID,
+				"message":   moment.Content,
+				"media_image":  moment.ImageURL,
+				"media_video":  moment.VideoURL,
+				"media":  res.GPXRouteText,
+				"createdAt": res.Moment.CreatedAt,
+				"authorInfo": gin.H{
+					"ID":        res.User.UserID,
+					"name":  res.User.Username,
 					"avatarUrl": res.User.AvatarURL,
 				},
 			},
