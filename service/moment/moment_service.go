@@ -380,6 +380,15 @@ func (m *MomentService) GetLatestByUserID(ctx context.Context, userID string) (*
 		zlog.Error("Error while retrieving user info", zap.String("userID", userID), zap.Error(err))
 		return nil, errorx.NewInternalErr()
 	}
+	var avatarUrl string
+	if user.AvatarURL != nil && *user.AvatarURL != "" {
+		avatarUrl, err = minio.GetUserAvatarUrl(ctx, *user.AvatarURL)
+		if err != nil {
+			zlog.Error("error while get user avatar url", zap.Error(err))
+			return nil, errorx.NewInternalErr()
+		}
+	}
+	user.AvatarURL = &avatarUrl
 
 	gpxRouteText := [][]string{}
 	if moment.RouteID != nil {
