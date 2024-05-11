@@ -2,6 +2,7 @@ package activity
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"api.backend.xjco2913/controller/dto"
 	"api.backend.xjco2913/service/activity"
+	"api.backend.xjco2913/service/friend"
 	"api.backend.xjco2913/service/sdto"
 	"github.com/gin-gonic/gin"
 )
@@ -318,6 +320,16 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 
 	participantsInfo := make([]gin.H, 0, len(activity.Participants))
 	for _, participant := range activity.Participants {
+		// check if is followed or not
+		isFollowed, sErr := friend.Service().IsFollowed(context.Background(), userID.(string), participant.UserID)
+		if sErr != nil {
+			c.JSON(sErr.Code(), dto.CommonRes{
+				StatusCode: -1,
+				StatusMsg:  sErr.Error(),
+			})
+			return
+		}
+
 		participantsInfo = append(participantsInfo, gin.H{
 			"userID":         participant.UserID,
 			"username":       participant.Username,
@@ -327,6 +339,7 @@ func (a *ActivityController) GetByID(c *gin.Context) {
 			"membershipTime": participant.MembershipTime,
 			"avatarURL":      participant.AvatarURL,
 			"membershipType": participant.MembershipType,
+			"isFollowed":     isFollowed,
 		})
 	}
 
@@ -771,7 +784,7 @@ func (a *ActivityController) GetRouteByIDs(c *gin.Context) {
 		StatusCode: 0,
 		StatusMsg:  "Get route successfully",
 		Data: gin.H{
-			"route": routes,
+			"route":     routes,
 			"avatarUrl": output.AvatarUrl,
 		},
 	})

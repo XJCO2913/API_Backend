@@ -2,6 +2,7 @@ package user
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io"
 	"strconv"
@@ -9,6 +10,7 @@ import (
 
 	"api.backend.xjco2913/controller/dto"
 	"api.backend.xjco2913/service/friend"
+	"api.backend.xjco2913/service/notify"
 	"api.backend.xjco2913/service/sdto"
 	"api.backend.xjco2913/service/user"
 	"api.backend.xjco2913/util"
@@ -117,19 +119,29 @@ func (u *UserController) Login(c *gin.Context) {
 		return
 	}
 
+	newNotificationCnt, err := notify.Service().UnreadCount(context.Background(), out.UserID)
+	if err != nil {
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
 	c.JSON(200, dto.CommonRes{
 		StatusCode: 0,
 		StatusMsg:  "Login successfully",
 		Data: gin.H{
 			"token": out.Token,
 			"userInfo": gin.H{
-				"username":   req.Username,
-				"gender":     out.Gender,
-				"birthday":   out.Birthday,
-				"region":     out.Region,
-				"avatarUrl":  out.AvatarUrl,
-				"followers":  followerCount.Count,
-				"followings": followingCount.Count,
+				"username":           req.Username,
+				"gender":             out.Gender,
+				"birthday":           out.Birthday,
+				"region":             out.Region,
+				"avatarUrl":          out.AvatarUrl,
+				"followers":          followerCount.Count,
+				"followings":         followingCount.Count,
+				"newNotificationCnt": newNotificationCnt,
 			},
 		},
 	})
@@ -223,18 +235,28 @@ func (u *UserController) GetByID(c *gin.Context) {
 		return
 	}
 
+	newNotificationCnt, err := notify.Service().UnreadCount(context.Background(), userID)
+	if err != nil {
+		c.JSON(err.Code(), dto.CommonRes{
+			StatusCode: -1,
+			StatusMsg:  err.Error(),
+		})
+		return
+	}
+
 	responseData := gin.H{
-		"userId":         userDetail.UserID,
-		"username":       userDetail.Username,
-		"avatarUrl":      userDetail.AvatarURL,
-		"isOrganiser":    userDetail.IsOrganiser,
-		"gender":         userDetail.Gender,
-		"birthday":       userDetail.Birthday,
-		"region":         userDetail.Region,
-		"membershipTime": userDetail.MembershipTime,
-		"membershipType": userDetail.MembershipType,
-		"followers":      followerCount.Count,
-		"followings":     followingCount.Count,
+		"userId":             userDetail.UserID,
+		"username":           userDetail.Username,
+		"avatarUrl":          userDetail.AvatarURL,
+		"isOrganiser":        userDetail.IsOrganiser,
+		"gender":             userDetail.Gender,
+		"birthday":           userDetail.Birthday,
+		"region":             userDetail.Region,
+		"membershipTime":     userDetail.MembershipTime,
+		"membershipType":     userDetail.MembershipType,
+		"followers":          followerCount.Count,
+		"followings":         followingCount.Count,
+		"newNotificationCnt": newNotificationCnt,
 	}
 
 	c.JSON(200, dto.CommonRes{

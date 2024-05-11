@@ -27,6 +27,12 @@ func (g *GPXService) ParseGPXData(ctx context.Context, in *sdto.ParseGPXDataInpu
 	gpxLonLatData, err := util.GPXToLonLat(in.GPXData)
 	if err != nil {
 		return nil, errorx.NewServicerErr(errorx.ErrExternal, "Invalid gpx format", nil)
+	} else if len(gpxLonLatData) <= 1 {
+		return nil, errorx.NewServicerErr(
+			400,
+			"Route data must have at least two points",
+			nil,
+		)
 	}
 
 	linestring := gpxLonLatData[0]
@@ -61,6 +67,13 @@ func (g *GPXService) ParseGPXData(ctx context.Context, in *sdto.ParseGPXDataInpu
 // Store the [[lon, lat], [lon, lat]...] data into mysql and return route id
 func (g *GPXService) ParseLonLatData(ctx context.Context, in *sdto.ParseLonLatDataInput) (*sdto.ParseLonLatDataOutput, *errorx.ServiceErr) {
 	lonLatStrData := util.StrStrToGPXStr(in.LonLatData)
+	if len(lonLatStrData) <= 1 {
+		return nil, errorx.NewServicerErr(
+			400,
+			"Route data must have at least two points",
+			nil,
+		)
+	}
 
 	linestring := lonLatStrData[0]
 	for i := 1; i < len(lonLatStrData); i++ {

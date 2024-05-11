@@ -155,3 +155,13 @@ func (f *FriendService) GetFollowingCount(ctx context.Context, userID string) (*
 		Count: len(followings),
 	}, nil
 }
+
+func (f *FriendService) IsFollowed(ctx context.Context, userId, otherId string) (bool, *errorx.ServiceErr) {
+	isFollowed, err := dao.CheckIsFollowed(ctx, userId, otherId)
+	if err != nil {
+		zlog.Error("Error while check is followed", zap.Error(err))
+		return false, errorx.NewInternalErr()
+	}
+
+	return isFollowed, nil
+}
